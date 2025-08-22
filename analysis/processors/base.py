@@ -5,7 +5,7 @@ from coffea import processor
 from coffea.nanoevents import NanoAODSchema
 from coffea.analysis_tools import Weights, PackedSelection
 from coffea.nanoevents.methods.vector import LorentzVector
-from analysis.utils import dump_lumi
+from analysis.utils import dump_lumi, dump_ak_array
 from analysis.workflows.config import WorkflowConfigBuilder
 from analysis.histograms import HistBuilder, fill_histograms
 from analysis.corrections.correction_manager import (
@@ -22,13 +22,22 @@ from analysis.selections import (
     get_stitching_mask,
 )
 
-
 NanoAODSchema.warn_missing_crossrefs = False
 
 
 class BaseProcessor(processor.ProcessorABC):
-    def __init__(self, workflow: str, year: str):
+    def __init__(
+        self,
+        workflow: str,
+        year: str,
+        output_format: str,
+        output_location: str,
+    ):
         self.year = year
+        self.workflow = workflow
+        self.output_format = output_format
+        self.output_location = output_location
+
         config_builder = WorkflowConfigBuilder(workflow)
         self.workflow_config = config_builder.build_workflow_config()
         self.histogram_config = self.workflow_config.histogram_config
@@ -115,7 +124,9 @@ class BaseProcessor(processor.ProcessorABC):
                     current_selection = selection_manager.all(*selections)
                     pruned_ev_cutflow = events[current_selection]
                     for obj in objects:
-                        pruned_ev_cutflow[f"selected_{obj}"] = objects[obj][current_selection]
+                        pruned_ev_cutflow[f"selected_{obj}"] = objects[obj][
+                            current_selection
+                        ]
                     weights_container_cutflow = weight_manager(
                         pruned_ev=pruned_ev_cutflow,
                         year=year,
@@ -134,22 +145,46 @@ class BaseProcessor(processor.ProcessorABC):
                         "raw_final_nevents": nevents_after,
                     }
                 )
-                # get analysis variables and fill histograms
+                # get analysis variables
                 variables_map = {}
                 for variable, axis in self.histogram_config.axes.items():
                     variables_map[variable] = eval(axis.expression)[category_mask]
-                fill_histograms(
-                    histogram_config=self.histogram_config,
-                    weights_container=weights_container,
-                    variables_map=variables_map,
-                    histograms=histograms,
-                    variation="nominal",
-                    category=category,
-                    is_mc=is_mc,
-                    flow=True,
-                )
+
+                if self.output_format == "coffea":
+                    fill_histograms(
+                        histogram_config=self.histogram_config,
+                        weights_container=weights_container,
+                        variables_map=variables_map,
+                        histograms=histograms,
+                        variation="nominal",
+                        category=category,
+                        is_mc=is_mc,
+                        flow=True,
+                    )
+                elif self.output_format == "parquet":
+                    fname = (
+                        events.behavior["__events_factory__"]._partition_key.replace(
+                            "/", "_"
+                        )
+                        + ".parquet"
+                    )
+                    base_subdirs = [self.workflow, self.year, dataset]
+                    for variable, array in variables_map.items():
+                        subdirs = base_subdirs + [variable, category]
+                        dump_ak_array(array, fname, self.output_location, subdirs)
+                    if is_mc:
+                        variations = ["nominal"] + list(weights_container.variations)
+                        for variation in variations:
+                            if variation == "nominal":
+                                weights = weights_container.weight()
+                            else:
+                                weights = weights_container.weight(modifier=variation)
+                            subdirs = base_subdirs + [f"weight_{variation}", category]
+                            dump_ak_array(weights, fname, self.output_location, subdirs)
+
         # add histograms to output dictionary
-        output["histograms"] = histograms
+        if self.output_format == "coffea":
+            output["histograms"] = histograms
         return output
 
     def postprocess(self, accumulator):
