@@ -67,15 +67,20 @@ if __name__ == "__main__":
         action="store_true",
         help="Enable saving outputs to /eos",
     )
+    parser.add_argument(
+        "--user",
+        type=str,
+        help="User name",
+    )
     args = parser.parse_args()
 
-
     # set output location (used when --output_format parquet)
-    user = os.environ["USER"]
     if args.eos:
-        output_location = f"root://eosuser.cern.ch//eos/user/{user[0]}/{user}/higgscharm/outputs/"
+        output_location = f"root://eosuser.cern.ch//eos/user/{args.user[0]}/{args.user}/higgscharm/outputs/"
     else:
-        output_location = f"/afs/cern.ch/user/{user[0]}/{user}/public/higgscharm/outputs/"
+        output_location = (
+            f"/afs/cern.ch/user/{args.user[0]}/{args.user}/public/higgscharm/outputs/"
+        )
 
     # load partition_fileset, run processor and save output
     with open(args.partition_json) as f:
@@ -84,10 +89,10 @@ if __name__ == "__main__":
         partition_fileset,
         treename="Events",
         processor_instance=BaseProcessor(
-            workflow=args.workflow, 
-            year=args.year, 
-            output_format=args.output_format, 
-            output_location=output_location
+            workflow=args.workflow,
+            year=args.year,
+            output_format=args.output_format,
+            output_location=output_location,
         ),
         executor=processor.futures_executor,
         executor_args={"schema": NanoAODSchema, "workers": 4},
