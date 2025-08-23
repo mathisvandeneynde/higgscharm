@@ -5,7 +5,7 @@ from coffea import processor
 from coffea.nanoevents import NanoAODSchema
 from coffea.analysis_tools import Weights, PackedSelection
 from coffea.nanoevents.methods.vector import LorentzVector
-from analysis.utils import dump_lumi, dump_ak_array
+from analysis.utils import dump_lumi, dump_pa_table
 from analysis.workflows.config import WorkflowConfigBuilder
 from analysis.histograms import HistBuilder, fill_histograms
 from analysis.corrections.correction_manager import (
@@ -145,7 +145,7 @@ class BaseProcessor(processor.ProcessorABC):
                         "raw_final_nevents": nevents_after,
                     }
                 )
-                # get analysis variables
+                # get analysis variables map
                 variables_map = {}
                 for variable, axis in self.histogram_config.axes.items():
                     variables_map[variable] = eval(axis.expression)[category_mask]
@@ -162,16 +162,7 @@ class BaseProcessor(processor.ProcessorABC):
                         flow=True,
                     )
                 elif self.output_format == "parquet":
-                    fname = (
-                        events.behavior["__events_factory__"]._partition_key.replace(
-                            "/", "_"
-                        )
-                        + ".parquet"
-                    )
-                    base_subdirs = [self.workflow, self.year, dataset]
-                    for variable, array in variables_map.items():
-                        subdirs = base_subdirs + [variable, category]
-                        dump_ak_array(array, fname, self.output_location, subdirs)
+                    # add weights to variables map
                     if is_mc:
                         variations = ["nominal"] + list(weights_container.variations)
                         for variation in variations:
@@ -179,8 +170,16 @@ class BaseProcessor(processor.ProcessorABC):
                                 weights = weights_container.weight()
                             else:
                                 weights = weights_container.weight(modifier=variation)
-                            subdirs = base_subdirs + [f"weight_{variation}", category]
-                            dump_ak_array(weights, fname, self.output_location, subdirs)
+                            variables_map[f"weight_{variation}"] = weights
+                    # save parquet files
+                    fname = (
+                        events.behavior["__events_factory__"]._partition_key.replace(
+                            "/", "_"
+                        )
+                        + ".parquet"
+                    )
+                    subdirs = [self.workflow, self.year, dataset, category]
+                    dump_pa_table(variables_map, fname, self.output_location, subdirs)
 
         # add histograms to output dictionary
         if self.output_format == "coffea":
