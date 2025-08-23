@@ -5,6 +5,7 @@ import subprocess
 from pathlib import Path
 from analysis.filesets.utils import divide_list
 from analysis.utils import make_output_directory
+from analysis.filesets.utils import fileset_checker
 
 
 def move_proxy() -> str:
@@ -42,11 +43,7 @@ def submit_condor(args):
         log_dir.mkdir(parents=True, exist_ok=True)
 
     # check if the fileset for the given year exists, generate it otherwise
-    filesets_path = Path.cwd() / "analysis" / "filesets"
-    fileset_file = filesets_path / f"fileset_{args.year}_NANO_lxplus.json"
-    if not fileset_file.exists():
-        cmd = f"python3 fetch.py --year {args.year}"
-        subprocess.run(cmd, shell=True)
+    fileset_checker(samples=[args.dataset], year=args.year)
     # save partitions json and jobnums to job directory
     jobnum_list = []
     partition_dataset = {}

@@ -1,7 +1,7 @@
 import argparse
 import subprocess
 from pathlib import Path
-
+from analysis.filesets.utils import fileset_checker
 
 MC_DATASETS = {
     "semilep_ttbar": ["TTto2L2Nu"],
@@ -183,25 +183,21 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    # check if the fileset for the given year exists, generate it otherwise
-    filesets_path = Path.cwd() / "analysis" / "filesets"
-    fileset_file = filesets_path / f"fileset_{args.year}_NANO_lxplus.json"
-    if not fileset_file.exists():
-        cmd = f"python3 fetch.py --year {args.year}"
-        subprocess.run(cmd, shell=True)
-
     # build the list of datasets to run over, based on processor and year
-    to_run = []
+    samples_to_run_over = []
     for kind, datasets in DATASETS[args.workflow].items():
         for dataset in datasets:
             if kind == "mc":
-                to_run += MC_DATASETS[dataset]
+                samples_to_run_over += MC_DATASETS[dataset]
             if kind == "data":
-                to_run += PD_DATASETS[dataset][args.year]
+                samples_to_run_over += PD_DATASETS[dataset][args.year]
+
+    # check if the fileset for the given year exists, generate it otherwise
+    fileset_checker(samples=samples_to_run_over, year=args.year)
 
     # submit (or prepare) a job for each dataset using the given arguments
     cmd = ["python3", "submit_condor.py"]
-    for dataset in to_run:
+    for dataset in samples_to_run_over:
         cmd_args = [
             "--workflow",
             args.workflow,

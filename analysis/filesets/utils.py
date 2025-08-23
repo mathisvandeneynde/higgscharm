@@ -1,6 +1,8 @@
 import re
 import glob
 import yaml
+import json
+import subprocess
 from pathlib import Path
 
 
@@ -63,12 +65,12 @@ def get_dataset_era(dataset, year):
     for dataset_key in dataset_config:
         if dataset.startswith(dataset_key):
             return dataset_config[dataset_key]["era"]
-        
-        
+
+
 def modify_site_list(year: str, site: str, status: str) -> None:
     """
-    Move a given site to the specified status list ("white" or "black") 
-    
+    Move a given site to the specified status list ("white" or "black")
+
     Parameters:
     -----------
         site: The site identifier to modify.
@@ -91,8 +93,8 @@ def modify_site_list(year: str, site: str, status: str) -> None:
 
     with open(yaml_file, "w") as f:
         yaml.dump(data, f, default_flow_style=False)
-    
-    
+
+
 def extract_xrootd_errors(error_files: list) -> set:
     """
     Extract xrootd URLs from a list of Condor error log files.
@@ -112,3 +114,24 @@ def extract_xrootd_errors(error_files: list) -> set:
         xrootd_matches = re.findall(r"root://[a-zA-Z0-9\-.]+(?:[:]\d+)?", err_content)
         xrootd_errs.update(xrootd_matches)
     return xrootd_errs
+
+
+def fileset_checker(samples: list, year: str):
+    """check if the fileset for the given year exists, generate it otherwise"""
+
+    filesets_path = Path.cwd() / "analysis" / "filesets"
+    fileset_file = filesets_path / f"fileset_{year}_NANO_lxplus.json"
+
+    build_input_fileset = False
+    if not fileset_file.exists():
+        build_input_fileset = True
+    else:
+        with open(fileset_file, "r") as f:
+            filesets = json.load(f)
+        build_input_fileset = any(ds not in filesets for ds in samples)
+
+    if build_input_fileset:
+        print("\nBuilding input filesets for:")
+        print(yaml.dump(samples, default_flow_style=False, sort_keys=False, indent=2))
+        cmd = f"python3 fetch.py --year {year} --samples {' '.join(samples)}"
+        subprocess.run(cmd, shell=True)
