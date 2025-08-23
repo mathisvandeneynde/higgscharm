@@ -1,10 +1,7 @@
 import os
 import shutil
 import pathlib
-import pandas as pd
 import awkward as ak
-import pyarrow as pa
-import pyarrow.parquet as pq
 from typing import List, Optional
 
 
@@ -17,8 +14,8 @@ def dump_pa_table(
     xrootd = False
     if xrd_prefix in location:
         try:
-            import XRootD  # type: ignore
-            import XRootD.client  # type: ignore
+            import XRootD
+            import XRootD.client
 
             xrootd = True
         except ImportError as err:
@@ -42,6 +39,9 @@ def dump_pa_table(
             out[variable] = ak.firsts(array)
         else:
             out[variable] = array
+
+    import pyarrow as pa
+    import pyarrow.parquet as pq
 
     table = pa.Table.from_pydict(out)
     if len(table) != 0:  # skip dataframes with empty entries
