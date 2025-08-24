@@ -17,6 +17,7 @@ MC_DATASETS = {
         "TBbarQ",
     ],
     "diboson": ["WW", "WZ", "ZZ"],
+    "dyjets_lo": ["DYJetsToLL"],
     "dyjets_50": ["DYto2L_2Jets_50"],
     "dyjets_10to50": ["DYto2L_2Jets_10to50"],
     "dyjets": ["DYto2L_2Jets_50", "DYto2L_2Jets_10to50"],
@@ -119,11 +120,11 @@ DATASETS = {
         "data": ["SingleMuon", "DoubleMuon", "Muon", "MuonEG", "EGamma"],
     },
     "zplusll_os": {
-        "mc": ["wz", "dyjets", "semilep_ttbar"],
+        "mc": ["wz", "dyjets_lo", "semilep_ttbar"],
         "data": ["SingleMuon", "DoubleMuon", "Muon", "MuonEG", "EGamma"],
     },
     "zplusll_ss": {
-        "mc": ["wz", "dyjets", "semilep_ttbar"],
+        "mc": ["wz", "dyjets_lo", "semilep_ttbar"],
         "data": ["SingleMuon", "DoubleMuon", "Muon", "MuonEG", "EGamma"],
     },
 }

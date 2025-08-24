@@ -43,6 +43,11 @@ EGammaG:
   query: EGamma/Run2022G-22Sep2023-v2/NANOAOD
   process: Data
   xsec: None
+DYJetsToLL:
+  era: MC
+  query: DYJetsToLL_M-50_TuneCP5_13p6TeV-madgraphMLM-pythia8/Run3Summer22EENanoAODv12-130X_mcRun3_2022_realistic_postEE_v5-v2/NANOAODSIM
+  process: DY+Jets
+  xsec: 5558.0
 DYto2L_2Jets_50:
   era: MC
   query: DYto2L-2Jets_MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/Run3Summer22EENanoAODv12-130X_mcRun3_2022_realistic_postEE_v6-v2/NANOAODSIM
