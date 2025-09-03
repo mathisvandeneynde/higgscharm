@@ -15,6 +15,12 @@ if __name__ == "__main__":
         type=str,
         choices=years,
     )
+    parser.add_argument(
+        "--samples",
+        nargs="*",
+        type=str,
+        help="(Optional) List of samples to use. If omitted, all available samples will be used",
+    )
     args = parser.parse_args()
 
     # open dataset configs
@@ -22,9 +28,14 @@ if __name__ == "__main__":
     datasets_dir = filesets_dir / f"{args.year}_nanov12.yaml"
     with open(datasets_dir, "r") as f:
         dataset_configs = yaml.safe_load(f)
+
     # read dataset queries
+    if args.samples:
+        samples_to_use = args.samples
+    else:
+        samples_to_use = list(dataset_configs.keys())
     das_queries = {}
-    for sample in dataset_configs:
+    for sample in samples_to_use:
         das_queries[sample] = dataset_configs[sample]["query"]
 
     # create a dataset_definition dict for each yeare
