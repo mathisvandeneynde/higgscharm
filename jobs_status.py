@@ -56,6 +56,7 @@ def parse_args():
         default=8,
         help="use .err files that have been modified less than 'hours_ago' hours ago",
     )
+    parser.add_argument("--reset", action="store_true", help="descp")
     return parser.parse_args()
 
 
@@ -258,6 +259,18 @@ def resubmit_jobs(job_dir, jobnum_missing, datasets_with_missing_jobs, workflow,
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     args = parse_args()
+
+    if args.reset:
+        subprocess.run(f"rm -rf condor/{args.workflow}/{args.year}", shell=True)
+        subprocess.run(f"rm -rf condor/logs/{args.workflow}/{args.year}", shell=True)
+        subprocess.run(f"rm -rf analysis/filesets/{args.year}_sites.yaml", shell=True)
+        subprocess.run(
+            f"rm -rf analysis/filesets/fileset_{args.year}_NANO_lxplus.json", shell=True
+        )
+        reset_cmd = f"python3 runner.py -w {args.workflow} -y {args.year}"
+        if args.eos:
+            reset_cmd += " --eos"
+        subprocess.run(reset_cmd, shell=True)
 
     output_dir = Path(make_output_directory(args))
     logging.info(f"Reading outputs from: {output_dir}\n")
