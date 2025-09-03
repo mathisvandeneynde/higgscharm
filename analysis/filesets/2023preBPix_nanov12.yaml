@@ -100,7 +100,7 @@ Muon1v4C:
   xsec: None
 DYJetsToLL:
   era: MC
-  query: DYJetsToLL_M-50_TuneCP5_13p6TeV-madgraphMLM-pythia8/Run3Summer23NanoAODv12-PilotMuonHits_130X_mcRun3_2023_realistic_v14-v2/NANOAODSIM
+  query: DYJetsToLL_M-50_TuneCP5_13p6TeV-madgraphMLM-pythia8/Run3Summer23NanoAODv12-Pilot_130X_mcRun3_2023_realistic_v14-v3/NANOAODSIM
   process: DY+Jets
   xsec: 5558.0
 DYto2L_2Jets_50:

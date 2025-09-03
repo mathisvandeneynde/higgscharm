@@ -108,15 +108,15 @@ DATASETS = {
         "data": ["SingleMuon", "DoubleMuon", "Muon", "MuonEG", "EGamma"],
     },
     "zplusl_os": {
-        "mc": ["wz", "dyjets", "semilep_ttbar"],
+        "mc": ["wz", "dyjets_lo", "semilep_ttbar"],
         "data": ["SingleMuon", "DoubleMuon", "Muon", "MuonEG", "EGamma"],
     },
     "zplusl_ss": {
-        "mc": ["wz", "dyjets", "semilep_ttbar"],
+        "mc": ["wz", "dyjets_lo", "semilep_ttbar"],
         "data": ["SingleMuon", "DoubleMuon", "Muon", "MuonEG", "EGamma"],
     },
     "zplusl_maximal": {
-        "mc": ["wz", "dyjets", "semilep_ttbar"],
+        "mc": ["wz", "dyjets_lo", "semilep_ttbar"],
         "data": ["SingleMuon", "DoubleMuon", "Muon", "MuonEG", "EGamma"],
     },
     "zplusll_os": {
