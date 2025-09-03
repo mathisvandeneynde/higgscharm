@@ -3,7 +3,7 @@ import awkward as ak
 from copy import deepcopy
 from coffea import processor
 from coffea.nanoevents import NanoAODSchema
-from coffea.analysis_tools import Weights, PackedSelection
+from coffea.analysis_tools import PackedSelection
 from coffea.nanoevents.methods.vector import LorentzVector
 from analysis.utils import dump_lumi, dump_pa_table
 from analysis.workflows.config import WorkflowConfigBuilder
@@ -96,7 +96,7 @@ class BaseProcessor(processor.ProcessorABC):
             selection_manager.add(selection, eval(mask))
 
         # --------------------------------------------------------------
-        # Histogram filling
+        # Histogram filling / array dumping
         # --------------------------------------------------------------
         categories = event_selection["categories"]
         for category, category_cuts in categories.items():
@@ -167,10 +167,21 @@ class BaseProcessor(processor.ProcessorABC):
                         variations = ["nominal"] + list(weights_container.variations)
                         for variation in variations:
                             if variation == "nominal":
-                                weights = weights_container.weight()
+                                variables_map[f"weight_nominal"] = (
+                                    weights_container.weight()
+                                )
+                                for (
+                                    partial_weight
+                                ) in weights_container.weightStatistics:
+                                    variables_map[f"weight_{partial_weight}"] = (
+                                        weights_container.partial_weight(
+                                            include=[partial_weight]
+                                        )
+                                    )
                             else:
-                                weights = weights_container.weight(modifier=variation)
-                            variables_map[f"weight_{variation}"] = weights
+                                variables_map[f"weight_{variation}"] = (
+                                    weights_container.weight(modifier=variation)
+                                )
                     # save parquet files
                     fname = (
                         events.behavior["__events_factory__"]._partition_key.replace(
