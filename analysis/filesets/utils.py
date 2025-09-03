@@ -4,6 +4,7 @@ import yaml
 import json
 import subprocess
 from pathlib import Path
+from analysis.workflows.config import WorkflowConfigBuilder
 
 
 def get_rootfiles(year: str, dataset: str):
@@ -135,3 +136,55 @@ def fileset_checker(samples: list, year: str):
         print(yaml.dump(samples, default_flow_style=False, sort_keys=False, indent=2))
         cmd = f"python3 fetch.py --year {year} --samples {' '.join(samples)}"
         subprocess.run(cmd, shell=True)
+
+
+def get_dataset_config(year):
+    fileset_path = Path.cwd() / "analysis" / "filesets"
+    fileset_file = f"{fileset_path}/{year}_nanov12.yaml"
+    with open(fileset_file, "r") as f:
+        dataset_config = yaml.safe_load(f)
+    return dataset_config
+
+
+def get_datasets_map(year: str):
+    dataset_config = get_dataset_config(year)
+    datasets_map = {}
+    for sample in dataset_config:
+        keys = dataset_config[sample]["key"]
+        if isinstance(keys, str):
+            if keys in datasets_map:
+                datasets_map[keys] += [sample]
+            else:
+                datasets_map[keys] = [sample]
+        elif isinstance(keys, list):
+            for key in keys:
+                if key in datasets_map:
+                    datasets_map[key] += [sample]
+                else:
+                    datasets_map[key] = [sample]
+    return datasets_map
+
+
+def get_datasets_to_run_over(workflow: str, year: str):
+    config_builder = WorkflowConfigBuilder(workflow=workflow)
+    workflow_config = config_builder.build_workflow_config()
+
+    samples_keys_to_run_over = []
+    if "data" in workflow_config.datasets:
+        data_samples = workflow_config.datasets["data"]
+        samples_keys_to_run_over += data_samples
+    if "mc" in workflow_config.datasets:
+        mc_samples = workflow_config.datasets["mc"]
+        samples_keys_to_run_over += mc_samples
+    if "signal" in workflow_config.datasets:
+        signal_samples = workflow_config.datasets["signal"]
+        samples_keys_to_run_over += signal_samples
+
+    datasets_to_run_over = []
+    datasets_map = get_datasets_map(year)
+    for key in samples_keys_to_run_over:
+        if key not in datasets_map:
+            print(f"\n{key} not availabe for {year}!")
+            continue
+        datasets_to_run_over += datasets_map[key]
+    return datasets_to_run_over

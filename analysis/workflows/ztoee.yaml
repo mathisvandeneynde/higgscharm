@@ -1,3 +1,11 @@
+datasets:
+  data:
+    - electron
+  mc:
+    - dy_nlo
+    - tt
+    - singletop
+    - diboson
 object_selection:
   electrons:
     field: events.Electron
