@@ -107,11 +107,14 @@ corrections:
     lhepdfWeight: false
     lhescaleWeight: false
     nnlopsWeight: false
+    osfrWeight: false
     electron:
       - id: false
       - reco: true
       - trigger: false
 histogram_config:
+  add_syst_axis: true
+  add_weight: true
   axes:
     z_mass_1fcr:
       type: Regular
@@ -190,7 +193,78 @@ histogram_config:
         - 26
       label: LL flavor
       expression: np.abs(objects['best_zllcandidate_2fcr'].z2.l1.pdgId) + np.abs(objects['best_zllcandidate_2fcr'].z2.l2.pdgId)
+    2fcr_l3_pt:
+      type: Variable
+      edges:
+        - 5
+        - 7
+        - 10
+        - 20
+        - 30
+        - 40
+        - 50
+        - 80
+      label: 2P2F $p_T(\ell_3)$ [GeV]
+      expression: objects['best_zllcandidate_2fcr'].z2.l1.pt
+    2fcr_l4_pt:
+      type: Variable
+      edges:
+        - 5
+        - 7
+        - 10
+        - 20
+        - 30
+        - 40
+        - 50
+        - 80
+      label: 2P2F $p_T(\ell_4)$ [GeV]
+      expression: objects['best_zllcandidate_2fcr'].z2.l2.pt
+    1fcr_l3_pt:
+      type: Variable
+      edges:
+        - 5
+        - 7
+        - 10
+        - 20
+        - 30
+        - 40
+        - 50
+        - 80
+      label: 3P1F $p_T(\ell_3)$ [GeV]
+      expression: objects['best_zllcandidate_1fcr'].z2.l1.pt
+    1fcr_l3_pass:
+      type: IntCategory
+      categories: [0, 1]
+      label: is_tight 3P1F $\ell_3$
+      expression: objects['best_zllcandidate_1fcr'].z2.l1.is_tight
+    1fcr_l4_pt:
+      type: Variable
+      edges:
+        - 5
+        - 7
+        - 10
+        - 20
+        - 30
+        - 40
+        - 50
+        - 80
+      label: 3P1F $p_T(\ell_4)$ [GeV]
+      expression: objects['best_zllcandidate_1fcr'].z2.l2.pt
+    1fcr_l4_pass:
+      type: IntCategory
+      categories: [0, 1]
+      label: is_tight 3P1F $\ell_4$
+      expression: objects['best_zllcandidate_1fcr'].z2.l2.is_tight
   layout:
+    lep_2fcr:
+      - 2fcr_l3_pt
+      - 2fcr_l4_pt
+    lep3_1fcr:
+      - 1fcr_l3_pt
+      - 1fcr_l3_pass
+    lep4_1fcr:
+      - 1fcr_l4_pt
+      - 1fcr_l4_pass
     zll_1fcr:
       - zll_mass_1fcr
       - z_flavor_1fcr
@@ -199,5 +273,3 @@ histogram_config:
       - zll_mass_2fcr
       - z_flavor_2fcr
       - ll_flavor_2fcr
-  add_syst_axis: true
-  add_weight: true
