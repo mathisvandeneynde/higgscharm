@@ -12,6 +12,7 @@ from coffea.util import load
 from coffea.processor import accumulate
 from analysis.workflows.config import WorkflowConfigBuilder
 from analysis.postprocess.coffea_plotter import CoffeaPlotter
+from analysis.filesets.utils import get_dataset_config, get_workflow_key_process_map
 from analysis.postprocess.utils import (
     print_header,
     setup_logger,
@@ -26,7 +27,6 @@ from analysis.postprocess.coffea_postprocessor import (
     save_process_histograms_by_sample,
     load_processed_histograms,
     get_results_report,
-    # get_results_report_zplusl,
 )
 
 OUTPUT_DIR = Path.cwd() / "outputs"
@@ -90,7 +90,7 @@ def parse_arguments():
         "--output_format",
         type=str,
         default="coffea",
-        choices=["coffea", "root"],
+        choices=["coffea"],
         help="Format of output histograms",
     )
     parser.add_argument(
@@ -102,9 +102,19 @@ def parse_arguments():
     parser.add_argument(
         "--pass_axis",
         type=str,
-        default="",
+        default=None,
         help="Binary axis (e.g., 'is_passing_lepton')",
     )
+    parser.add_argument(
+        "--flavor",
+        type=str,
+        default=None,
+        help="Binary axis (e.g., 'is_passing_lepton')",
+    )
+    parser.add_argument(
+        "--nocutflow", action="store_true", help="Enable postprocessing"
+    )
+    parser.add_argument("--blind", action="store_true", help="Blind data")
     return parser.parse_args()
 
 
@@ -158,40 +168,6 @@ def plot_variable(variable: str, group_by, histogram_config) -> bool:
     return False
 
 
-def save_cutflow_report(
-    category: str, category_dir: Path, event_selection: dict, process_samples_map: dict
-):
-    """generate and save the cutflow table for a given category"""
-    print_header("Cutflow")
-    cutflow_df = pd.DataFrame()
-
-    for process in process_samples_map:
-        cutflow_file = category_dir / f"cutflow_{category}_{process}.csv"
-        if cutflow_file.exists():
-            df = pd.read_csv(cutflow_file, index_col=0)
-            cutflow_df = pd.concat([cutflow_df, df], axis=1)
-        else:
-            logging.warning(f"Missing cutflow file: {cutflow_file}")
-
-    if "Data" in cutflow_df.columns:
-        cutflow_df["Total Background"] = cutflow_df.drop(columns="Data").sum(axis=1)
-    else:
-        cutflow_df["Total Background"] = cutflow_df.sum(axis=1)
-
-    cutflow_index = ["initial"] + event_selection["categories"][category]
-    cutflow_df = cutflow_df.loc[cutflow_index]
-
-    ordered_cols = ["Data", "Total Background"] + [
-        col for col in cutflow_df.columns if col not in ["Data", "Total Background"]
-    ]
-    cutflow_df = cutflow_df[ordered_cols]
-
-    logging.info(
-        f'{cutflow_df.applymap(lambda x: f"{x:.3f}" if pd.notnull(x) else "")}\n'
-    )
-    cutflow_df.to_csv(category_dir / f"cutflow_{category}.csv")
-
-
 def save_results_report(
     workflow: str, category: str, category_dir: Path, processed_histograms: dict
 ):
@@ -233,6 +209,9 @@ if __name__ == "__main__":
     event_selection = workflow_config.event_selection
     categories = event_selection["categories"]
     processed_histograms = None
+
+    if "data" not in workflow_config.datasets:
+        args.blind = True
 
     if args.year in ["2022", "2023"]:
         # load and accumulate processed histograms
@@ -276,43 +255,46 @@ if __name__ == "__main__":
                 f.write(latex_table)
 
             # load and combine cutflow tables
-            print_header(f"Cutflow")
-            cutflow_pre = pd.read_csv(
-                OUTPUT_DIR
-                / args.workflow
-                / f"{args.year}pre{identifier}"
-                / category
-                / f"cutflow_{category}.csv",
-                index_col=0,
-            )
-            cutflow_post = pd.read_csv(
-                OUTPUT_DIR
-                / args.workflow
-                / f"{args.year}post{identifier}"
-                / category
-                / f"cutflow_{category}.csv",
-                index_col=0,
-            )
-            combined_cutflow = combine_cutflows(cutflow_pre, cutflow_post)
-            combined_cutflow.to_csv(category_dir / f"cutflow_{category}.csv")
-            logging.info(
-                combined_cutflow.applymap(lambda x: f"{x:.2f}" if pd.notnull(x) else "")
-            )
-            logging.info("\n")
-
-            # compute efficiencies
-            print_header(f"Efficiency")
-            eff_df = pd.DataFrame(index=combined_cutflow.index)
-            for col in combined_cutflow.columns:
-                eff_df[col] = (
-                    combined_cutflow[col] / combined_cutflow[col].iloc[0] * 100
+            if not args.nocutflow:
+                print_header(f"Cutflow")
+                cutflow_pre = pd.read_csv(
+                    OUTPUT_DIR
+                    / args.workflow
+                    / f"{args.year}pre{identifier}"
+                    / category
+                    / f"cutflow_{category}.csv",
+                    index_col=0,
                 )
-            eff_df.to_csv(category_dir / f"eff_{category}.csv")
-            logging.info(eff_df)
-            logging.info("\n")
+                cutflow_post = pd.read_csv(
+                    OUTPUT_DIR
+                    / args.workflow
+                    / f"{args.year}post{identifier}"
+                    / category
+                    / f"cutflow_{category}.csv",
+                    index_col=0,
+                )
+                combined_cutflow = combine_cutflows(cutflow_pre, cutflow_post)
+                combined_cutflow.to_csv(category_dir / f"cutflow_{category}.csv")
+                logging.info(
+                    combined_cutflow.applymap(
+                        lambda x: f"{x:.2f}" if pd.notnull(x) else ""
+                    )
+                )
+                logging.info("\n")
 
-            cutflow_eff = format_cutflow_with_efficiency(combined_cutflow, eff_df)
-            cutflow_eff.to_csv(category_dir / f"cutflow_eff_{category}.csv")
+                # compute efficiencies
+                print_header(f"Efficiency")
+                eff_df = pd.DataFrame(index=combined_cutflow.index)
+                for col in combined_cutflow.columns:
+                    eff_df[col] = (
+                        combined_cutflow[col] / combined_cutflow[col].iloc[0] * 100
+                    )
+                eff_df.to_csv(category_dir / f"eff_{category}.csv")
+                logging.info(eff_df)
+                logging.info("\n")
+
+                cutflow_eff = format_cutflow_with_efficiency(combined_cutflow, eff_df)
+                cutflow_eff.to_csv(category_dir / f"cutflow_eff_{category}.csv")
 
     if args.postprocess:
         logging.info(workflow_config.to_yaml())
@@ -340,6 +322,7 @@ if __name__ == "__main__":
                 sample=sample,
                 grouped_outputs=grouped_outputs,
                 categories=categories,
+                nocutflow=args.nocutflow,
             )
             gc.collect()
 
@@ -350,6 +333,7 @@ if __name__ == "__main__":
                 process_samples_map=process_samples_map,
                 process=process,
                 categories=categories,
+                nocutflow=args.nocutflow,
             )
             gc.collect()
 
@@ -361,15 +345,70 @@ if __name__ == "__main__":
 
         for category in categories:
             logging.info(f"category: {category}")
-            category_dir = output_dir / category
-            save_cutflow_report(
-                category, category_dir, event_selection, process_samples_map
-            )
-            save_results_report(
-                args.workflow, category, category_dir, processed_histograms
-            )
+            category_dir = output_dir / str(category)
+
+            if not args.nocutflow:
+                print_header(f"Cutflow")
+                cutflow_df = pd.DataFrame()
+                for process in process_samples_map:
+                    cutflow_file = category_dir / f"cutflow_{category}_{process}.csv"
+                    cutflow_df = pd.concat(
+                        [cutflow_df, pd.read_csv(cutflow_file, index_col=[0])], axis=1
+                    )
+
+                columns_to_drop = []
+                key_process_map = get_workflow_key_process_map(
+                    workflow_config, args.year
+                )
+                if "signal" in workflow_config.datasets:
+                    signal_keys = [k for k in workflow_config.datasets["signal"]]
+                    signals = [key_process_map[key] for key in signal_keys]
+                    columns_to_drop += signals
+
+                if not args.blind:
+                    columns_to_drop += ["Data"]
+
+                total_background = cutflow_df.drop(columns=columns_to_drop).sum(axis=1)
+                cutflow_df["Total Background"] = total_background
+
+                cutflow_index = event_selection["categories"][category]
+                cutflow_df = cutflow_df.loc[cutflow_index]
+
+                if not args.blind:
+                    to_process = ["Data", "Total Background"]
+                else:
+                    to_process = ["Total Background"]
+                cutflow_df = cutflow_df[
+                    to_process
+                    + [
+                        process
+                        for process in cutflow_df.columns
+                        if process not in to_process
+                    ]
+                ]
+                logging.info(
+                    f'{cutflow_df.applymap(lambda x: f"{x:.3f}" if pd.notnull(x) else "")}\n'
+                )
+                cutflow_df.to_csv(f"{category_dir}/cutflow_{category}.csv")
+                logging.info("\n")
+
+            if args.workflow in ["ztoee", "ztomumu"]:
+                print_header(f"Results")
+                results_df = get_results_report(
+                    processed_histograms,
+                    workflow_config,
+                    category,
+                    columns_to_drop,
+                    args.blind,
+                )
+                logging.info(
+                    results_df.applymap(lambda x: f"{x:.5f}" if pd.notnull(x) else "")
+                )
+                logging.info("\n")
+                results_df.to_csv(f"{category_dir}/results_{category}.csv")
 
     if args.plot:
+        subprocess.run("python3 analysis/postprocess/build_color_map.py", shell=True)
         if not args.postprocess and args.year not in ["2022", "2023"]:
             postprocess_file = (
                 output_dir / f"{args.year}_processed_histograms.{args.output_format}"
@@ -390,6 +429,7 @@ if __name__ == "__main__":
             group_by=group_by,
             pass_axis=args.pass_axis,
         )
+        category_map = {11: "11", 13: "13"}
         for category in categories:
             logging.info(f"Plotting histograms for category: {category}")
             for variable in workflow_config.histogram_config.variables:
@@ -408,16 +448,31 @@ if __name__ == "__main__":
                         continue
                 if plot_variable(variable, group_by, workflow_config.histogram_config):
                     logging.info(variable)
-                    plotter.plot_histograms(
-                        variable=variable,
-                        category=category,
-                        yratio_limits=args.yratio_limits,
-                        log=args.log,
-                        extension=args.extension,
-                    )
+                    if (args.workflow in ["zplusll_os"]) and ("zll_mass" in variable):
+                        for region in ["1fcr", "2fcr"]:
+                            for flavor in ["4e", "2mu2e", "4mu", "2e2mu"]:
+                                if region in variable:
+                                    logging.info(region)
+                                    plotter.plot_histograms(
+                                        variable=variable,
+                                        category=category,
+                                        yratio_limits=args.yratio_limits,
+                                        log=args.log,
+                                        extension=args.extension,
+                                        flavor=flavor,
+                                        region=region,
+                                    )
+                    else:
+                        plotter.plot_histograms(
+                            variable=variable,
+                            category=category,
+                            yratio_limits=args.yratio_limits,
+                            log=args.log,
+                            extension=args.extension,
+                        )
             if args.workflow in ["zplusl_os", "zplusl_ss"]:
                 plotter.plot_fake_rate(category)
             subprocess.run(
-                f"tar -zcvf {output_dir}/{category}/{args.workflow}_{args.year}_plots.tar.gz {output_dir}/{category}/*.{args.extension}",
+                f"tar -zcvf {output_dir}/{category_map.get(category, category)}/{args.workflow}_{args.year}_plots.tar.gz {output_dir}/{category_map.get(category, category)}/*.{args.extension}",
                 shell=True,
             )

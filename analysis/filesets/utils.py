@@ -3,6 +3,7 @@ import glob
 import yaml
 import json
 import subprocess
+import numpy as np
 from pathlib import Path
 from analysis.workflows.config import WorkflowConfigBuilder
 
@@ -139,8 +140,13 @@ def fileset_checker(samples: list, year: str):
 
 
 def get_dataset_config(year):
+    aux_year_map = {
+        "2022": "2022preEE",
+        "2023": "2023preBPix",
+    }
+    aux_year = aux_year_map.get(year, year)
     fileset_path = Path.cwd() / "analysis" / "filesets"
-    fileset_file = f"{fileset_path}/{year}_nanov12.yaml"
+    fileset_file = f"{fileset_path}/{aux_year}_nanov12.yaml"
     with open(fileset_file, "r") as f:
         dataset_config = yaml.safe_load(f)
     return dataset_config
@@ -188,3 +194,42 @@ def get_datasets_to_run_over(workflow: str, year: str):
             continue
         datasets_to_run_over += datasets_map[key]
     return datasets_to_run_over
+
+
+def get_workflow_key_process_map(workflow_config, year):
+    datasets = workflow_config.datasets
+    dataset_configs = get_dataset_config(year)
+    sample_keys = np.concatenate(list(datasets.values())).tolist()
+
+    processes = []
+    key_process_map = {}
+
+    for sample in dataset_configs:
+        sample_process = dataset_configs[sample]["process"]
+        if sample_process == "Data":
+            continue
+        sample_key = dataset_configs[sample]["key"]
+        if isinstance(sample_key, str):
+            if sample_key in sample_keys:
+                if sample_process not in processes:
+                    processes.append(sample_process)
+                    key_process_map[sample_key] = sample_process
+        elif isinstance(sample_key, list):
+            for sk in sample_key:
+                if sk in sample_keys:
+                    if sample_process not in processes:
+                        processes.append(sample_process)
+                        key_process_map[sk] = sample_process
+
+    return key_process_map
+
+
+def get_process_era_map(year):
+    dataset_configs = get_dataset_config(year)
+    process_era_map = {}
+    for sample in dataset_configs:
+        sample_process = dataset_configs[sample]["process"]
+        if sample_process not in process_era_map:
+            process_era_map[sample_process] = dataset_configs[sample]["era"]
+
+    return process_era_map

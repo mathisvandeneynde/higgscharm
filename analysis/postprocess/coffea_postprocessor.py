@@ -14,13 +14,9 @@ from analysis.postprocess.utils import (
 
 
 def save_process_histograms_by_sample(
-    grouped_outputs,
-    sample,
-    year: str,
-    output_dir: str,
-    categories,
+    grouped_outputs, sample, year: str, output_dir: str, categories, nocutflow
 ):
-    print_header(f"Processing {sample} outputs")
+    print_header(f"Processing {sample} sample outputs")
 
     fileset_file = Path.cwd() / "analysis" / "filesets" / f"{year}_nanov12.yaml"
     with open(fileset_file, "r") as f:
@@ -62,7 +58,7 @@ def save_process_histograms_by_sample(
     weight = 1
     xsec = dataset_config[sample]["xsec"]
     sumw = metadata["sumw"]
-    if dataset_config[sample]["era"] == "MC":
+    if dataset_config[sample]["era"] == "mc":
         weight = (luminosities[year] * xsec) / sumw
 
     logging.info(f"luminosity [1/pb]: {luminosities[year]}")
@@ -77,21 +73,23 @@ def save_process_histograms_by_sample(
     logging.info(f"saving histograms")
     save(scaled_histograms, f"{output_dir}/{sample}.coffea")
 
-    scaled_cutflow = {}
-    for category in categories:
-        logging.info(f"saving cutflow for category {category}\n")
-        category_dir = Path(f"{output_dir}/{category}")
-        if not category_dir.exists():
-            category_dir.mkdir(parents=True, exist_ok=True)
-        scaled_cutflow[category] = {}
-        if category in metadata:
-            for cut, nevents in metadata[category]["cutflow"].items():
-                scaled_cutflow[category][cut] = nevents * weight
-        processed_cutflow = {sample: scaled_cutflow[category]}
-        cutflow_file = Path(
-            f"{output_dir}/{category}/cutflow_{category}_{sample}.coffea"
-        )
-        save(processed_cutflow, cutflow_file)
+    if not nocutflow:
+        scaled_cutflow = {}
+        for category in categories:
+            category_dir = Path(f"{output_dir}/{category}")
+            if not category_dir.exists():
+                category_dir.mkdir(parents=True, exist_ok=True)
+            scaled_cutflow[category] = {}
+
+            if category in metadata:
+                for cut, nevents in metadata[category]["cutflow"].items():
+                    scaled_cutflow[category][cut] = nevents * weight
+            processed_cutflow = {sample: scaled_cutflow[category]}
+            cutflow_file = Path(
+                f"{output_dir}/{category}/cutflow_{category}_{sample}.coffea"
+            )
+            logging.info(f"saving {sample} cutflow for category {category}")
+            save(processed_cutflow, cutflow_file)
 
 
 def save_process_histograms_by_process(
@@ -100,8 +98,9 @@ def save_process_histograms_by_process(
     output_dir: str,
     process_samples_map: dict,
     categories,
+    nocutflow,
 ):
-    print_header(f"Processing {process} outputs")
+    print_header(f"Processing {process} process outputs")
     # group and accumulate output files by sample
     extension = ".coffea"
     output_files = []
@@ -115,22 +114,24 @@ def save_process_histograms_by_process(
     output_histograms = {process: accumulate(hist_to_accumulate)}
     save(output_histograms, f"{output_dir}/{process}.coffea")
 
-    cutflow = {}
-    for category in categories:
-        logging.info(f"saving cutflow for category {category}\n")
-        category_dir = Path(f"{output_dir}/{category}")
-        cut_to_accumulate = []
-        df = pd.DataFrame()
-        for sample in process_samples_map[process]:
-            cutflow_file = category_dir / f"cutflow_{category}_{sample}.coffea"
-            if cutflow_file.exists():
-                df_sample = pd.DataFrame(load(cutflow_file).values())
-                df = pd.concat([df, df_sample])
-
-        cutflow_df = pd.DataFrame(df.sum())
-        cutflow_df.columns = [process]
-        cutflow_file = Path(f"{output_dir}/{category}/cutflow_{category}_{process}.csv")
-        cutflow_df.to_csv(cutflow_file)
+    if not nocutflow:
+        cutflow = {}
+        for category in categories:
+            category_dir = Path(f"{output_dir}/{category}")
+            cut_to_accumulate = []
+            df = pd.DataFrame()
+            for sample in process_samples_map[process]:
+                cutflow_file = category_dir / f"cutflow_{category}_{sample}.coffea"
+                if cutflow_file.exists():
+                    df_sample = pd.DataFrame(load(cutflow_file).values())
+                    df = pd.concat([df, df_sample])
+            cutflow_df = pd.DataFrame(df.sum())
+            cutflow_df.columns = [process]
+            cutflow_file = Path(
+                f"{output_dir}/{category}/cutflow_{category}_{process}.csv"
+            )
+            logging.info(f"saving {process} cutflow for category {category}")
+            cutflow_df.to_csv(cutflow_file)
 
 
 def load_processed_histograms(
@@ -145,7 +146,9 @@ def load_processed_histograms(
     return processed_histograms
 
 
-def get_results_report(processed_histograms, category):
+def get_results_report(
+    processed_histograms, workflow_config, category, columns_to_drop, blind
+):
     kin, aux_var = find_kin_and_axis(processed_histograms)
     nominal = {}
     variations = {}
@@ -210,12 +213,12 @@ def get_results_report(processed_histograms, category):
     results = {}
     for process in nominal:
         results[process] = {}
-
         results[process]["events"] = np.sum(nominal[process].values())
         if process == "Data":
             results[process]["stat err"] = np.sqrt(np.sum(nominal[process].values()))
         else:
-            mcs.append(process)
+            if process not in columns_to_drop:
+                mcs.append(process)
             results[process]["stat err"] = mcstat_err[process]
             results[process]["syst err up"] = bin_error_up[process]
             results[process]["syst err down"] = bin_error_down[process]
@@ -231,7 +234,8 @@ def get_results_report(processed_histograms, category):
         np.sum(df.loc["syst err down", mcs] ** 2)
     )
     df = df.T
-    df.loc["Data/Total background"] = (
-        df.loc["Data", ["events"]] / df.loc["Total background", ["events"]]
-    )
+    if not blind:
+        df.loc["Data/Total background"] = (
+            df.loc["Data", ["events"]] / df.loc["Total background", ["events"]]
+        )
     return df
