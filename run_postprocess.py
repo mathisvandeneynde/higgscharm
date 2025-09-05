@@ -106,12 +106,6 @@ def parse_arguments():
         help="Binary axis (e.g., 'is_passing_lepton')",
     )
     parser.add_argument(
-        "--flavor",
-        type=str,
-        default=None,
-        help="Binary axis (e.g., 'is_passing_lepton')",
-    )
-    parser.add_argument(
         "--nocutflow", action="store_true", help="Enable postprocessing"
     )
     parser.add_argument("--blind", action="store_true", help="Blind data")
@@ -447,12 +441,11 @@ if __name__ == "__main__":
                     if not proceed:
                         continue
                 if plot_variable(variable, group_by, workflow_config.histogram_config):
-                    logging.info(variable)
                     if (args.workflow in ["zplusll_os"]) and ("zll_mass" in variable):
                         for region in ["1fcr", "2fcr"]:
                             for flavor in ["4e", "2mu2e", "4mu", "2e2mu"]:
                                 if region in variable:
-                                    logging.info(region)
+                                    logging.info(f"{variable} {flavor}")
                                     plotter.plot_histograms(
                                         variable=variable,
                                         category=category,
@@ -463,6 +456,7 @@ if __name__ == "__main__":
                                         region=region,
                                     )
                     else:
+                        logging.info(variable)
                         plotter.plot_histograms(
                             variable=variable,
                             category=category,
