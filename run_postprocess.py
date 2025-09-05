@@ -37,19 +37,13 @@ def parse_arguments():
     parser.add_argument(
         "-w",
         "--workflow",
+        dest="workflow",
         required=True,
+        type=str,
         choices=[
-            "ztomumu",
-            "ztoee",
-            "zzto4l",
-            "hww",
-            "zplusl_os",
-            "zplusl_ss",
-            "zplusl_maximal",
-            "zplusll_os",
-            "zplusll_ss",
+            f.stem for f in (Path.cwd() / "analysis" / "workflows").glob("*.yaml")
         ],
-        help="Workflow config to run",
+        help="workflow to run",
     )
     parser.add_argument(
         "-y",
