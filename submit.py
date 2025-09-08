@@ -1,6 +1,7 @@
 import os
 import json
 import argparse
+from pathlib import Path
 from coffea import processor
 from coffea.util import save
 from coffea.nanoevents import NanoAODSchema
