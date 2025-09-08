@@ -12,12 +12,16 @@ object_selection:
     cuts:
       - events.Electron.pt > 10
       - np.abs(events.Electron.eta) < 2.4
+      - np.abs(events.Electron.dxy) < 0.5
+      - np.abs(events.Electron.dz) < 1
       - working_points.electron_id(events, 'wp80iso')
   muons:
     field: events.Muon
     cuts:
       - events.Muon.pt > 10
       - np.abs(events.Muon.eta) < 2.4
+      - np.abs(events.Muon.dxy) < 0.5
+      - np.abs(events.Muon.dz) < 1
       - working_points.muon_iso(events, 'tight')
       - working_points.muon_id(events, 'tight')
       - delta_r_higher(events.Muon, objects['electrons'], 0.4)

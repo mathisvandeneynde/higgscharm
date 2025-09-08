@@ -21,8 +21,8 @@ object_selection:
     cuts:
       - events.Electron.pt > 10
       - np.abs(events.Electron.eta) < 2.4
-      - events.Electron.dxy < 0.5
-      - events.Electron.dz < 1
+      - np.abs(events.Electron.dxy) < 0.5
+      - np.abs(events.Electron.dz) < 1
       - working_points.electron_id(events, 'wp80iso')
       - delta_r_higher(events.Electron, objects['muons'], 0.4)
   jets:
