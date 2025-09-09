@@ -60,10 +60,10 @@ Muon1v2D:
   xsec: None
 DYJetsToLL:
   era: mc
-  query: DYJetsToLL_M-50_TuneCP5_13p6TeV-madgraphMLM-pythia8/Run3Summer23BPixNanoAODv12-Pilot_130X_mcRun3_2023_realistic_postBPix_v2-v3/NANOAODSIM
+  query: DYto2L-4Jets_MLL-50_TuneCP5_13p6TeV_madgraphMLM-pythia8/Run3Summer23BPixNanoAODv12-JMENano12p5_132X_mcRun3_2023_realistic_postBPix_v4-v1/NANOAODSIM
   process: DY+Jets
   key: dy_lo
-  xsec: 5558.0
+  xsec: 5467.0
 DYto2L_2Jets_50:
   era: mc
   query: DYto2L-2Jets_MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v2-v3/NANOAODSIM
