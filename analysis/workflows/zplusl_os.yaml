@@ -87,7 +87,7 @@ event_selection:
     ele_flavor: ak.all(np.abs(objects['other_relaxed_leptons'].pdgId) == 11, axis=1)
     mu_flavor: ak.all(np.abs(objects['other_relaxed_leptons'].pdgId) == 13, axis=1)
   categories:
-    11:
+    electron:
       - trigger
       - lumimask
       - atleast_one_goodvertex
@@ -96,7 +96,7 @@ event_selection:
       - ele_flavor
       - atleast_one_zcandidate
       - one_relaxed_lepton
-    13:
+    muon:
       - trigger
       - lumimask
       - atleast_one_goodvertex
