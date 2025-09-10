@@ -520,29 +520,29 @@ class CoffeaPlotter:
 
     def plot_fake_rate(self, category, ylim=(None, 0.35), extension="pdf"):
         edges = (
-            self.processed_histograms["Data"]["loose_lepton"]
-            .project("loose_lepton_pt")
+            self.processed_histograms["Data"]["probe_lepton"]
+            .project("probe_lepton_pt")
             .axes.edges[0]
         )
         xerr = edges[1:] - edges[:-1]
         centers = (
-            self.processed_histograms["Data"]["loose_lepton"]
-            .project("loose_lepton_pt")
+            self.processed_histograms["Data"]["probe_lepton"]
+            .project("probe_lepton_pt")
             .axes.centers[0]
         )
 
-        data_barrel = self.processed_histograms["Data"]["loose_lepton"][
+        data_barrel = self.processed_histograms["Data"]["probe_lepton"][
             {"variation": "nominal", "category": category, "is_barrel_lepton": True}
-        ].project("loose_lepton_pt", "is_passing_lepton")
-        data_endcap = self.processed_histograms["Data"]["loose_lepton"][
+        ].project("probe_lepton_pt", "is_passing_lepton")
+        data_endcap = self.processed_histograms["Data"]["probe_lepton"][
             {"variation": "nominal", "category": category, "is_barrel_lepton": False}
-        ].project("loose_lepton_pt", "is_passing_lepton")
-        wz_barrel = self.processed_histograms["WZ"]["loose_lepton"][
+        ].project("probe_lepton_pt", "is_passing_lepton")
+        wz_barrel = self.processed_histograms["WZ"]["probe_lepton"][
             {"variation": "nominal", "category": category, "is_barrel_lepton": True}
-        ].project("loose_lepton_pt", "is_passing_lepton")
-        wz_endcap = self.processed_histograms["WZ"]["loose_lepton"][
+        ].project("probe_lepton_pt", "is_passing_lepton")
+        wz_endcap = self.processed_histograms["WZ"]["probe_lepton"][
             {"variation": "nominal", "category": category, "is_barrel_lepton": False}
-        ].project("loose_lepton_pt", "is_passing_lepton")
+        ].project("probe_lepton_pt", "is_passing_lepton")
         data_wz_barrel = data_barrel + (wz_barrel * -1)
         data_wz_endcap = data_endcap + (wz_endcap * -1)
 
