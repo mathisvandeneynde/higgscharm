@@ -5,12 +5,14 @@ from analysis.corrections.pileup import add_pileup_weight
 from analysis.corrections.nnlops import add_nnlops_weight
 from analysis.corrections.lhepdf import add_lhepdf_weight
 from analysis.corrections.electron import ElectronWeights
+from analysis.corrections.os_fr_2p2f import add_2p2f_weight
 from analysis.corrections.jerc import apply_jerc_corrections
 from analysis.corrections.lhescale import add_scalevar_weight
 from analysis.corrections.met import apply_met_phi_corrections
 from analysis.corrections.muon_ss import apply_muon_ss_corrections
 from analysis.corrections.partonshower import add_partonshower_weight
 from analysis.corrections.electron_ss import apply_electron_ss_corrections
+
 
 
 def object_corrector_manager(events, year, dataset, workflow_config):
@@ -95,6 +97,15 @@ def weight_manager(pruned_ev, year, dataset, workflow_config, variation="nominal
                     events=pruned_ev,
                     weights_container=weights_container,
                 )
+
+        if "2P2FWeight" in weights_config:
+            if weights_config["2P2FWeight"]:
+                add_2p2f_weight(
+                    events=pruned_ev,
+                    year=year,
+                    weights_container=weights_container,
+                )
+                
         if "muon" in weights_config:
             if "selected_muons" in pruned_ev.fields:
                 muon_weights = MuonWeights(

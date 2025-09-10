@@ -116,7 +116,7 @@ corrections:
     lhepdfWeight: false
     lhescaleWeight: false
     nnlopsWeight: false
-    osfrWeight: false
+    2P2FWeight: true
     electron:
       - id: false
       - reco: true
