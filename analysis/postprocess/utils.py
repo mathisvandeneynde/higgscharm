@@ -41,7 +41,7 @@ def clear_output_directory(output_dir, ext):
         os.remove(file)
 
 
-def df_to_latex(df, table_title="Events"):
+def df_to_latex(df, blind, table_title="Events"):
     output = rf"""\begin{{table}}[h!]
 \centering
 \begin{{tabular}}{{@{{}} l c @{{}}}}
@@ -56,14 +56,16 @@ def df_to_latex(df, table_title="Events"):
     for label, row in df.iterrows():
         events = row["events"]
         stat_err = row["stat err"] if pd.notna(row["stat err"]) else None
-        syst_err = row["syst err"] if pd.notna(row["syst err"]) else None
+        syst_err_up = row["syst err up"] if pd.notna(row["syst err up"]) else None
+        syst_err_down = row["syst err down"] if pd.notna(row["syst err down"]) else None
 
         events_f = f"{float(events):.2f}"
         stat_err_f = f"{float(stat_err):.2f}" if stat_err is not None else "nan"
-        syst_err_f = f"{float(syst_err):.2f}" if syst_err is not None else "nan"
+        syst_err_up_f = f"{float(syst_err_up):.2f}" if syst_err_up is not None else "nan"
+        syst_err_down_f = f"{float(syst_err_down):.2f}" if syst_err_down is not None else "nan"
 
         if label not in ["Data", "Total background", "Data/Total background"]:
-            output += f"{label} & ${events_f} \\pm {stat_err_f} \\, (\\text{{stat}}) \\pm {syst_err_f} \\, (\\text{{syst}})$\\\\\n"
+            output += f"{label} & ${events_f} \\pm {stat_err_f} \\, (\\text{{stat}}) \\pm {syst_err_up_f} \\, (\\text{{syst up}})$ \\pm {syst_err_down_f} \\, (\\text{{syst down}})$\\\\\n"
 
     output += r"\hline" + "\n"
 
@@ -71,20 +73,22 @@ def df_to_latex(df, table_title="Events"):
     bg = df.loc["Total background"]
     total_background_value = bg["events"]
     stat_err_bg = bg["stat err"]
-    syst_err_bg = bg["syst err"]
+    syst_err_up_bg = bg["syst err up"]
+    syst_err_down_bg = bg["syst err down"]
 
-    output += f"Total Background & ${float(total_background_value):.2f} \\pm {float(stat_err_bg):.2f} \\, (\\text{{stat}}) \\pm {float(syst_err_bg):.2f} \\, (\\text{{syst}})$ \\\\ \n"
+    output += f"Total Background & ${float(total_background_value):.2f} \\pm {float(stat_err_bg):.2f} \\, (\\text{{stat}}) \\pm {float(syst_err_up_bg):.2f} \\, (\\text{{syst up}})$ \\pm {float(syst_err_down_bg):.2f} \\, (\\text{{syst down}})$ \\\\ \n"
 
     # Data
-    data_value = df.loc["Data"]["events"]
-    output += f"Data & ${float(data_value):.0f}$ \\\\ \n"
+    if not blind:
+        data_value = df.loc["Data"]["events"]
+        output += f"Data & ${float(data_value):.0f}$ \\\\ \n"
 
-    output += r"\hline" + "\n"
-
-    # Data/Total Background
-    if total_background_value and data_value:
-        ratio = data_value / total_background_value
-        output += f"Data/Total Background & ${ratio:.2f}$ \\\\ \n"
+        output += r"\hline" + "\n"
+    
+        # Data/Total Background
+        if total_background_value and data_value:
+            ratio = data_value / total_background_value
+            output += f"Data/Total Background & ${ratio:.2f}$ \\\\ \n"
 
     output += r"""\hline
 \end{tabular}
@@ -92,19 +96,22 @@ def df_to_latex(df, table_title="Events"):
     return output
 
 
-def combine_event_tables(df1, df2):
-    assert all(df1.index == df2.index), "Los índices de los DataFrames no coinciden."
+def combine_event_tables(df1, df2, blind):
+    assert all(df1.index == df2.index), "DataFrame index don't match!"
     combined = pd.DataFrame(index=df1.index)
     combined["events"] = df1["events"] + df2["events"]
     combined["stat err"] = np.sqrt(df1["stat err"] ** 2 + df2["stat err"] ** 2)
-    combined["syst err"] = np.sqrt(df1["syst err"] ** 2 + df2["syst err"] ** 2)
-    data = combined.loc["Data", "events"]
-    total_bkg = combined.loc["Total background", "events"]
-    combined.loc["Data/Total background", ["events", "stat err", "syst err"]] = [
-        data / total_bkg,
-        np.nan,
-        np.nan,
-    ]
+    combined["syst err up"] = np.sqrt(df1["syst err up"] ** 2 + df2["syst err up"] ** 2)
+    combined["syst err down"] = np.sqrt(df1["syst err up"] ** 2 + df2["syst err down"] ** 2)
+    if not blind:
+        data = combined.loc["Data", "events"]
+        total_bkg = combined.loc["Total background", "events"]
+        combined.loc["Data/Total background", ["events", "stat err", "syst err up", "syst err down"]] = [
+            data / total_bkg,
+            np.nan,
+            np.nan,
+            np.nan,
+        ]
     return combined
 
 

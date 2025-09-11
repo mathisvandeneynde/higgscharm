@@ -8,7 +8,7 @@ import subprocess
 import pandas as pd
 from pathlib import Path
 from collections import defaultdict
-from coffea.util import load
+from coffea.util import load, save
 from coffea.processor import accumulate
 from analysis.workflows.config import WorkflowConfigBuilder
 from analysis.postprocess.coffea_plotter import CoffeaPlotter
@@ -116,10 +116,7 @@ def get_sample_name(filename: str, year: str) -> str:
 
 def build_process_sample_map(datasets: list[str], year: str) -> dict[str, list[str]]:
     """map processes to their corresponding samples based on dataset config"""
-    fileset_path = Path.cwd() / "analysis/filesets" / f"{year}_nanov12.yaml"
-    with open(fileset_path, "r") as f:
-        dataset_configs = yaml.safe_load(f)
-
+    dataset_configs = get_dataset_config(year)
     process_map = defaultdict(list)
     for sample in datasets:
         config = dataset_configs[sample]
@@ -206,6 +203,7 @@ if __name__ == "__main__":
         processed_histograms = load_year_histograms(
             args.workflow, args.year, args.output_format
         )
+        save(processed_histograms, f"{output_dir}/{args.year}_processed_histograms.coffea")
         identifier = "EE" if args.year == "2022" else "BPix"
         for category in categories:
             logging.info(f"category: {category}")
@@ -226,7 +224,7 @@ if __name__ == "__main__":
                 / f"results_{category}.csv",
                 index_col=0,
             )
-            combined_results = combine_event_tables(results_pre, results_post)
+            combined_results = combine_event_tables(results_pre, results_post, args.blind)
 
             print_header(f"Results")
             logging.info(
@@ -235,10 +233,12 @@ if __name__ == "__main__":
             logging.info("\n")
 
             category_dir = OUTPUT_DIR / args.workflow / args.year / category
+            if not category_dir.exists():
+                category_dir.mkdir(parents=True, exist_ok=True)
             combined_results.to_csv(category_dir / f"results_{category}.csv")
 
             # save latex table
-            latex_table = df_to_latex(combined_results)
+            latex_table = df_to_latex(combined_results, args.blind)
             with open(category_dir / f"results_{category}.txt", "w") as f:
                 f.write(latex_table)
 
