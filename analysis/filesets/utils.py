@@ -52,18 +52,21 @@ def divide_list(lst: list, nfiles: int = 20) -> list:
     return result
 
 
-def get_dataset_key(dataset):
-    datasets = ["MuonEG", "Muon", "EGamma", "SingleMuon", "DoubleMuon"]
-    for dataset_key in datasets:
-        if dataset.startswith(dataset_key):
-            return dataset_key
-    return "MC"
+def get_dataset_config(year):
+    aux_year_map = {
+        "2022": "2022preEE",
+        "2023": "2023preBPix",
+    }
+    aux_year = aux_year_map.get(year, year)
+    fileset_path = Path.cwd() / "analysis" / "filesets"
+    fileset_file = f"{fileset_path}/{aux_year}_nanov12.yaml"
+    with open(fileset_file, "r") as f:
+        dataset_config = yaml.safe_load(f)
+    return dataset_config
 
 
 def get_dataset_era(dataset, year):
-    fileset_path = Path(f"{Path.cwd()}/analysis/filesets")
-    with open(f"{fileset_path}/{year}_nanov12.yaml", "r") as f:
-        dataset_config = yaml.safe_load(f)
+    dataset_config = get_dataset_config(year)
     for dataset_key in dataset_config:
         if dataset.startswith(dataset_key):
             return dataset_config[dataset_key]["era"]
@@ -137,19 +140,6 @@ def fileset_checker(samples: list, year: str):
         print(yaml.dump(samples, default_flow_style=False, sort_keys=False, indent=2))
         cmd = f"python3 fetch.py --year {year} --samples {' '.join(samples)}"
         subprocess.run(cmd, shell=True)
-
-
-def get_dataset_config(year):
-    aux_year_map = {
-        "2022": "2022preEE",
-        "2023": "2023preBPix",
-    }
-    aux_year = aux_year_map.get(year, year)
-    fileset_path = Path.cwd() / "analysis" / "filesets"
-    fileset_file = f"{fileset_path}/{aux_year}_nanov12.yaml"
-    with open(fileset_file, "r") as f:
-        dataset_config = yaml.safe_load(f)
-    return dataset_config
 
 
 def get_datasets_map(year: str):
