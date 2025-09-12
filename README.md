@@ -7,6 +7,9 @@ Python package for analyzing H+c events. The package uses a columnar framework t
 - [Submit Condor jobs](#Submit-Condor-jobs)
 - [Postprocessing](#Postprocessing)
 
+### Development workflow
+Please make a dedicated branch with your commits and make a PR to the main.
+
 ### Workflows
 
 The available workflows are:
@@ -24,6 +27,10 @@ The workflows (selections, variables, output histograms, triggers, etc) are defi
 ### Input filesets
 
 Each year/campaign has a config file in [`analysis/filesets/<campaign>_nanov12.yaml`](https://github.com/deoache/higgscharm/tree/lxplus/analysis/filesets) from which the input filesets are built. The config file contains a key name, era, associated process, cross section and DAS query of the datasets. The sites allowed are defined in [`analysis/filesets/xrootd_sites.py`](https://github.com/deoache/higgscharm/blob/lxplus/analysis/filesets/xrootd_sites.py).
+
+### Local test
+
+Before submitting batch jobs, you can first test with small number of events. This can be done in web based environment with jupyter notebooks, e.g. using coffea-casa: (instruction)
 
 
 ### Submit Condor jobs
