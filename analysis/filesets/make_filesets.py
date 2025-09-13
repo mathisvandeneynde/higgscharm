@@ -36,8 +36,12 @@ if __name__ == "__main__":
         samples_to_use = list(dataset_configs.keys())
     das_queries = {}
     for sample in samples_to_use:
-        das_queries[sample] = dataset_configs[sample]["query"]
-
+        query = dataset_configs[sample]["query"]
+        if query:
+            das_queries[sample] = query
+        else:
+            print(f"No available query for: {sample}")
+            
     # create a dataset_definition dict for each yeare
     dataset_definition = {}
     for dataset_key, query in das_queries.items():

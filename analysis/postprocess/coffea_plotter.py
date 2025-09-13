@@ -9,6 +9,7 @@ from matplotlib.lines import Line2D
 from coffea.processor import accumulate
 from hist.intervals import poisson_interval
 from matplotlib.offsetbox import AnchoredText
+from analysis.filesets.utils import get_workflow_key_process_map, get_process_era_map
 from analysis.histograms import VariableAxis, IntegerAxis
 from analysis.workflows.config import WorkflowConfigBuilder
 from analysis.postprocess.utils import (
@@ -42,39 +43,28 @@ class CoffeaPlotter:
         config_builder = WorkflowConfigBuilder(workflow=workflow)
         workflow_config = config_builder.build_workflow_config()
         self.histogram_config = workflow_config.histogram_config
+        self.datasets = workflow_config.datasets
 
-        campaigns = ["2022preEE", "2022postEE", "2023preBPix", "2023postBPix"]
-        if year not in campaigns:
-            if year.startswith("2022"):
-                aux_year = "2022preEE"
-            elif year.startswith("2023"):
-                aux_year = "2023preBPix"
-        else:
-            aux_year = year
-
-        # load luminosities and style
+        # load luminosities and plotting style params
         postprocess_dir = Path.cwd() / "analysis" / "postprocess"
         style_file = postprocess_dir / "style.yaml"
         luminosity_file = postprocess_dir / "luminosity.yaml"
+        color_map_file = postprocess_dir / "process_color_map.yaml"
 
         with open(style_file, "r") as f:
             self.style = yaml.safe_load(f)
         with open(f"{Path.cwd()}/analysis/postprocess/luminosity.yaml", "r") as f:
             self.luminosities = yaml.safe_load(f)
 
-        # set processes color map
-        with open(f"{Path.cwd()}/analysis/filesets/{aux_year}_nanov12.yaml", "r") as f:
-            dataset_configs = yaml.safe_load(f)
-        processes = sorted(
-            set(
-                dataset_configs[sample]["process"]
-                for sample in dataset_configs
-                if dataset_configs[sample]["process"] != "Data"
-            )
-        )
-        self.color_map = {
-            process: color for process, color in zip(processes, self.style["colors"])
-        }
+        # set processes -> era map
+        self.process_era_map = get_process_era_map(year)
+
+        # set processes -> color map
+        key_process_map = get_workflow_key_process_map(workflow_config, year)
+        processes = list(key_process_map.values())
+        with open(color_map_file, "r") as f:
+            color_map = yaml.safe_load(f)
+        self.color_map = {p: c for p, c in color_map.items() if p in processes}
 
     def get_histogram(
         self,
@@ -82,6 +72,8 @@ class CoffeaPlotter:
         variation,
         category,
         histogram,
+        flavor,
+        region,
         other_category=None,
     ):
         """returns histogram by processes/variable/category"""
@@ -93,10 +85,18 @@ class CoffeaPlotter:
             selector[self.pass_axis] = True
         if other_category is not None:
             selector[self.group_by["name"]] = other_category
+        if self.workflow.startswith("zplusll") and flavor:
+            flavor_selector = {
+                "4e": {f"z_flavor_{region}": 0, f"ll_flavor_{region}": 0},
+                "4mu": {f"z_flavor_{region}": 1, f"ll_flavor_{region}": 1},
+                "2e2mu": {f"z_flavor_{region}": 0, f"ll_flavor_{region}": 1},
+                "2mu2e": {f"z_flavor_{region}": 1, f"ll_flavor_{region}": 0},
+            }
+            selector.update(flavor_selector[flavor])
         histogram = histogram[selector].project(variable)
         # if axis type is variable divide by bin width
-        if isinstance(self.histogram_config.axes[variable], VariableAxis):
-            histogram = divide_by_binwidth(histogram)
+        # if isinstance(self.histogram_config.axes[variable], VariableAxis):
+        #    histogram = divide_by_binwidth(histogram)
         return histogram
 
     def get_variations(
@@ -105,6 +105,8 @@ class CoffeaPlotter:
         category,
         variation,
         histogram,
+        flavor,
+        region,
     ):
         """returns variation histogram by processes/variable/category"""
         # get variable histogram for nominal variation and category
@@ -116,20 +118,34 @@ class CoffeaPlotter:
         if "category" in histogram.axes.name:
             selectorup["category"] = category
             selectordown["category"] = category
+        if self.workflow.startswith("zplusll") and flavor:
+            flavor_selector = {
+                "4e": {f"z_flavor_{region}": 0, f"ll_flavor_{region}": 0},
+                "4mu": {f"z_flavor_{region}": 1, f"ll_flavor_{region}": 1},
+                "2e2mu": {f"z_flavor_{region}": 0, f"ll_flavor_{region}": 1},
+                "2mu2e": {f"z_flavor_{region}": 1, f"ll_flavor_{region}": 0},
+            }
+            selectorup.update(flavor_selector[flavor])
+            selectordown.update(flavor_selector[flavor])
         histogram_up = histogram[selectorup].project(variable)
         histogram_down = histogram[selectordown].project(variable)
         # if axis type is variable divide by bin width
-        if isinstance(self.histogram_config.axes[variable], VariableAxis):
-            histogram_up = divide_by_binwidth(histogram_up)
-            histogram_down = divide_by_binwidth(histogram_down)
+        # if isinstance(self.histogram_config.axes[variable], VariableAxis):
+        #    histogram_up = divide_by_binwidth(histogram_up)
+        #    histogram_down = divide_by_binwidth(histogram_down)
 
         return histogram_up, histogram_down
 
-    def collect_histograms_for_plotting(self, variable, category):
+    def collect_histograms_for_plotting(self, variable, category, flavor, region):
+        histogram_info = {}
+        if "mc" in self.datasets:
+            histogram_info["mc"] = {"nominal": {}, "variations": {}}
+        if "signal" in self.datasets:
+            histogram_info["signal"] = {"nominal": {}}
+        if self.group_by != "process":
+            histogram_info["categories"] = {}
 
-        histogram_info = {"variations": {}}
         for process, histogram_dict in self.processed_histograms.items():
-
             if variable in histogram_dict:
                 aux_histogram = histogram_dict[variable]
             else:
@@ -143,50 +159,58 @@ class CoffeaPlotter:
                     variable=variable,
                     category=category,
                     variation="nominal",
+                    flavor=flavor,
+                    region=region,
                     histogram=aux_histogram,
                 )
             else:
+                key = self.process_era_map[process]
                 if self.group_by != "process":
                     cat_axis = aux_histogram.axes[self.group_by["name"]]
                     self.category_map = {cat_axis.index(cat): cat for cat in cat_axis}
                     group_by_categories = [cat_axis.index(cat) for cat in cat_axis]
                     for cat in group_by_categories:
-                        if cat not in histogram_info:
-                            histogram_info[cat] = {}
-                        histogram_info[cat][process] = self.get_histogram(
+                        if cat not in histogram_info["categories"]:
+                            histogram_info["categories"][cat] = {}
+                        histogram_info["categories"][cat][process] = self.get_histogram(
                             variable=variable,
                             category=category,
                             variation="nominal",
                             other_category=cat,
                             histogram=aux_histogram,
+                            flavor=flavor,
+                            region=region,
                         )
                 else:
-                    if "nominal" not in histogram_info:
-                        histogram_info["nominal"] = {}
-                    histogram_info["nominal"][process] = self.get_histogram(
+                    histogram_info[key]["nominal"][process] = self.get_histogram(
                         variable=variable,
                         category=category,
                         variation="nominal",
                         histogram=aux_histogram,
+                        flavor=flavor,
+                        region=region,
                     )
 
                 # save variations histograms
-                for variation in get_variations_keys(self.processed_histograms):
-                    var_cats = [v for v in aux_histogram.axes["variation"]]
-                    if not f"{variation}Up" in var_cats:
-                        continue
-                    up, down = self.get_variations(
-                        variable=variable,
-                        category=category,
-                        variation=variation,
-                        histogram=aux_histogram,
-                    )
-                    if f"{variation}Up" in histogram_info["variations"]:
-                        histogram_info["variations"][f"{variation}Up"] += up
-                        histogram_info["variations"][f"{variation}Down"] += up
-                    else:
-                        histogram_info["variations"][f"{variation}Up"] = up
-                        histogram_info["variations"][f"{variation}Down"] = down
+                if key == "mc":
+                    for variation in get_variations_keys(self.processed_histograms):
+                        var_cats = [v for v in aux_histogram.axes["variation"]]
+                        if not f"{variation}Up" in var_cats:
+                            continue
+                        up, down = self.get_variations(
+                            variable=variable,
+                            category=category,
+                            variation=variation,
+                            histogram=aux_histogram,
+                            flavor=flavor,
+                            region=region,
+                        )
+                        if f"{variation}Up" in histogram_info[key]["variations"]:
+                            histogram_info[key]["variations"][f"{variation}Up"] += up
+                            histogram_info[key]["variations"][f"{variation}Down"] += up
+                        else:
+                            histogram_info[key]["variations"][f"{variation}Up"] = up
+                            histogram_info[key]["variations"][f"{variation}Down"] = down
 
         return histogram_info
 
@@ -197,8 +221,8 @@ class CoffeaPlotter:
         err2_down = mcstat_err2
         for variation in get_variations_keys(self.processed_histograms):
             # Up/down variations for a single MC sample
-            var_up = histogram_info["variations"][f"{variation}Up"].values()
-            var_down = histogram_info["variations"][f"{variation}Down"].values()
+            var_up = histogram_info["mc"]["variations"][f"{variation}Up"].values()
+            var_down = histogram_info["mc"]["variations"][f"{variation}Down"].values()
             # Compute the uncertainties corresponding to the up/down variations
             err_up = var_up - self.nominal_values
             err_down = var_down - self.nominal_values
@@ -266,37 +290,64 @@ class CoffeaPlotter:
         xmin, xmax = rax.get_xlim()
         rax.hlines(1, xmin, xmax, color="k", linestyle=":")
 
+    def add_rax_label(self, variable, category, flavor, rax):
+        xlabel = self.histogram_config.axes[variable].label
+        if self.workflow.startswith("zplusll") and flavor:
+            xlabels = {
+                "4e": "$m_{4e}$ [GeV]",
+                "4mu": "$m_{4\mu}$ [GeV]",
+                "2e2mu": "$m_{2e2\mu}$ [GeV]",
+                "2mu2e": "$m_{2\mu 2e}$ [GeV]",
+            }
+            xlabel = xlabels[flavor]
+
+        rax.set(
+            xlabel=xlabel,
+            ylabel="Data / Pred",
+            facecolor="white",
+        )
+
     def plot_histograms(
         self,
         variable: str,
         category: str,
         yratio_limits: str = None,
         log: bool = False,
+        add_ratio: bool = True,
+        blind: bool = False,
+        flavor: str = None,
+        region: str = None,
         extension: str = "png",
     ):
+        if blind:
+            add_ratio = False
+
         setup_logger(self.output_dir)
+
         # set plot params
         hep.style.use(hep.style.CMS)
         plt.rcParams.update(self.style["rcParams"])
-        # get nominal MC histograms
-        histogram_info = self.collect_histograms_for_plotting(variable, category)
-        if self.group_by == "process":
-            nominal_mc_hists = list(histogram_info["nominal"].values())
-            colors, labels = [], []
-            for process in histogram_info["nominal"]:
-                labels.append(process)
-                colors.append(self.color_map[process])
 
+        # get mc, data and signal histograms
+        histogram_info = self.collect_histograms_for_plotting(
+            variable, category, flavor, region
+        )
+
+        # get nominal MC histograms
+        mc_colors, mc_labels = [], []
+        if self.group_by == "process":
+            nominal_mc_hists = list(histogram_info["mc"]["nominal"].values())
+            for process in histogram_info["mc"]["nominal"]:
+                mc_labels.append(process)
+                mc_colors.append(self.color_map[process])
         else:
-            labels = []
-            colors = []
             nominal_mc_hists = []
-            for i, cat in enumerate(histogram_info):
-                if cat not in ["data", "variations"]:
-                    nominal_mc_hists.append(accumulate(histogram_info[cat].values()))
-                    labels_map = {v: k for k, v in self.group_by["label"].items()}
-                    labels.append(labels_map[self.category_map[cat]])
-                    colors.append(self.style["colors"][i])
+            for cat in histogram_info["categories"]:
+                nominal_mc_hists.append(
+                    accumulate(histogram_info["categories"][cat].values())
+                )
+                labels_map = {v: k for k, v in self.group_by["label"].items()}
+                mc_labels.append(labels_map[self.category_map[cat]])
 
         mc_histogram = accumulate(nominal_mc_hists)
         self.nominal_values = mc_histogram.values()
@@ -305,12 +356,15 @@ class CoffeaPlotter:
         self.centers = mc_histogram.axes.centers[0]
         self.widths = mc_histogram.axes.widths[0]
 
-        # get variation histograms
-        variation_histograms = histogram_info["variations"]
+        # get variation MC histograms
+        variation_histograms = histogram_info["mc"]["variations"]
+
         # get Data histogram
-        data_histogram = histogram_info["data"]
-        self.data_values = data_histogram.values()
-        self.data_variances = data_histogram.variances()
+        if not blind:
+            data_histogram = histogram_info["data"]
+            self.data_values = data_histogram.values()
+            self.data_variances = data_histogram.variances()
+
         # plot stacked MC and Data histograms
         fig, (ax, rax) = plt.subplots(
             nrows=2,
@@ -320,53 +374,78 @@ class CoffeaPlotter:
             gridspec_kw={"height_ratios": (4, 1)},
             sharex=True,
         )
-        hep.histplot(
-            nominal_mc_hists,
-            label=labels,
-            color=colors,
-            flow="none",
-            ax=ax,
-            **self.style["mc_hist_kwargs"],
-        )
-        hep.histplot(
-            data_histogram,
-            label="Data",
-            flow="none",
-            ax=ax,
-            **self.style["data_hist_kwargs"],
-        )
+        if not add_ratio:
+            fig, ax = plt.subplots(
+                nrows=1,
+                ncols=1,
+                figsize=(9, 9),
+                tight_layout=True,
+            )
+        mc_hist_args = {
+            "H": nominal_mc_hists,
+            "label": mc_labels,
+            "flow": "none",
+            "ax": ax,
+        }
+        mc_hist_args.update(self.style["mc_hist_kwargs"])
+        if mc_colors:
+            mc_hist_args.update({"color": mc_colors})
+        hep.histplot(**mc_hist_args)
+        if ("data" in self.datasets) or (not blind):
+            hep.histplot(
+                data_histogram,
+                label="Data",
+                flow="none",
+                ax=ax,
+                **self.style["data_hist_kwargs"],
+            )
+        if "signal" in self.datasets:
+            for signal_process, signal_histogram in histogram_info["signal"][
+                "nominal"
+            ].items():
+                hep.histplot(
+                    signal_histogram,
+                    label=signal_process,
+                    color=self.color_map[signal_process],
+                    flow="none",
+                    ax=ax,
+                    **self.style["signal_hist_kwargs"],
+                )
+
         # plot uncertainty band
         self.plot_uncert_band(histogram_info, ax)
+
         # plot ratio
-        self.plot_ratio(rax)
+        if add_ratio:
+            self.plot_ratio(rax)
+
         # set limits
         hist_edges = np.array([[i, j] for i, j in zip(self.edges[:-1], self.edges[1:])])
         xlimits = np.min(hist_edges[self.nominal_values > 0]), np.max(
             hist_edges[self.nominal_values > 0]
         )
         ax.set_xlim(xlimits)
-        rax.set_xlim(xlimits)
-        rax.set_ylim(yratio_limits)
+        if add_ratio:
+            rax.set_xlim(xlimits)
+            rax.set_ylim(yratio_limits)
+
         # set axes labels
         ylabel = "Events"
-        if isinstance(self.histogram_config.axes[variable], VariableAxis):
-            ylabel += " / bin width"
-        ax.set(xlabel=None, ylabel=ylabel)
-        formatter = ticker.ScalarFormatter()
-        formatter.set_scientific(False)
-        ax.yaxis.set_major_formatter(formatter)
-
+        # if isinstance(self.histogram_config.axes[variable], VariableAxis):
+        #    ylabel += " / GeV"
         xlabel = self.histogram_config.axes[variable].label
         if self.workflow in ["zplusl_os", "zplusl_ss"]:
             if category == "electron":
                 xlabel = xlabel.replace(r"\ell", r"e")
             elif category == "muon":
                 xlabel = xlabel.replace(r"\ell", r"\mu")
-        rax.set(
-            xlabel=xlabel,
-            ylabel="Data / Pred",
-            facecolor="white",
-        )
+        if add_ratio:
+            ax.set(xlabel=None, ylabel=ylabel)
+            self.add_rax_label(variable, category, flavor, rax)
+        else:
+            ax.set(xlabel=xlabel, ylabel=ylabel)
+
+        # set plot text
         text_map = {
             "ztoee": rf"$ Z \rightarrow ee$ events",
             "ztomumu": rf"$ Z \rightarrow \mu\mu$ events",
@@ -398,6 +477,9 @@ class CoffeaPlotter:
         ax.add_artist(at)
         # set log scale
         if log:
+            formatter = ticker.ScalarFormatter()
+            formatter.set_scientific(False)
+            ax.yaxis.set_major_formatter(formatter)
             ax.set_yscale("log")
             ax.set_ylim(top=np.max(data_histogram.values()) * 100)
         else:
@@ -431,34 +513,36 @@ class CoffeaPlotter:
             figname = f"{str(output_path)}/{self.workflow}_{category}_{variable}_{self.pass_axis}_{self.year}.{extension}"
         if self.group_by != "process":
             figname = f"{str(output_path)}/{self.workflow}_{category}_{variable}_{self.year}_groupedby{self.group_by['name']}.{extension}"
+        if flavor and region:
+            figname = f"{str(output_path)}/{self.workflow}_{category}_{variable}_{flavor}_{self.year}.{extension}"
         fig.savefig(figname)
         plt.close()
 
     def plot_fake_rate(self, category, ylim=(None, 0.35), extension="pdf"):
         edges = (
-            self.processed_histograms["Data"]["loose_lepton"]
-            .project("loose_lepton_pt")
+            self.processed_histograms["Data"]["probe_lepton"]
+            .project("probe_lepton_pt")
             .axes.edges[0]
         )
         xerr = edges[1:] - edges[:-1]
         centers = (
-            self.processed_histograms["Data"]["loose_lepton"]
-            .project("loose_lepton_pt")
+            self.processed_histograms["Data"]["probe_lepton"]
+            .project("probe_lepton_pt")
             .axes.centers[0]
         )
 
-        data_barrel = self.processed_histograms["Data"]["loose_lepton"][
+        data_barrel = self.processed_histograms["Data"]["probe_lepton"][
             {"variation": "nominal", "category": category, "is_barrel_lepton": True}
-        ].project("loose_lepton_pt", "is_passing_lepton")
-        data_endcap = self.processed_histograms["Data"]["loose_lepton"][
+        ].project("probe_lepton_pt", "is_passing_lepton")
+        data_endcap = self.processed_histograms["Data"]["probe_lepton"][
             {"variation": "nominal", "category": category, "is_barrel_lepton": False}
-        ].project("loose_lepton_pt", "is_passing_lepton")
-        wz_barrel = self.processed_histograms["WZ"]["loose_lepton"][
+        ].project("probe_lepton_pt", "is_passing_lepton")
+        wz_barrel = self.processed_histograms["WZ"]["probe_lepton"][
             {"variation": "nominal", "category": category, "is_barrel_lepton": True}
-        ].project("loose_lepton_pt", "is_passing_lepton")
-        wz_endcap = self.processed_histograms["WZ"]["loose_lepton"][
+        ].project("probe_lepton_pt", "is_passing_lepton")
+        wz_endcap = self.processed_histograms["WZ"]["probe_lepton"][
             {"variation": "nominal", "category": category, "is_barrel_lepton": False}
-        ].project("loose_lepton_pt", "is_passing_lepton")
+        ].project("probe_lepton_pt", "is_passing_lepton")
         data_wz_barrel = data_barrel + (wz_barrel * -1)
         data_wz_endcap = data_endcap + (wz_endcap * -1)
 
