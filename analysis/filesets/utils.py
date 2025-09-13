@@ -65,6 +65,14 @@ def get_dataset_config(year):
     return dataset_config
 
 
+def get_dataset_name(dataset):
+    datasets = ["MuonEG", "Muon", "EGamma", "SingleMuon", "DoubleMuon"]
+    for dataset_key in datasets:
+        if dataset.startswith(dataset_key):
+            return dataset_key
+    return "mc"
+
+
 def get_dataset_era(dataset, year):
     dataset_config = get_dataset_config(year)
     for dataset_key in dataset_config:
