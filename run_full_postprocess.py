@@ -1,5 +1,6 @@
 import argparse
 import subprocess
+from pathlib import Path
 
 
 if __name__ == "__main__":
@@ -8,17 +9,12 @@ if __name__ == "__main__":
         "-w",
         "--workflow",
         dest="workflow",
+        required=True,
         type=str,
         choices=[
-            "ztomumu",
-            "ztoee",
-            "zzto4l",
-            "zplusl_os",
-            "zplusl_ss",
-            "zplusll_os",
-            "zplusll_ss",
+            f.stem for f in (Path.cwd() / "analysis" / "workflows").glob("*.yaml")
         ],
-        help="workflow config to run",
+        help="workflow to run",
     )
     years = ["2022preEE", "2022postEE", "2023preBPix", "2023postBPix"]
     parser.add_argument(
@@ -76,7 +72,7 @@ if __name__ == "__main__":
                     "--plot",
                     "--log",
                     "--group_by",
-                    '{"name": "leadingjet_partonflavour", "label": {"usdg": 0, "c": 4, "b": 5}}',
+                    '{"name": "leadingjet_flavour", "label": {"usdg": 0, "c": 4, "b": 5}}',
                 ]
             )
 

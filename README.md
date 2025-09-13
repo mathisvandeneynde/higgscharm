@@ -133,11 +133,7 @@ Once the Condor jobs are completed and all outputs are saved under the `outputs/
 ```bash
 python3 run_postprocess.py --workflow <workflow> --year <year> --postprocess --plot --log
 ``` 
-To merge the outputs of a year with split campaigns (e.g. 2022 and 2023), run without the `--postprocess` flag
-```bash
-python3 run_postprocess.py --workflow <workflow> --year <year> --plot --log
-```
-to automatically combine both campaigns and compute joint results and plots.
+After running post-processing for the two campaigns of a particular year, you can use the same command (with `--year 2022` or `--year 2023`) to automatically combine both campaigns and compute joint results and plots.
 
 Results will be saved to the same directory as the output files.
 

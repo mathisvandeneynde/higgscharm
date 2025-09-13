@@ -199,92 +199,102 @@ if __name__ == "__main__":
         args.blind = True
 
     if args.year in ["2022", "2023"]:
-        # load and accumulate processed histograms
-        processed_histograms = load_year_histograms(
-            args.workflow, args.year, args.output_format
-        )
-        save(processed_histograms, f"{output_dir}/{args.year}_processed_histograms.coffea")
-        identifier = "EE" if args.year == "2022" else "BPix"
-        for category in categories:
-            logging.info(f"category: {category}")
-            # load and combine results tables
-            results_pre = pd.read_csv(
-                OUTPUT_DIR
-                / args.workflow
-                / f"{args.year}pre{identifier}"
-                / category
-                / f"results_{category}.csv",
-                index_col=0,
+        if args.postprocess:
+            # load and accumulate processed histograms
+            processed_histograms = load_year_histograms(
+                args.workflow, args.year, args.output_format
             )
-            results_post = pd.read_csv(
-                OUTPUT_DIR
-                / args.workflow
-                / f"{args.year}post{identifier}"
-                / category
-                / f"results_{category}.csv",
-                index_col=0,
+            save(
+                processed_histograms,
+                f"{output_dir}/{args.year}_processed_histograms.coffea",
             )
-            combined_results = combine_event_tables(results_pre, results_post, args.blind)
-
-            print_header(f"Results")
-            logging.info(
-                combined_results.applymap(lambda x: f"{x:.5f}" if pd.notnull(x) else "")
-            )
-            logging.info("\n")
-
-            category_dir = OUTPUT_DIR / args.workflow / args.year / category
-            if not category_dir.exists():
-                category_dir.mkdir(parents=True, exist_ok=True)
-            combined_results.to_csv(category_dir / f"results_{category}.csv")
-
-            # save latex table
-            latex_table = df_to_latex(combined_results, args.blind)
-            with open(category_dir / f"results_{category}.txt", "w") as f:
-                f.write(latex_table)
-
-            # load and combine cutflow tables
-            if not args.nocutflow:
-                print_header(f"Cutflow")
-                cutflow_pre = pd.read_csv(
+            identifier = "EE" if args.year == "2022" else "BPix"
+            for category in categories:
+                logging.info(f"category: {category}")
+                # load and combine results tables
+                results_pre = pd.read_csv(
                     OUTPUT_DIR
                     / args.workflow
                     / f"{args.year}pre{identifier}"
                     / category
-                    / f"cutflow_{category}.csv",
+                    / f"results_{category}.csv",
                     index_col=0,
                 )
-                cutflow_post = pd.read_csv(
+                results_post = pd.read_csv(
                     OUTPUT_DIR
                     / args.workflow
                     / f"{args.year}post{identifier}"
                     / category
-                    / f"cutflow_{category}.csv",
+                    / f"results_{category}.csv",
                     index_col=0,
                 )
-                combined_cutflow = combine_cutflows(cutflow_pre, cutflow_post)
-                combined_cutflow.to_csv(category_dir / f"cutflow_{category}.csv")
+                combined_results = combine_event_tables(
+                    results_pre, results_post, args.blind
+                )
+
+                print_header(f"Results")
                 logging.info(
-                    combined_cutflow.applymap(
-                        lambda x: f"{x:.2f}" if pd.notnull(x) else ""
+                    combined_results.applymap(
+                        lambda x: f"{x:.5f}" if pd.notnull(x) else ""
                     )
                 )
                 logging.info("\n")
 
-                # compute efficiencies
-                print_header(f"Efficiency")
-                eff_df = pd.DataFrame(index=combined_cutflow.index)
-                for col in combined_cutflow.columns:
-                    eff_df[col] = (
-                        combined_cutflow[col] / combined_cutflow[col].iloc[0] * 100
+                category_dir = OUTPUT_DIR / args.workflow / args.year / category
+                if not category_dir.exists():
+                    category_dir.mkdir(parents=True, exist_ok=True)
+                combined_results.to_csv(category_dir / f"results_{category}.csv")
+
+                # save latex table
+                latex_table = df_to_latex(combined_results, args.blind)
+                with open(category_dir / f"results_{category}.txt", "w") as f:
+                    f.write(latex_table)
+
+                # load and combine cutflow tables
+                if not args.nocutflow:
+                    print_header(f"Cutflow")
+                    cutflow_pre = pd.read_csv(
+                        OUTPUT_DIR
+                        / args.workflow
+                        / f"{args.year}pre{identifier}"
+                        / category
+                        / f"cutflow_{category}.csv",
+                        index_col=0,
                     )
-                eff_df.to_csv(category_dir / f"eff_{category}.csv")
-                logging.info(eff_df)
-                logging.info("\n")
+                    cutflow_post = pd.read_csv(
+                        OUTPUT_DIR
+                        / args.workflow
+                        / f"{args.year}post{identifier}"
+                        / category
+                        / f"cutflow_{category}.csv",
+                        index_col=0,
+                    )
+                    combined_cutflow = combine_cutflows(cutflow_pre, cutflow_post)
+                    combined_cutflow.to_csv(category_dir / f"cutflow_{category}.csv")
+                    logging.info(
+                        combined_cutflow.applymap(
+                            lambda x: f"{x:.2f}" if pd.notnull(x) else ""
+                        )
+                    )
+                    logging.info("\n")
 
-                cutflow_eff = format_cutflow_with_efficiency(combined_cutflow, eff_df)
-                cutflow_eff.to_csv(category_dir / f"cutflow_eff_{category}.csv")
+                    # compute efficiencies
+                    print_header(f"Efficiency")
+                    eff_df = pd.DataFrame(index=combined_cutflow.index)
+                    for col in combined_cutflow.columns:
+                        eff_df[col] = (
+                            combined_cutflow[col] / combined_cutflow[col].iloc[0] * 100
+                        )
+                    eff_df.to_csv(category_dir / f"eff_{category}.csv")
+                    logging.info(eff_df)
+                    logging.info("\n")
 
-    if args.postprocess:
+                    cutflow_eff = format_cutflow_with_efficiency(
+                        combined_cutflow, eff_df
+                    )
+                    cutflow_eff.to_csv(category_dir / f"cutflow_eff_{category}.csv")
+
+    if args.postprocess and (args.year not in ["2022", "2023"]):
         logging.info(workflow_config.to_yaml())
         print_header(f"Reading outputs from: {output_dir}")
 
@@ -417,7 +427,6 @@ if __name__ == "__main__":
             group_by=group_by,
             pass_axis=args.pass_axis,
         )
-        category_map = {11: "11", 13: "13"}
         for category in categories:
             logging.info(f"Plotting histograms for category: {category}")
             for variable in workflow_config.histogram_config.variables:
@@ -461,6 +470,6 @@ if __name__ == "__main__":
             if args.workflow in ["zplusl_os", "zplusl_ss"]:
                 plotter.plot_fake_rate(category)
             subprocess.run(
-                f"tar -zcvf {output_dir}/{category_map.get(category, category)}/{args.workflow}_{args.year}_plots.tar.gz {output_dir}/{category_map.get(category, category)}/*.{args.extension}",
+                f"tar -zcvf {output_dir}/{category}/{args.workflow}_{args.year}_plots.tar.gz {output_dir}/{category}/*.{args.extension}",
                 shell=True,
             )
