@@ -8,6 +8,8 @@ Python package for analyzing H+c events. The package uses a columnar framework t
 - [Submit Condor jobs](#Submit-Condor-jobs)
 - [Postprocessing](#Postprocessing)
 
+### Development workflow
+Please make a dedicated branch with your commits and make a PR to the main.
 
 ### Input filesets
  
@@ -34,6 +36,7 @@ DYJetsToLL:
 - **`key`**: Label that associates the dataset with a group defined in the workflow configuration under `datasets` (see next section).
 - **`query`**: DAS path used to fetch the files for this dataset.
 - **`xsec`**: Cross section in picobarns (pb). Should be `null` for data. Required for MC and signal samples in order to compute event weights.
+
 
 ### Workflows
 
@@ -76,6 +79,7 @@ The workflows (selections, variables, output histograms, triggers, etc) are defi
 To run locally, you can use the Coffea-Casa tool, which you can accessd [here](https://coffea.casa/hub/login?next=%2Fhub%2F) (**make sure to select the coffea 0.7.26 image**) (more info on coffea-casa [here](https://coffea-casa.readthedocs.io/en/latest/)). You can use the `tester.ipynb` notebook to test a workflow. There, you can select the year, dataset, output format (`coffea` for histograms or `parquet` for pandas DataFrames) and executor (`iterative` or `futures`). Feel free to add more datasets in case you need to run a particular workflow (and don't forget to use `root://xcache//` in order to be able to access the dataset).
 
 This way, you can check that the workflow is running without issues before submitting batch jobs. It also allows you to interact with the output (whether histograms or DataFrames) to check that it makes sense and contains the expected information.
+
 
 
 ### Submit Condor jobs
@@ -133,6 +137,7 @@ Once the Condor jobs are completed and all outputs are saved under the `outputs/
 ```bash
 python3 run_postprocess.py --workflow <workflow> --year <year> --postprocess --plot --log
 ``` 
+
 After running post-processing for the two campaigns of a particular year, you can use the same command (with `--year 2022` or `--year 2023`) to automatically combine both campaigns and compute joint results and plots.
 
 Results will be saved to the same directory as the output files.
@@ -146,3 +151,4 @@ This script:
 * Runs all steps of `run_postprocess.py` depending on the workflow type.
 * Adds special configurations (e.g. `--group_by` for the $Z\rightarrow \ell\ell$ workflows and `--pass_axis` for the `zplusl_X` workflows).
 * Automatically produces plots and merged results for multi-campaign years (e.g. 2022, 2023).
+
