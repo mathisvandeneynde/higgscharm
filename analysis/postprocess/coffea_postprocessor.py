@@ -16,7 +16,7 @@ from analysis.postprocess.utils import (
 def save_process_histograms_by_sample(
     grouped_outputs, sample, year: str, output_dir: str, categories, nocutflow
 ):
-    print_header(f"Processing {sample} sample outputs")
+    print_header(f"Processing {sample} outputs")
 
     fileset_file = Path.cwd() / "analysis" / "filesets" / f"{year}_nanov12.yaml"
     with open(fileset_file, "r") as f:
@@ -94,7 +94,6 @@ def save_process_histograms_by_sample(
 
 def save_process_histograms_by_process(
     process: str,
-    year: str,
     output_dir: str,
     process_samples_map: dict,
     categories,

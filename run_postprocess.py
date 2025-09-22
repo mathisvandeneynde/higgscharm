@@ -57,7 +57,7 @@ def parse_arguments():
             "2023preBPix",
             "2023postBPix",
         ],
-        help="Year of the data",
+        help="Data year",
     )
     parser.add_argument(
         "--log", action="store_true", help="Enable log scale for y-axis"
@@ -106,6 +106,44 @@ def parse_arguments():
     return parser.parse_args()
 
 
+def check_output_dir(workflow: str, year: str) -> Path:
+    """
+    Verify that the output directory exists for the given workflow and year.
+    - For years 2022 and 2023, both pre/post sub-year directories must exist
+      before creating the parent directory.
+    - Returns the valid Path if successful.
+    - Raises FileNotFoundError if required directories are missing.
+    """
+
+    output_dir = OUTPUT_DIR / workflow / year
+
+    if output_dir.exists():
+        return output_dir
+
+    # Years that require both pre and post subdirectories
+    aux_map = {
+        "2022": ["2022preEE", "2022postEE"],
+        "2023": ["2023preBPix", "2023postBPix"],
+    }
+
+    if year in aux_map:
+        pre_year, post_year = [OUTPUT_DIR / workflow / y for y in aux_map[year]]
+
+        # Collect missing subdirectories
+        missing = [str(p) for p in (pre_year, post_year) if not p.exists()]
+        if missing:
+            raise FileNotFoundError(
+                f"Missing required directories for year {year}: {', '.join(missing)}"
+            )
+
+        # Create the parent directory if both pre and post exist
+        output_dir.mkdir(parents=True, exist_ok=True)
+        return output_dir
+
+    # Case for sub-years or any other invalid year
+    raise FileNotFoundError(f"Could not find outputs at {output_dir}")
+
+
 def get_sample_name(filename: str, year: str) -> str:
     """return sample name from filename"""
     sample_name = Path(filename).stem
@@ -125,7 +163,7 @@ def build_process_sample_map(datasets: list[str], year: str) -> dict[str, list[s
 
 
 def load_year_histograms(workflow: str, year: str, output_format: str):
-    """load and merge histograms from pre/post campaigns"""
+    """load and merge histograms from pre/post years"""
     aux_map = {
         "2022": ["2022preEE", "2022postEE"],
         "2023": ["2023preBPix", "2023postBPix"],
@@ -153,27 +191,6 @@ def plot_variable(variable: str, group_by, histogram_config) -> bool:
     return False
 
 
-def save_results_report(
-    workflow: str, category: str, category_dir: Path, processed_histograms: dict
-):
-    """generate and save the results summary table for a given category"""
-    print_header("Results")
-    if workflow in ["zplusl_os", "zplusl_ss"]:
-        results_df = get_results_report_zplusl(processed_histograms, category)
-        logging.info(results_df.applymap(lambda x: f"{x:.5f}" if pd.notnull(x) else ""))
-        logging.info("\n")
-        results_df.to_csv(category_dir / f"results_{category}.csv")
-    else:
-        results_df = get_results_report(processed_histograms, category)
-        logging.info(results_df.applymap(lambda x: f"{x:.5f}" if pd.notnull(x) else ""))
-        logging.info("\n")
-        results_df.to_csv(category_dir / f"results_{category}.csv")
-
-        latex_table = df_to_latex(results_df)
-        with open(category_dir / f"results_{category}.txt", "w") as f:
-            f.write(latex_table)
-
-
 if __name__ == "__main__":
     args = parse_arguments()
 
@@ -182,9 +199,7 @@ if __name__ == "__main__":
     except json.JSONDecodeError:
         group_by = args.group_by
 
-    output_dir = OUTPUT_DIR / args.workflow / args.year
-    output_dir.mkdir(parents=True, exist_ok=True)
-
+    output_dir = check_output_dir(args.workflow, args.year)
     clear_output_directory(output_dir, "txt")
     setup_logger(output_dir)
 
@@ -200,6 +215,7 @@ if __name__ == "__main__":
 
     if args.year in ["2022", "2023"]:
         if args.postprocess:
+            print_header(f"Running postprocess for {args.year}")
             # load and accumulate processed histograms
             processed_histograms = load_year_histograms(
                 args.workflow, args.year, args.output_format
@@ -211,44 +227,45 @@ if __name__ == "__main__":
             identifier = "EE" if args.year == "2022" else "BPix"
             for category in categories:
                 logging.info(f"category: {category}")
-                # load and combine results tables
-                results_pre = pd.read_csv(
-                    OUTPUT_DIR
-                    / args.workflow
-                    / f"{args.year}pre{identifier}"
-                    / category
-                    / f"results_{category}.csv",
-                    index_col=0,
-                )
-                results_post = pd.read_csv(
-                    OUTPUT_DIR
-                    / args.workflow
-                    / f"{args.year}post{identifier}"
-                    / category
-                    / f"results_{category}.csv",
-                    index_col=0,
-                )
-                combined_results = combine_event_tables(
-                    results_pre, results_post, args.blind
-                )
-
-                print_header(f"Results")
-                logging.info(
-                    combined_results.applymap(
-                        lambda x: f"{x:.5f}" if pd.notnull(x) else ""
-                    )
-                )
-                logging.info("\n")
-
                 category_dir = OUTPUT_DIR / args.workflow / args.year / category
                 if not category_dir.exists():
                     category_dir.mkdir(parents=True, exist_ok=True)
-                combined_results.to_csv(category_dir / f"results_{category}.csv")
+                if args.workflow in ["ztoee", "ztomumu"]:
+                    # load and combine results tables
+                    results_pre = pd.read_csv(
+                        OUTPUT_DIR
+                        / args.workflow
+                        / f"{args.year}pre{identifier}"
+                        / category
+                        / f"results_{category}.csv",
+                        index_col=0,
+                    )
+                    results_post = pd.read_csv(
+                        OUTPUT_DIR
+                        / args.workflow
+                        / f"{args.year}post{identifier}"
+                        / category
+                        / f"results_{category}.csv",
+                        index_col=0,
+                    )
+                    combined_results = combine_event_tables(
+                        results_pre, results_post, args.blind
+                    )
 
-                # save latex table
-                latex_table = df_to_latex(combined_results, args.blind)
-                with open(category_dir / f"results_{category}.txt", "w") as f:
-                    f.write(latex_table)
+                    print_header(f"Results")
+                    logging.info(
+                        combined_results.applymap(
+                            lambda x: f"{x:.5f}" if pd.notnull(x) else ""
+                        )
+                    )
+                    logging.info("\n")
+
+                    combined_results.to_csv(category_dir / f"results_{category}.csv")
+
+                    # save latex table
+                    latex_table = df_to_latex(combined_results, args.blind)
+                    with open(category_dir / f"results_{category}.txt", "w") as f:
+                        f.write(latex_table)
 
                 # load and combine cutflow tables
                 if not args.nocutflow:
@@ -295,7 +312,7 @@ if __name__ == "__main__":
                     cutflow_eff.to_csv(category_dir / f"cutflow_eff_{category}.csv")
 
     if args.postprocess and (args.year not in ["2022", "2023"]):
-        logging.info(workflow_config.to_yaml())
+        print_header(f"Running postprocess for {args.year}")
         print_header(f"Reading outputs from: {output_dir}")
 
         output_files = [
@@ -326,7 +343,6 @@ if __name__ == "__main__":
 
         for process in process_samples_map:
             save_process_histograms_by_process(
-                year=args.year,
                 output_dir=output_dir,
                 process_samples_map=process_samples_map,
                 process=process,
@@ -405,9 +421,14 @@ if __name__ == "__main__":
                 logging.info("\n")
                 results_df.to_csv(f"{category_dir}/results_{category}.csv")
 
+                # save latex table
+                latex_table = df_to_latex(results_df, args.blind)
+                with open(category_dir / f"results_{category}.txt", "w") as f:
+                    f.write(latex_table)
+
     if args.plot:
         subprocess.run("python3 analysis/postprocess/build_color_map.py", shell=True)
-        if not args.postprocess and args.year not in ["2022", "2023"]:
+        if not args.postprocess:
             postprocess_file = (
                 output_dir / f"{args.year}_processed_histograms.{args.output_format}"
             )
@@ -418,7 +439,7 @@ if __name__ == "__main__":
                     f"  'python3 run_postprocess.py -w {args.workflow} -y {args.year} --postprocess'"
                 )
 
-        print_header("Plots")
+        print_header(f"Running plotter for {args.year}")
         plotter = CoffeaPlotter(
             workflow=args.workflow,
             processed_histograms=processed_histograms,
