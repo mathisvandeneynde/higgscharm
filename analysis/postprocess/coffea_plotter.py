@@ -95,8 +95,8 @@ class CoffeaPlotter:
             selector.update(flavor_selector[flavor])
         histogram = histogram[selector].project(variable)
         # if axis type is variable divide by bin width
-        # if isinstance(self.histogram_config.axes[variable], VariableAxis):
-        #    histogram = divide_by_binwidth(histogram)
+        if isinstance(self.histogram_config.axes[variable], VariableAxis):
+            histogram = divide_by_binwidth(histogram)
         return histogram
 
     def get_variations(
@@ -130,10 +130,9 @@ class CoffeaPlotter:
         histogram_up = histogram[selectorup].project(variable)
         histogram_down = histogram[selectordown].project(variable)
         # if axis type is variable divide by bin width
-        # if isinstance(self.histogram_config.axes[variable], VariableAxis):
-        #    histogram_up = divide_by_binwidth(histogram_up)
-        #    histogram_down = divide_by_binwidth(histogram_down)
-
+        if isinstance(self.histogram_config.axes[variable], VariableAxis):
+            histogram_up = divide_by_binwidth(histogram_up)
+            histogram_down = divide_by_binwidth(histogram_down)
         return histogram_up, histogram_down
 
     def collect_histograms_for_plotting(self, variable, category, flavor, region):
@@ -290,7 +289,55 @@ class CoffeaPlotter:
         xmin, xmax = rax.get_xlim()
         rax.hlines(1, xmin, xmax, color="k", linestyle=":")
 
-    def add_rax_label(self, variable, category, flavor, rax):
+    def add_text(self, region, category, ax):
+        text_map = {
+            "ztoee": rf"$ Z \rightarrow ee$ events",
+            "ztomumu": rf"$ Z \rightarrow \mu \mu$ events",
+        }
+        if self.workflow in ["zplusl_os", "zplusl_ss"]:
+            zplusl_method = {
+                "zplusl_os": "(OS)",
+                "zplusl_ss": "(SS)",
+            }
+            zplusl_text = {
+                "electron": rf"$Z+e$ {zplusl_method[self.workflow]} events",
+                "muon": rf"$Z+\mu$ {zplusl_method[self.workflow]} events",
+            }
+            if self.pass_axis:
+                zplusl_text = {
+                    "electron": f"$Z+e$ {zplusl_method[self.workflow]} events with $e$ passing selection",
+                    "muon": f"$Z+\mu$ {zplusl_method[self.workflow]} events with $\mu$ passing selection",
+                }
+            zplusl_text_map = {
+                "zplusl_os": zplusl_text[category],
+                "zplusl_ss": zplusl_text[category],
+            }
+            text_map = {**text_map, **zplusl_text_map}
+
+        if self.workflow.startswith("zplusll"):
+            zplusll_text_map = {
+                "zplusll_os": (
+                    "3P+1F control sample"
+                    if region == "1fcr"
+                    else "2P+2F control sample"
+                ),
+                "zplusll_ss": "SS-SF control sample",
+            }
+            text_map = {**text_map, **zplusll_text_map}
+
+        ax.add_artist(
+            AnchoredText(
+                text_map.get(self.workflow, f"{self.workflow} events") + "\n",
+                loc="upper left",
+                frameon=False,
+            )
+        )
+
+    def add_xylabels(self, variable, category, flavor, add_ratio, ax, rax):
+        ylabel = "Events"
+        if isinstance(self.histogram_config.axes[variable], VariableAxis):
+            ylabel += " / GeV"
+
         xlabel = self.histogram_config.axes[variable].label
         if self.workflow.startswith("zplusll") and flavor:
             xlabels = {
@@ -300,12 +347,21 @@ class CoffeaPlotter:
                 "2mu2e": "$m_{2\mu 2e}$ [GeV]",
             }
             xlabel = xlabels[flavor]
+        if self.workflow in ["zplusl_os", "zplusl_ss"]:
+            if category == "electron":
+                xlabel = xlabel.replace(r"\ell", r"e")
+            elif category == "muon":
+                xlabel = xlabel.replace(r"\ell", r"\mu")
 
-        rax.set(
-            xlabel=xlabel,
-            ylabel="Data / Pred",
-            facecolor="white",
-        )
+        if add_ratio:
+            ax.set(xlabel=None, ylabel=ylabel)
+            rax.set(
+                xlabel=xlabel,
+                ylabel="Data / Pred",
+                facecolor="white",
+            )
+        else:
+            ax.set(xlabel=xlabel, ylabel=ylabel)
 
     def plot_histograms(
         self,
@@ -430,51 +486,11 @@ class CoffeaPlotter:
             rax.set_ylim(yratio_limits)
 
         # set axes labels
-        ylabel = "Events"
-        # if isinstance(self.histogram_config.axes[variable], VariableAxis):
-        #    ylabel += " / GeV"
-        xlabel = self.histogram_config.axes[variable].label
-        if self.workflow in ["zplusl_os", "zplusl_ss"]:
-            if category == "electron":
-                xlabel = xlabel.replace(r"\ell", r"e")
-            elif category == "muon":
-                xlabel = xlabel.replace(r"\ell", r"\mu")
-        if add_ratio:
-            ax.set(xlabel=None, ylabel=ylabel)
-            self.add_rax_label(variable, category, flavor, rax)
-        else:
-            ax.set(xlabel=xlabel, ylabel=ylabel)
+        self.add_xylabels(variable, category, flavor, add_ratio, ax, rax)
 
         # set plot text
-        text_map = {
-            "ztoee": rf"$ Z \rightarrow ee$ events",
-            "ztomumu": rf"$ Z \rightarrow \mu\mu$ events",
-        }
-        if self.workflow in ["zplusl_os", "zplusl_ss"]:
-            zplusl_method = {
-                "zplusl_os": "(OS)",
-                "zplusl_ss": "(SS)",
-            }
-            zplusl_text = {
-                "electron": rf"$Z+e$ {zplusl_method[self.workflow]} events",
-                "muon": rf"$Z+\mu$ {zplusl_method[self.workflow]} events",
-            }
-            if self.pass_axis:
-                zplusl_text = {
-                    "electron": f"$Z+e$ {zplusl_method[self.workflow]} events with $e$ passing selection",
-                    "muon": f"$Z+\mu$ {zplusl_method[self.workflow]} events with $\mu$ passing selection",
-                }
-            zplusl_text_map = {
-                "zplusl_os": zplusl_text[category],
-                "zplusl_ss": zplusl_text[category],
-            }
-            text_map = {**text_map, **zplusl_text_map}
-        at = AnchoredText(
-            text_map.get(self.workflow, f"{self.workflow} events") + "\n",
-            loc="upper left",
-            frameon=False,
-        )
-        ax.add_artist(at)
+        self.add_text(region, category, ax)
+
         # set log scale
         if log:
             formatter = ticker.ScalarFormatter()

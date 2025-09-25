@@ -16,7 +16,7 @@ if __name__ == "__main__":
         ],
         help="workflow to run",
     )
-    years = ["2022preEE", "2022postEE", "2023preBPix", "2023postBPix"]
+    years = ["2022preEE", "2022postEE", "2023preBPix", "2023postBPix", "2022", "2023"]
     parser.add_argument(
         "-y",
         "--year",
@@ -24,11 +24,11 @@ if __name__ == "__main__":
         type=str,
         choices=years + ["all"],
         default="all",
-        help="dataset year",
     )
     parser.add_argument(
         "--nopostprocess", action="store_true", help="Skip postprocessing step"
     )
+    parser.add_argument("--noplot", action="store_true", help="Skip ploting step")
     args = parser.parse_args()
 
     for year in years:
@@ -49,32 +49,33 @@ if __name__ == "__main__":
                         "--postprocess",
                     ]
                 )
-            subprocess.run(
-                [
-                    "python3",
-                    "run_postprocess.py",
-                    "-w",
-                    args.workflow,
-                    "-y",
-                    year,
-                    "--plot",
-                    "--log",
-                ]
-            )
-            subprocess.run(
-                [
-                    "python3",
-                    "run_postprocess.py",
-                    "-w",
-                    args.workflow,
-                    "-y",
-                    year,
-                    "--plot",
-                    "--log",
-                    "--group_by",
-                    '{"name": "leadingjet_flavour", "label": {"usdg": 0, "c": 4, "b": 5}}',
-                ]
-            )
+            if not args.noplot:
+                subprocess.run(
+                    [
+                        "python3",
+                        "run_postprocess.py",
+                        "-w",
+                        args.workflow,
+                        "-y",
+                        year,
+                        "--plot",
+                        "--log",
+                    ]
+                )
+                subprocess.run(
+                    [
+                        "python3",
+                        "run_postprocess.py",
+                        "-w",
+                        args.workflow,
+                        "-y",
+                        year,
+                        "--plot",
+                        "--log",
+                        "--group_by",
+                        '{"name": "leadingjet_flavour", "label": {"usdg": 0, "c": 4, "b": 5}}',
+                    ]
+                )
 
         elif args.workflow in ["zplusl_os", "zplusl_ss"]:
             if not args.nopostprocess:
@@ -89,38 +90,39 @@ if __name__ == "__main__":
                         "--postprocess",
                     ]
                 )
-            subprocess.run(
-                [
-                    "python3",
-                    "run_postprocess.py",
-                    "-w",
-                    args.workflow,
-                    "-y",
-                    year,
-                    "--plot",
-                    "--log",
-                    "--yratio_limits",
-                    "0",
-                    "2",
-                ]
-            )
-            subprocess.run(
-                [
-                    "python3",
-                    "run_postprocess.py",
-                    "-w",
-                    args.workflow,
-                    "-y",
-                    year,
-                    "--plot",
-                    "--log",
-                    "--pass_axis",
-                    "is_passing_lepton",
-                    "--yratio_limits",
-                    "0",
-                    "2",
-                ]
-            )
+            if not args.noplot:
+                subprocess.run(
+                    [
+                        "python3",
+                        "run_postprocess.py",
+                        "-w",
+                        args.workflow,
+                        "-y",
+                        year,
+                        "--plot",
+                        "--log",
+                        "--yratio_limits",
+                        "0",
+                        "2",
+                    ]
+                )
+                subprocess.run(
+                    [
+                        "python3",
+                        "run_postprocess.py",
+                        "-w",
+                        args.workflow,
+                        "-y",
+                        year,
+                        "--plot",
+                        "--log",
+                        "--pass_axis",
+                        "is_passing_lepton",
+                        "--yratio_limits",
+                        "0",
+                        "2",
+                    ]
+                )
 
         elif args.workflow in ["zplusll_os", "zplusll_ss"]:
             if not args.nopostprocess:
@@ -135,37 +137,7 @@ if __name__ == "__main__":
                         "--postprocess",
                     ]
                 )
-            subprocess.run(
-                [
-                    "python3",
-                    "run_postprocess.py",
-                    "-w",
-                    args.workflow,
-                    "-y",
-                    year,
-                    "--plot",
-                    "--yratio_limits",
-                    "0",
-                    "2",
-                ]
-            )
-        else:
-            subprocess.run(
-                [
-                    "python3",
-                    "run_postprocess.py",
-                    "-w",
-                    args.workflow,
-                    "-y",
-                    year,
-                    "--plot",
-                    "--log",
-                ]
-            )
-
-    if args.workflow not in ["zplusl_os", "zplusl_ss", "zplusll_os", "zplusll_ss"]:
-        if args.year == "all":
-            for y in ["2022", "2023"]:
+            if not args.noplot:
                 subprocess.run(
                     [
                         "python3",
@@ -173,7 +145,35 @@ if __name__ == "__main__":
                         "-w",
                         args.workflow,
                         "-y",
-                        y,
+                        year,
+                        "--plot",
+                        "--yratio_limits",
+                        "0",
+                        "2",
+                    ]
+                )
+        else:
+            if not args.nopostprocess:
+                subprocess.run(
+                    [
+                        "python3",
+                        "run_postprocess.py",
+                        "-w",
+                        args.workflow,
+                        "-y",
+                        year,
+                        "--postprocess",
+                    ]
+                )
+            if not args.noplot:
+                subprocess.run(
+                    [
+                        "python3",
+                        "run_postprocess.py",
+                        "-w",
+                        args.workflow,
+                        "-y",
+                        year,
                         "--plot",
                         "--log",
                     ]

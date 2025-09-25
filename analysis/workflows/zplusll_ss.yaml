@@ -4,7 +4,7 @@ datasets:
     - electron
     - muon_electron
   mc:
-    - dy_lo
+    - dy_nlo
     - wz
     - tt_semileptonic
 object_selection:

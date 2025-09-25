@@ -61,8 +61,12 @@ def df_to_latex(df, blind, table_title="Events"):
 
         events_f = f"{float(events):.2f}"
         stat_err_f = f"{float(stat_err):.2f}" if stat_err is not None else "nan"
-        syst_err_up_f = f"{float(syst_err_up):.2f}" if syst_err_up is not None else "nan"
-        syst_err_down_f = f"{float(syst_err_down):.2f}" if syst_err_down is not None else "nan"
+        syst_err_up_f = (
+            f"{float(syst_err_up):.2f}" if syst_err_up is not None else "nan"
+        )
+        syst_err_down_f = (
+            f"{float(syst_err_down):.2f}" if syst_err_down is not None else "nan"
+        )
 
         if label not in ["Data", "Total background", "Data/Total background"]:
             output += f"{label} & ${events_f} \\pm {stat_err_f} \\, (\\text{{stat}}) \\pm {syst_err_up_f} \\, (\\text{{syst up}})$ \\pm {syst_err_down_f} \\, (\\text{{syst down}})$\\\\\n"
@@ -84,7 +88,7 @@ def df_to_latex(df, blind, table_title="Events"):
         output += f"Data & ${float(data_value):.0f}$ \\\\ \n"
 
         output += r"\hline" + "\n"
-    
+
         # Data/Total Background
         if total_background_value and data_value:
             ratio = data_value / total_background_value
@@ -102,11 +106,16 @@ def combine_event_tables(df1, df2, blind):
     combined["events"] = df1["events"] + df2["events"]
     combined["stat err"] = np.sqrt(df1["stat err"] ** 2 + df2["stat err"] ** 2)
     combined["syst err up"] = np.sqrt(df1["syst err up"] ** 2 + df2["syst err up"] ** 2)
-    combined["syst err down"] = np.sqrt(df1["syst err up"] ** 2 + df2["syst err down"] ** 2)
+    combined["syst err down"] = np.sqrt(
+        df1["syst err up"] ** 2 + df2["syst err down"] ** 2
+    )
     if not blind:
         data = combined.loc["Data", "events"]
         total_bkg = combined.loc["Total background", "events"]
-        combined.loc["Data/Total background", ["events", "stat err", "syst err up", "syst err down"]] = [
+        combined.loc[
+            "Data/Total background",
+            ["events", "stat err", "syst err up", "syst err down"],
+        ] = [
             data / total_bkg,
             np.nan,
             np.nan,
