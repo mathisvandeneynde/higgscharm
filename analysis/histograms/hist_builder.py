@@ -11,6 +11,7 @@ class HistBuilder:
             "Regular": hist.axis.Regular,
             "Variable": hist.axis.Variable,
             "Integer": hist.axis.Integer,
+            "Boolean": hist.axis.Boolean,
         }
         self.int_cat = False
         if all(isinstance(cat, int) for cat in self.histogram_config.categories):

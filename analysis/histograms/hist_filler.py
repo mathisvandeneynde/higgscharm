@@ -21,10 +21,13 @@ def get_flow_array(histogram, variable, variables_map):
 
 
 def get_variable_array(histogram, histogram_config, variable, variables_map, flow):
-    if histogram_config.axes[variable].type in ["IntCategory", "Integer"]:
-        # cast to integer array
+    axis_type = histogram_config.axes[variable].type
+    if axis_type in ["IntCategory", "Integer"]:
         variable_array = normalize(variables_map[variable])
         variable_array = ak.to_numpy(variable_array).astype(int)
+    elif axis_type == "Boolean":
+        variable_array = normalize(variables_map[variable])
+        variable_array = ak.to_numpy(variable_array).astype(bool)
     elif flow:
         # add underflow/overflow to first/last bin
         variable_array = get_flow_array(
@@ -34,11 +37,18 @@ def get_variable_array(histogram, histogram_config, variable, variables_map, flo
         )
     else:
         variable_array = normalize(variables_map[variable])
+
     return variable_array
 
 
 def fill_histogram(
-    histograms, histogram_config, variables_map, category, weights, variation, flow=True
+    histograms,
+    histogram_config,
+    variables_map,
+    category,
+    weights,
+    variation,
+    flow=True,
 ):
     if histogram_config.layout == "individual":
         for variable in histograms:
