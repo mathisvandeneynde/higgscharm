@@ -117,6 +117,7 @@ corrections:
     lhescaleWeight: false
     nnlopsWeight: false
     2P2FWeight: true
+    3P1FWeight: true
     electron:
       - id: false
       - reco: true
@@ -125,20 +126,6 @@ histogram_config:
   add_syst_axis: true
   add_weight: true
   axes:
-    z_mass_1fcr:
-      type: Regular
-      bins: 54
-      start: 12
-      stop: 120
-      label: $m(Z)$ [GeV]
-      expression: objects['best_zllcandidate_1fcr'].z1.p4.mass
-    ll_mass_1fcr:
-      type: Regular
-      bins: 54
-      start: 12
-      stop: 120
-      label: $m(\ell\ell)$ [GeV]
-      expression: objects['best_zllcandidate_1fcr'].z2.p4.mass
     zll_mass_1fcr:
       type: Regular
       bins: 40
@@ -146,13 +133,6 @@ histogram_config:
       stop: 870
       label: $m(Z\ell\ell)$ [GeV]
       expression: objects['best_zllcandidate_1fcr'].p4.mass
-    zll_pt_1fcr:
-      type: Regular
-      bins: 40
-      start: 0
-      stop: 400
-      label: $p_T(Z\ell\ell)$ [GeV]
-      expression: objects['best_zllcandidate_1fcr'].p4.pt
     z_flavor_1fcr:
       type: IntCategory
       categories:
@@ -167,20 +147,6 @@ histogram_config:
         - 26
       label: LLflavor
       expression: np.abs(objects['best_zllcandidate_1fcr'].z2.l1.pdgId) + np.abs(objects['best_zllcandidate_1fcr'].z2.l2.pdgId)
-    z_mass_2fcr:
-      type: Regular
-      bins: 54
-      start: 12
-      stop: 120
-      label: $m(Z)$ [GeV]
-      expression: objects['best_zllcandidate_2fcr'].z1.p4.mass
-    ll_mass_2fcr:
-      type: Regular
-      bins: 54
-      start: 12
-      stop: 120
-      label: $m(\ell\ell)$ [GeV]
-      expression: objects['best_zllcandidate_2fcr'].z2.p4.mass
     zll_mass_2fcr:
       type: Regular
       bins: 40
@@ -202,78 +168,7 @@ histogram_config:
         - 26
       label: LL flavor
       expression: np.abs(objects['best_zllcandidate_2fcr'].z2.l1.pdgId) + np.abs(objects['best_zllcandidate_2fcr'].z2.l2.pdgId)
-    2fcr_l3_pt:
-      type: Variable
-      edges:
-        - 5
-        - 7
-        - 10
-        - 20
-        - 30
-        - 40
-        - 50
-        - 80
-      label: 2P2F $p_T(\ell_3)$ [GeV]
-      expression: objects['best_zllcandidate_2fcr'].z2.l1.pt
-    2fcr_l4_pt:
-      type: Variable
-      edges:
-        - 5
-        - 7
-        - 10
-        - 20
-        - 30
-        - 40
-        - 50
-        - 80
-      label: 2P2F $p_T(\ell_4)$ [GeV]
-      expression: objects['best_zllcandidate_2fcr'].z2.l2.pt
-    1fcr_l3_pt:
-      type: Variable
-      edges:
-        - 5
-        - 7
-        - 10
-        - 20
-        - 30
-        - 40
-        - 50
-        - 80
-      label: 3P1F $p_T(\ell_3)$ [GeV]
-      expression: objects['best_zllcandidate_1fcr'].z2.l1.pt
-    1fcr_l3_pass:
-      type: IntCategory
-      categories: [0, 1]
-      label: is_tight 3P1F $\ell_3$
-      expression: objects['best_zllcandidate_1fcr'].z2.l1.is_tight
-    1fcr_l4_pt:
-      type: Variable
-      edges:
-        - 5
-        - 7
-        - 10
-        - 20
-        - 30
-        - 40
-        - 50
-        - 80
-      label: 3P1F $p_T(\ell_4)$ [GeV]
-      expression: objects['best_zllcandidate_1fcr'].z2.l2.pt
-    1fcr_l4_pass:
-      type: IntCategory
-      categories: [0, 1]
-      label: is_tight 3P1F $\ell_4$
-      expression: objects['best_zllcandidate_1fcr'].z2.l2.is_tight
   layout:
-    lep_2fcr:
-      - 2fcr_l3_pt
-      - 2fcr_l4_pt
-    lep3_1fcr:
-      - 1fcr_l3_pt
-      - 1fcr_l3_pass
-    lep4_1fcr:
-      - 1fcr_l4_pt
-      - 1fcr_l4_pass
     zll_1fcr:
       - zll_mass_1fcr
       - z_flavor_1fcr

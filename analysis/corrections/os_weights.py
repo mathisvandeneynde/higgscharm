@@ -10,8 +10,8 @@ def get_lepton_os_fr(lepton, year, channel):
     pt_cut = {"electron": 7.0, "muon": 5.0}
     pdgid_cut = {"electron": 11, "muon": 13}
 
-    json_path = f"{Path.cwd()}/analysis/data/{year}_os_fr_weight.json.gz"
-    cset = correctionlib.CorrectionSet.from_file(json_path)
+    json_path = Path.cwd() / "analysis" / "data" / f"{year}_os_fr_weight.json.gz"
+    cset = correctionlib.CorrectionSet.from_file(str(json_path))
 
     lepton_pt = lepton.pt
     lepton_is_barrel = np.abs(lepton.eta) < barrel_cut[channel]
@@ -38,19 +38,37 @@ def get_os_fr(lepton, year):
     return ak.where(np.abs(lepton.pdgId) == 11, electron_fr, muon_fr)
 
 
-def add_2p2f_weight(events, weights_container, year):
+def add_os_2p2f_weights(events, year, weights_container):
+    """Add wweights needed to compute the 2P2F component of the Z+X background estimation"""
     is_2fcr = ak.firsts(events.selected_best_zllcandidate_2fcr.z2.is_2fcr)
     lep1 = ak.firsts(events.selected_best_zllcandidate_2fcr.z2.l1)
     lep2 = ak.firsts(events.selected_best_zllcandidate_2fcr.z2.l2)
 
-    f1 = get_os_fr(lep1, year)
-    f2 = get_os_fr(lep2, year)
+    fr_lep1 = get_os_fr(lep1, year)
+    fr_lep2 = get_os_fr(lep2, year)
 
-    w1 = f1 / (1 - f1)
-    w2 = f2 / (1 - f2)
+    weight_lep1 = fr_lep1 / (1 - fr_lep1)
+    weight_lep2 = fr_lep2 / (1 - fr_lep2)
 
-    weight = ak.where(is_2fcr, w1 + w2, 1)
     weights_container.add(
-        name="os_2p2f",
-        weight=weight,
+        name="os_2p2f_w1plusw2",
+        weight=ak.where(is_2fcr, weight_lep1 + weight_lep2, 1),
+    )
+    weights_container.add(
+        name="os_2p2f_w1timesw2",
+        weight=ak.where(is_2fcr, weight_lep1 * weight_lep2, 1),
+    )
+
+
+def add_os_3p1f_weights(events, year, weights_container):
+    """Add wweights needed to compute the 3P1F component of the Z+X background estimation"""
+    is_1fcr = ak.firsts(events.selected_best_zllcandidate_1fcr.z2.is_1fcr)
+    lep1 = ak.firsts(events.selected_best_zllcandidate_1fcr.z2.l1)
+    lep2 = ak.firsts(events.selected_best_zllcandidate_1fcr.z2.l2)
+
+    lep = ak.where(lep1.is_relaxed, lep1, lep2)
+    fr = get_os_fr(lep, year)
+    weights_container.add(
+        name="os_3p1f",
+        weight=ak.where(is_1fcr, fr / (1 - fr), 1),
     )
