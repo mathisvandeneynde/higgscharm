@@ -1,10 +1,17 @@
 import os
+import yaml
 import glob
 import hist
 import pickle
 import logging
 import numpy as np
 import pandas as pd
+import dask.dataframe as dd
+from pathlib import Path
+from collections import defaultdict
+from coffea.util import load, save
+from coffea.processor import accumulate
+from analysis.filesets.utils import get_dataset_config
 
 
 def setup_logger(output_dir):
@@ -39,65 +46,6 @@ def clear_output_directory(output_dir, ext):
     files = glob.glob(os.path.join(output_dir, f"*.{ext}"))
     for file in files:
         os.remove(file)
-
-
-def df_to_latex(df, blind, table_title="Events"):
-    output = rf"""\begin{{table}}[h!]
-\centering
-\begin{{tabular}}{{@{{}} l c @{{}}}}
-\hline
- & \textbf{{{table_title}}} \\
-\hline
-"""
-
-    total_background_value = None
-    data_value = None
-
-    for label, row in df.iterrows():
-        events = row["events"]
-        stat_err = row["stat err"] if pd.notna(row["stat err"]) else None
-        syst_err_up = row["syst err up"] if pd.notna(row["syst err up"]) else None
-        syst_err_down = row["syst err down"] if pd.notna(row["syst err down"]) else None
-
-        events_f = f"{float(events):.2f}"
-        stat_err_f = f"{float(stat_err):.2f}" if stat_err is not None else "nan"
-        syst_err_up_f = (
-            f"{float(syst_err_up):.2f}" if syst_err_up is not None else "nan"
-        )
-        syst_err_down_f = (
-            f"{float(syst_err_down):.2f}" if syst_err_down is not None else "nan"
-        )
-
-        if label not in ["Data", "Total background", "Data/Total background"]:
-            output += f"{label} & ${events_f} \\pm {stat_err_f} \\, (\\text{{stat}}) \\pm {syst_err_up_f} \\, (\\text{{syst up}})$ \\pm {syst_err_down_f} \\, (\\text{{syst down}})$\\\\\n"
-
-    output += r"\hline" + "\n"
-
-    # Total background
-    bg = df.loc["Total background"]
-    total_background_value = bg["events"]
-    stat_err_bg = bg["stat err"]
-    syst_err_up_bg = bg["syst err up"]
-    syst_err_down_bg = bg["syst err down"]
-
-    output += f"Total Background & ${float(total_background_value):.2f} \\pm {float(stat_err_bg):.2f} \\, (\\text{{stat}}) \\pm {float(syst_err_up_bg):.2f} \\, (\\text{{syst up}})$ \\pm {float(syst_err_down_bg):.2f} \\, (\\text{{syst down}})$ \\\\ \n"
-
-    # Data
-    if not blind:
-        data_value = df.loc["Data"]["events"]
-        output += f"Data & ${float(data_value):.0f}$ \\\\ \n"
-
-        output += r"\hline" + "\n"
-
-        # Data/Total Background
-        if total_background_value and data_value:
-            ratio = data_value / total_background_value
-            output += f"Data/Total Background & ${ratio:.2f}$ \\\\ \n"
-
-    output += r"""\hline
-\end{tabular}
-\end{table}"""
-    return output
 
 
 def combine_event_tables(df1, df2, blind):
@@ -168,3 +116,308 @@ def find_kin_and_axis(processed_histograms, name="multiplicity"):
                 if axis_name != "variation" and name in axis_name:
                     return kin, axis_name
     raise ValueError(f"No histogram with a '{name}' axis found.")
+
+
+def merge_parquets(inpath, outpath, sample_name):
+    parquets = dd.read_parquet(f"{inpath}/*.parquet", engine="pyarrow", calculate_divisions=False)
+    df = parquets.compute()
+    outpath = Path(outpath)
+    if not outpath.exists():
+        outpath.mkdir(parents=True, exist_ok=True)
+    df.to_parquet(f"{outpath}/{sample_name}.parquet", engine="pyarrow", index=False)
+
+
+def accumulate_metadata(grouped_outputs, sample):
+    grouped_metadata = {}
+    for fname in grouped_outputs[sample]:
+        output = load(fname)
+        if not output:
+            continue
+        for meta_key, meta_val in output["metadata"].items():
+            grouped_metadata.setdefault(meta_key, []).append(meta_val)
+    return {k: accumulate(v) for k, v in grouped_metadata.items()}
+
+
+def accumulate_histograms(grouped_outputs, sample):
+    grouped_histograms = []
+    for fname in grouped_outputs[sample]:
+        output = load(fname)
+        if output:
+            grouped_histograms.append(output["histograms"])
+    return accumulate(grouped_histograms)
+
+
+def get_lumi_weight(year, sample, metadata):
+    lumi_file = Path.cwd() / "analysis" / "postprocess" / "luminosity.yaml"
+    with open(lumi_file, "r") as f:
+        luminosities = yaml.safe_load(f)
+
+    dataset_config = get_dataset_config(year)
+    xsec = dataset_config[sample]["xsec"]
+    sumw = metadata["sumw"]
+    weight = 1
+    if dataset_config[sample]["era"] in ["mc", "signal"]:
+        weight = (luminosities[year] * xsec) / sumw
+
+    logging.info(f"luminosity [1/pb]: {luminosities[year]}")
+    logging.info(f"xsec [pb]: {xsec}")
+    logging.info(f"sumw: {sumw}")
+    logging.info(f"weight: {weight}")
+
+    return weight
+
+
+def save_cutflows(metadata, categories, sample, weight, output_dir):
+    for category in categories:
+        logging.info(f"saving {sample} cutflow for category {category}")
+        
+        category_dir = Path(output_dir) / category
+        if not category_dir.exists():
+            category_dir.mkdir(parents=True, exist_ok=True)
+
+        scaled_cutflow = {
+            cut: nevents * weight
+            for cut, nevents in metadata[category]["cutflow"].items()
+        }
+        processed_cutflow = {sample: scaled_cutflow}
+        cutflow_file = category_dir / f"cutflow_{category}_{sample}.coffea"
+        save(processed_cutflow, cutflow_file)
+
+
+def get_process_dict(output_dir, year, categories):
+    folders = glob.glob(str(output_dir / "*"))
+    process_dict = defaultdict(list)
+    
+    dataset_config = get_dataset_config(year)
+    
+    for folder in folders:
+        folder_path = Path(folder)
+        name = folder_path.name
+        for category in categories:
+            if name == category:
+                continue
+            if category not in process_dict:
+                process_dict[category] = {}
+                
+            folder_content = glob.glob(f"{folder_path}/*")
+    
+            # case where there are multiple partitions and the folder includes only .coffea files
+            if any(".coffea" in f for f in folder_content) and not any(category in f for f in folder_content):
+                if name not in process_dict[category]:
+                    process_dict[category][name] = []
+            # case where there is only one partition and the main folder includes both the .coffea file and the category folder
+            elif any(".coffea" in f for f in folder_content) and any(category in f for f in folder_content):
+                for f in folder_content:
+                    if category in f:
+                        if name not in process_dict[category]:
+                            process_dict[category][name] = [str(folder_path)]
+            # case where there's only the category folder
+            else:
+                actual_name = name.rsplit("_", 1)[0]
+                if actual_name in process_dict[category]:
+                    process_dict[category][actual_name].append(str(folder_path))
+    
+    return dict(process_dict)
+
+    
+def merge_parquets_by_sample(output_dir, year, categories):
+    """Merge parquet files from subfolders into a single output path per sample and category."""
+    print_header("Merging parquet outputs by sample")
+    process_dict = get_process_dict(output_dir, year, categories)
+    for category in categories:
+        for name, subfolders in process_dict[category].items():
+            outpath = f"{output_dir}/parquets_{name}/{category}"
+            if len(subfolders) != 0:
+                logging.info(
+                    f"Merging {name} outputs into {len(subfolders)} "
+                    f"{'partition' if len(subfolders) == 1 else 'partitions'}"
+                )
+                for i, subfolder in enumerate(subfolders, start=1):
+                    inpath = f"{subfolder}/{category}"
+                    merge_parquets(inpath, outpath, f"{name}_{i}")
+
+
+def accumulate_and_save_cutflows(process, process_samples_map, output_dir, categories):
+    """Accumulate cutflows from all samples in a process and save them per category."""
+    for category in categories:
+        category_dir = Path(f"{output_dir}/{category}")
+        df_total = pd.DataFrame()
+
+        for sample in process_samples_map[process]:
+            cutflow_file = category_dir / f"cutflow_{category}_{sample}.coffea"
+            if cutflow_file.exists():
+                df_sample = pd.DataFrame(load(cutflow_file).values())
+                df_total = pd.concat([df_total, df_sample])
+
+        if not df_total.empty:
+            cutflow_df = pd.DataFrame(df_total.sum())
+            cutflow_df.columns = [process]
+            cutflow_csv = category_dir / f"cutflow_{category}_{process}.csv"
+            logging.info(f"Saving cutflow for process {process}, category {category}")
+            cutflow_df.to_csv(cutflow_csv)
+
+                    
+def load_processed_histograms(
+    year: str,
+    output_dir: str,
+    process_samples_map: dict,
+):
+    processed_histograms = {}
+    for process in process_samples_map:
+        processed_histograms.update(load(f"{output_dir}/{process}.coffea"))
+    save(processed_histograms, f"{output_dir}/{year}_processed_histograms.coffea")
+    return processed_histograms
+
+
+def get_results_report(
+    processed_histograms, workflow_config, category, columns_to_drop, blind
+):
+    kin, aux_var = find_kin_and_axis(processed_histograms)
+    nominal = {}
+    variations = {}
+    mcstat_err = {}
+    bin_error_up = {}
+    bin_error_down = {}
+    for process in processed_histograms:
+        aux_hist = processed_histograms[process][kin]
+        nominal_selector = {"variation": "nominal"}
+        if "category" in aux_hist.axes.name:
+            nominal_selector["category"] = category
+        nominal_hist = aux_hist[nominal_selector].project(aux_var)
+        nominal[process] = nominal_hist
+
+        mcstat_err[process] = {}
+        bin_error_up[process] = {}
+        bin_error_down[process] = {}
+        mcstat_err2 = nominal_hist.variances()
+        mcstat_err[process] = np.sum(np.sqrt(mcstat_err2))
+        err2_up = mcstat_err2
+        err2_down = mcstat_err2
+
+        if process == "Data":
+            continue
+
+        for variation in get_variations_keys(processed_histograms):
+            if f"{variation}Up" not in aux_hist.axes["variation"]:
+                continue
+            selectorup = {"variation": f"{variation}Up"}
+            selectordown = {"variation": f"{variation}Down"}
+            if "category" in aux_hist.axes.name:
+                selectorup["category"] = category
+                selectordown["category"] = category
+            var_up = aux_hist[selectorup].project(aux_var).values()
+            var_down = aux_hist[selectordown].project(aux_var).values()
+            # Compute the uncertainties corresponding to the up/down variations
+            err_up = var_up - nominal_hist.values()
+            err_down = var_down - nominal_hist.values()
+            # Compute the flags to check which of the two variations (up and down) are pushing the nominal value up and down
+            up_is_up = err_up > 0
+            down_is_down = err_down < 0
+            # Compute the flag to check if the uncertainty is one-sided, i.e. when both variations are up or down
+            is_onesided = up_is_up ^ down_is_down
+            # Sum in quadrature of the systematic uncertainties taking into account if the uncertainty is one- or double-sided
+            err2_up_twosided = np.where(up_is_up, err_up**2, err_down**2)
+            err2_down_twosided = np.where(up_is_up, err_down**2, err_up**2)
+            err2_max = np.maximum(err2_up_twosided, err2_down_twosided)
+            err2_up_onesided = np.where(is_onesided & up_is_up, err2_max, 0)
+            err2_down_onesided = np.where(is_onesided & down_is_down, err2_max, 0)
+            err2_up_combined = np.where(is_onesided, err2_up_onesided, err2_up_twosided)
+            err2_down_combined = np.where(
+                is_onesided, err2_down_onesided, err2_down_twosided
+            )
+            # Sum in quadrature of the systematic uncertainty corresponding to a MC sample
+            err2_up += err2_up_combined
+            err2_down += err2_down_combined
+
+        bin_error_up[process] = np.sum(np.sqrt(err2_up))
+        bin_error_down[process] = np.sum(np.sqrt(err2_down))
+
+    mcs = []
+    results = {}
+    for process in nominal:
+        results[process] = {}
+        results[process]["events"] = np.sum(nominal[process].values())
+        if process == "Data":
+            results[process]["stat err"] = np.sqrt(np.sum(nominal[process].values()))
+        else:
+            if process not in columns_to_drop:
+                mcs.append(process)
+            results[process]["stat err"] = mcstat_err[process]
+            results[process]["syst err up"] = bin_error_up[process]
+            results[process]["syst err down"] = bin_error_down[process]
+    df = pd.DataFrame(results)
+    df["Total background"] = df.loc[["events"], mcs].sum(axis=1)
+    df.loc["stat err", "Total background"] = np.sqrt(
+        np.sum(df.loc["stat err", mcs] ** 2)
+    )
+    df.loc["syst err up", "Total background"] = np.sqrt(
+        np.sum(df.loc["syst err up", mcs] ** 2)
+    )
+    df.loc["syst err down", "Total background"] = np.sqrt(
+        np.sum(df.loc["syst err down", mcs] ** 2)
+    )
+    df = df.T
+    if not blind:
+        df.loc["Data/Total background"] = (
+            df.loc["Data", ["events"]] / df.loc["Total background", ["events"]]
+        )
+    return df
+
+
+def df_to_latex(df, blind, table_title="Events"):
+    output = rf"""\begin{{table}}[h!]
+\centering
+\begin{{tabular}}{{@{{}} l c @{{}}}}
+\hline
+ & \textbf{{{table_title}}} \\
+\hline
+"""
+
+    total_background_value = None
+    data_value = None
+
+    for label, row in df.iterrows():
+        events = row["events"]
+        stat_err = row["stat err"] if pd.notna(row["stat err"]) else None
+        syst_err_up = row["syst err up"] if pd.notna(row["syst err up"]) else None
+        syst_err_down = row["syst err down"] if pd.notna(row["syst err down"]) else None
+
+        events_f = f"{float(events):.2f}"
+        stat_err_f = f"{float(stat_err):.2f}" if stat_err is not None else "nan"
+        syst_err_up_f = (
+            f"{float(syst_err_up):.2f}" if syst_err_up is not None else "nan"
+        )
+        syst_err_down_f = (
+            f"{float(syst_err_down):.2f}" if syst_err_down is not None else "nan"
+        )
+
+        if label not in ["Data", "Total background", "Data/Total background"]:
+            output += f"{label} & ${events_f} \\pm {stat_err_f} \\, (\\text{{stat}}) \\pm {syst_err_up_f} \\, (\\text{{syst up}})$ \\pm {syst_err_down_f} \\, (\\text{{syst down}})$\\\\\n"
+
+    output += r"\hline" + "\n"
+
+    # Total background
+    bg = df.loc["Total background"]
+    total_background_value = bg["events"]
+    stat_err_bg = bg["stat err"]
+    syst_err_up_bg = bg["syst err up"]
+    syst_err_down_bg = bg["syst err down"]
+
+    output += f"Total Background & ${float(total_background_value):.2f} \\pm {float(stat_err_bg):.2f} \\, (\\text{{stat}}) \\pm {float(syst_err_up_bg):.2f} \\, (\\text{{syst up}})$ \\pm {float(syst_err_down_bg):.2f} \\, (\\text{{syst down}})$ \\\\ \n"
+
+    # Data
+    if not blind:
+        data_value = df.loc["Data"]["events"]
+        output += f"Data & ${float(data_value):.0f}$ \\\\ \n"
+
+        output += r"\hline" + "\n"
+
+        # Data/Total Background
+        if total_background_value and data_value:
+            ratio = data_value / total_background_value
+            output += f"Data/Total Background & ${ratio:.2f}$ \\\\ \n"
+
+    output += r"""\hline
+\end{tabular}
+\end{table}"""
+    return output

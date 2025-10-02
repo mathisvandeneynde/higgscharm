@@ -218,6 +218,7 @@ class CoffeaPlotter:
         mcstat_err2 = self.nominal_variances
         err2_up = mcstat_err2
         err2_down = mcstat_err2
+
         for variation in get_variations_keys(self.processed_histograms):
             # Up/down variations for a single MC sample
             var_up = histogram_info["mc"]["variations"][f"{variation}Up"].values()
