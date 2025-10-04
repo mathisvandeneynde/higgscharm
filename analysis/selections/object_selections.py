@@ -13,6 +13,7 @@ from analysis.selections import (
     fourlepcand,
     make_cand,
     select_best_zzcandidate,
+    select_candidate_mass,
 )
 
 
@@ -382,6 +383,46 @@ class ObjectSelector:
         """selects best Zll candidates for SS CR"""
         self.objects[obj_name] = select_best_zzcandidate(
             self.objects["zllcandidates"], "is_sscr"
+        )
+
+    def select_mass_2e2e_1fcr(self, obj_name):
+        self.objects[obj_name] = select_candidate_mass(
+            self.objects["best_zllcandidate_1fcr"], "2e2e"
+        )
+
+    def select_mass_2e2mu_1fcr(self, obj_name):
+        self.objects[obj_name] = select_candidate_mass(
+            self.objects["best_zllcandidate_1fcr"], "2e2mu"
+        )
+
+    def select_mass_2mu2e_1fcr(self, obj_name):
+        self.objects[obj_name] = select_candidate_mass(
+            self.objects["best_zllcandidate_1fcr"], "2mu2e"
+        )
+
+    def select_mass_2mu2mu_1fcr(self, obj_name):
+        self.objects[obj_name] = select_candidate_mass(
+            self.objects["best_zllcandidate_1fcr"], "2mu2mu"
+        )
+
+    def select_mass_2e2e_2fcr(self, obj_name):
+        self.objects[obj_name] = select_candidate_mass(
+            self.objects["best_zllcandidate_2fcr"], "2e2e"
+        )
+
+    def select_mass_2e2mu_2fcr(self, obj_name):
+        self.objects[obj_name] = select_candidate_mass(
+            self.objects["best_zllcandidate_2fcr"], "2e2mu"
+        )
+
+    def select_mass_2mu2e_2fcr(self, obj_name):
+        self.objects[obj_name] = select_candidate_mass(
+            self.objects["best_zllcandidate_2fcr"], "2mu2e"
+        )
+
+    def select_mass_2mu2mu_2fcr(self, obj_name):
+        self.objects[obj_name] = select_candidate_mass(
+            self.objects["best_zllcandidate_2fcr"], "2mu2mu"
         )
 
     # --------------------------------------------------------------------------------

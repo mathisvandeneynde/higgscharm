@@ -7,6 +7,7 @@ datasets:
     - dy_nlo
     - wz
     - tt_semileptonic
+    - zz
 object_selection:
   muons:
     field: events.Muon
@@ -83,6 +84,22 @@ object_selection:
     field: select_best_1fcr_zllcandidate
   best_zllcandidate_2fcr:
     field: select_best_2fcr_zllcandidate
+  mass_2e2e_1fcr:
+    field: select_mass_2e2e_1fcr
+  mass_2e2mu_1fcr:
+    field: select_mass_2e2mu_1fcr
+  mass_2mu2e_1fcr:
+    field: select_mass_2mu2e_1fcr
+  mass_2mu2mu_1fcr:
+    field: select_mass_2mu2mu_1fcr
+  mass_2e2e_2fcr:
+    field: select_mass_2e2e_2fcr
+  mass_2e2mu_2fcr:
+    field: select_mass_2e2mu_2fcr
+  mass_2mu2e_2fcr:
+    field: select_mass_2mu2e_2fcr
+  mass_2mu2mu_2fcr:
+    field: select_mass_2mu2mu_2fcr
 event_selection:
   hlt_paths:
     - SingleMu
@@ -124,27 +141,34 @@ histogram_config:
   add_syst_axis: true
   add_weight: true
   axes:
-    zll_mass_1fcr:
+    zll_mass_2e2e_1fcr:
       type: Regular
       bins: 40
       start: 70
       stop: 870
-      label: $m(Z\ell\ell)$ [GeV]
-      expression: objects['best_zllcandidate_1fcr'].p4.mass
-    z_flavor_1fcr:
-      type: IntCategory
-      categories:
-        - 22
-        - 26
-      label: 3P1F Zflavor
-      expression: np.abs(objects['best_zllcandidate_1fcr'].z1.l1.pdgId) + np.abs(objects['best_zllcandidate_1fcr'].z1.l2.pdgId)
-    ll_flavor_1fcr:
-      type: IntCategory
-      categories:
-        - 22
-        - 26
-      label: 3P1F LLflavor
-      expression: np.abs(objects['best_zllcandidate_1fcr'].z2.l1.pdgId) + np.abs(objects['best_zllcandidate_1fcr'].z2.l2.pdgId)
+      label: $m_{2e2e}$ [GeV]
+      expression: objects['mass_2e2e_1fcr']
+    zll_mass_2mu2e_1fcr:
+      type: Regular
+      bins: 40
+      start: 70
+      stop: 870
+      label: $m_{2\mu2e}$ [GeV]
+      expression: objects['mass_2mu2e_1fcr']
+    zll_mass_2e2mu_1fcr:
+      type: Regular
+      bins: 40
+      start: 70
+      stop: 870
+      label: $m_{2e2\mu}$ [GeV]
+      expression: objects['mass_2e2mu_1fcr']
+    zll_mass_2mu2mu_1fcr:
+      type: Regular
+      bins: 40
+      start: 70
+      stop: 870
+      label: $m_{2\mu 2\mu}$ [GeV]
+      expression: objects['mass_2mu2mu_1fcr']
     l3_pt_1fcr:
       type: Variable
       edges:
@@ -207,27 +231,34 @@ histogram_config:
         - 13
       label: 3P1F $\ell_4$ pdgid
       expression: np.abs(objects['best_zllcandidate_1fcr'].z2.l2.pdgId)
-    zll_mass_2fcr:
+    zll_mass_2e2e_2fcr:
       type: Regular
       bins: 40
       start: 70
       stop: 870
-      label: $m(Z\ell\ell)$ [GeV]
-      expression: objects['best_zllcandidate_2fcr'].p4.mass
-    z_flavor_2fcr:
-      type: IntCategory
-      categories:
-        - 22
-        - 26
-      label: 2P2F Zflavor
-      expression: np.abs(objects['best_zllcandidate_2fcr'].z1.l1.pdgId) + np.abs(objects['best_zllcandidate_2fcr'].z1.l2.pdgId)
-    ll_flavor_2fcr:
-      type: IntCategory
-      categories:
-        - 22
-        - 26
-      label: 2P2F LLflavor
-      expression: np.abs(objects['best_zllcandidate_2fcr'].z2.l1.pdgId) + np.abs(objects['best_zllcandidate_2fcr'].z2.l2.pdgId)
+      label: $m_{2e2e}$ [GeV]
+      expression: objects['mass_2e2e_2fcr']
+    zll_mass_2mu2e_2fcr:
+      type: Regular
+      bins: 40
+      start: 70
+      stop: 870
+      label: $m_{2\mu2e}$ [GeV]
+      expression: objects['mass_2mu2e_2fcr']
+    zll_mass_2e2mu_2fcr:
+      type: Regular
+      bins: 40
+      start: 70
+      stop: 870
+      label: $m_{2e2\mu}$ [GeV]
+      expression: objects['mass_2e2mu_2fcr']
+    zll_mass_2mu2mu_2fcr:
+      type: Regular
+      bins: 40
+      start: 70
+      stop: 870
+      label: $m_{2\mu 2\mu}$ [GeV]
+      expression: objects['mass_2mu2mu_2fcr']
     l3_pt_2fcr:
       type: Variable
       edges:
@@ -282,30 +313,4 @@ histogram_config:
         - 13
       label: 2P2F $\ell_4$ pdgid
       expression: np.abs(objects['best_zllcandidate_2fcr'].z2.l2.pdgId)
-  layout:
-    zll_1fcr:
-      - zll_mass_1fcr
-      - z_flavor_1fcr
-      - ll_flavor_1fcr
-    lep3_1fcr:
-      - l3_pt_1fcr
-      - l3_eta_1fcr
-      - l3_istight_1fcr
-      - l3_pgid_1fcr
-    lep4_1fcr:
-      - l4_pt_1fcr
-      - l4_eta_1fcr
-      - l4_istight_1fcr
-      - l4_pgid_1fcr
-    zll_2fcr:
-      - zll_mass_2fcr
-      - z_flavor_2fcr
-      - ll_flavor_2fcr
-    lep3_2fcr:
-      - l3_pt_2fcr
-      - l3_eta_2fcr
-      - l3_pgid_2fcr
-    lep4_2fcr:
-      - l4_pt_2fcr
-      - l4_eta_2fcr
-      - l4_pgid_2fcr
+  layout: individual
