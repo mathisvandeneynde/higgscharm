@@ -29,6 +29,13 @@ if __name__ == "__main__":
         "--nopostprocess", action="store_true", help="Skip postprocessing step"
     )
     parser.add_argument("--noplot", action="store_true", help="Skip ploting step")
+    parser.add_argument(
+        "--output_format",
+        type=str,
+        default="coffea",
+        choices=["coffea", "parquet"],
+        help="Format of output files",
+    )
     args = parser.parse_args()
 
     for year in years:
@@ -47,6 +54,8 @@ if __name__ == "__main__":
                         "-y",
                         year,
                         "--postprocess",
+                        "--output_format",
+                        args.output_format,
                     ]
                 )
             if not args.noplot:
@@ -88,6 +97,8 @@ if __name__ == "__main__":
                         "-y",
                         year,
                         "--postprocess",
+                        "--output_format",
+                        args.output_format,
                     ]
                 )
             if not args.noplot:
@@ -101,9 +112,6 @@ if __name__ == "__main__":
                         year,
                         "--plot",
                         "--log",
-                        "--yratio_limits",
-                        "0",
-                        "2",
                     ]
                 )
                 subprocess.run(
@@ -135,6 +143,8 @@ if __name__ == "__main__":
                         "-y",
                         year,
                         "--postprocess",
+                        "--output_format",
+                        args.output_format,
                     ]
                 )
             if not args.noplot:
@@ -163,6 +173,8 @@ if __name__ == "__main__":
                         "-y",
                         year,
                         "--postprocess",
+                        "--output_format",
+                        args.output_format,
                     ]
                 )
             if not args.noplot:
