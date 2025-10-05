@@ -244,7 +244,12 @@ if __name__ == "__main__":
 
         for process in process_samples_map:
             save_histograms_by_process(
-                process, output_dir, process_samples_map, categories, args.nocutflow
+                process,
+                output_dir,
+                process_samples_map,
+                categories,
+                args.nocutflow,
+                args.output_format,
             )
             gc.collect()
 
@@ -456,29 +461,14 @@ if __name__ == "__main__":
                     if not proceed:
                         continue
                 if plot_variable(variable, group_by, workflow_config.histogram_config):
-                    if (args.workflow in ["zplusll_os"]) and ("zll_mass" in variable):
-                        for region in ["1fcr", "2fcr"]:
-                            for flavor in ["4e", "2mu2e", "4mu", "2e2mu"]:
-                                if region in variable:
-                                    logging.info(f"{variable} {flavor}")
-                                    plotter.plot_histograms(
-                                        variable=variable,
-                                        category=category,
-                                        yratio_limits=args.yratio_limits,
-                                        log=args.log,
-                                        extension=args.extension,
-                                        flavor=flavor,
-                                        region=region,
-                                    )
-                    else:
-                        logging.info(variable)
-                        plotter.plot_histograms(
-                            variable=variable,
-                            category=category,
-                            yratio_limits=args.yratio_limits,
-                            log=args.log,
-                            extension=args.extension,
-                        )
+                    logging.info(variable)
+                    plotter.plot_histograms(
+                        variable=variable,
+                        category=category,
+                        yratio_limits=args.yratio_limits,
+                        log=args.log,
+                        extension=args.extension,
+                    )
             if args.workflow in ["zplusl_os", "zplusl_ss"]:
                 plotter.plot_fake_rate(category)
             subprocess.run(
