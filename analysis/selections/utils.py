@@ -280,10 +280,10 @@ def select_candidate_mass(cand, flavor):
     z1_flavor = np.abs(cand.z1.l1.pdgId) + np.abs(cand.z1.l2.pdgId)
     z2_flavor = np.abs(cand.z2.l1.pdgId) + np.abs(cand.z2.l2.pdgId)
     flavor_masks = {
-        "2e2e": (z1_flavor == 22) & (z2_flavor == 22),
+        "4e": (z1_flavor == 22) & (z2_flavor == 22),
+        "4mu": (z1_flavor == 26) & (z2_flavor == 26),
         "2e2mu": (z1_flavor == 22) & (z2_flavor == 26),
         "2mu2e": (z1_flavor == 26) & (z2_flavor == 22),
-        "2mu2mu": (z1_flavor == 26) & (z2_flavor == 26),
     }
     return cand[flavor_masks[flavor]].p4.mass
 
