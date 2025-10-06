@@ -90,7 +90,7 @@ event_selection:
     atleast_one_zcandidate: ak.num(objects['zcandidates']) >= 1
     ele_flavor: ak.all(np.abs(objects['other_relaxed_leptons'].pdgId) == 11, axis=1)
     mu_flavor: ak.all(np.abs(objects['other_relaxed_leptons'].pdgId) == 13, axis=1)
-    trilepton_mass_cut: ak.num(objects['trilepton']) == 1
+    one_trilepton: ak.num(objects['trilepton']) == 1
   categories:
     electron:
       - trigger
@@ -101,7 +101,7 @@ event_selection:
       - ele_flavor
       - atleast_one_zcandidate
       - one_relaxed_lepton
-      - trilepton_mass_cut
+      - one_trilepton
     muon:
       - trigger
       - lumimask
@@ -111,7 +111,7 @@ event_selection:
       - mu_flavor
       - atleast_one_zcandidate
       - one_relaxed_lepton
-      - trilepton_mass_cut
+      - one_trilepton
 corrections:
   objects:
     - jets
