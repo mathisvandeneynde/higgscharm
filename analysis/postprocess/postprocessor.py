@@ -153,7 +153,7 @@ def save_histograms_by_process(
     process_samples_map: dict,
     categories: list,
     nocutflow: bool,
-    output_format,
+    output_format: str,
 ):
     """Accumulate and save all outputs for a given physics process"""
     print_header(f"Processing {process} outputs")
