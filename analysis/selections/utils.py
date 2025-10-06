@@ -276,6 +276,18 @@ def select_best_zzcandidate(cand, cr=False):
     return selected_cand[best_candidate_mask]
 
 
+def select_candidate_mass(cand, flavor):
+    z1_flavor = np.abs(cand.z1.l1.pdgId) + np.abs(cand.z1.l2.pdgId)
+    z2_flavor = np.abs(cand.z2.l1.pdgId) + np.abs(cand.z2.l2.pdgId)
+    flavor_masks = {
+        "4e": (z1_flavor == 22) & (z2_flavor == 22),
+        "4mu": (z1_flavor == 26) & (z2_flavor == 26),
+        "2e2mu": (z1_flavor == 22) & (z2_flavor == 26),
+        "2mu2e": (z1_flavor == 26) & (z2_flavor == 22),
+    }
+    return cand[flavor_masks[flavor]].p4.mass
+
+
 @numba.njit
 def unique_numba(arr):
     """Returns unique elements, inverse indices, and counts (Numba-compatible)"""

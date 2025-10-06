@@ -5,7 +5,6 @@ from analysis.corrections.pileup import add_pileup_weight
 from analysis.corrections.nnlops import add_nnlops_weight
 from analysis.corrections.lhepdf import add_lhepdf_weight
 from analysis.corrections.electron import ElectronWeights
-from analysis.corrections.os_fr_2p2f import add_2p2f_weight
 from analysis.corrections.jerc import apply_jerc_corrections
 from analysis.corrections.lhescale import add_scalevar_weight
 from analysis.corrections.met import apply_met_phi_corrections
@@ -95,14 +94,6 @@ def weight_manager(pruned_ev, year, dataset, workflow_config, variation="nominal
             if dataset.startswith("GluGluH"):
                 add_nnlops_weight(
                     events=pruned_ev,
-                    weights_container=weights_container,
-                )
-
-        if "2P2FWeight" in weights_config:
-            if weights_config["2P2FWeight"]:
-                add_2p2f_weight(
-                    events=pruned_ev,
-                    year=year,
                     weights_container=weights_container,
                 )
                 

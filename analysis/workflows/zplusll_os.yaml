@@ -7,6 +7,7 @@ datasets:
     - dy_nlo
     - wz
     - tt_semileptonic
+    - zz
 object_selection:
   muons:
     field: events.Muon
@@ -83,6 +84,22 @@ object_selection:
     field: select_best_1fcr_zllcandidate
   best_zllcandidate_2fcr:
     field: select_best_2fcr_zllcandidate
+  mass_4e_1fcr:
+    field: select_mass_4e_1fcr
+  mass_2e2mu_1fcr:
+    field: select_mass_2e2mu_1fcr
+  mass_2mu2e_1fcr:
+    field: select_mass_2mu2e_1fcr
+  mass_4mu_1fcr:
+    field: select_mass_4mu_1fcr
+  mass_4e_2fcr:
+    field: select_mass_4e_2fcr
+  mass_2e2mu_2fcr:
+    field: select_mass_2e2mu_2fcr
+  mass_2mu2e_2fcr:
+    field: select_mass_2mu2e_2fcr
+  mass_4mu_2fcr:
+    field: select_mass_4mu_2fcr
 event_selection:
   hlt_paths:
     - SingleMu
@@ -116,7 +133,6 @@ corrections:
     lhepdfWeight: false
     lhescaleWeight: false
     nnlopsWeight: false
-    2P2FWeight: true
     electron:
       - id: false
       - reco: true
@@ -125,110 +141,35 @@ histogram_config:
   add_syst_axis: true
   add_weight: true
   axes:
-    z_mass_1fcr:
-      type: Regular
-      bins: 54
-      start: 12
-      stop: 120
-      label: $m(Z)$ [GeV]
-      expression: objects['best_zllcandidate_1fcr'].z1.p4.mass
-    ll_mass_1fcr:
-      type: Regular
-      bins: 54
-      start: 12
-      stop: 120
-      label: $m(\ell\ell)$ [GeV]
-      expression: objects['best_zllcandidate_1fcr'].z2.p4.mass
-    zll_mass_1fcr:
+    zll_mass_4e_1fcr:
       type: Regular
       bins: 40
       start: 70
       stop: 870
-      label: $m(Z\ell\ell)$ [GeV]
-      expression: objects['best_zllcandidate_1fcr'].p4.mass
-    zll_pt_1fcr:
-      type: Regular
-      bins: 40
-      start: 0
-      stop: 400
-      label: $p_T(Z\ell\ell)$ [GeV]
-      expression: objects['best_zllcandidate_1fcr'].p4.pt
-    z_flavor_1fcr:
-      type: IntCategory
-      categories:
-        - 22
-        - 26
-      label: Zflavor
-      expression: np.abs(objects['best_zllcandidate_1fcr'].z1.l1.pdgId) + np.abs(objects['best_zllcandidate_1fcr'].z1.l2.pdgId)
-    ll_flavor_1fcr:
-      type: IntCategory
-      categories:
-        - 22
-        - 26
-      label: LLflavor
-      expression: np.abs(objects['best_zllcandidate_1fcr'].z2.l1.pdgId) + np.abs(objects['best_zllcandidate_1fcr'].z2.l2.pdgId)
-    z_mass_2fcr:
-      type: Regular
-      bins: 54
-      start: 12
-      stop: 120
-      label: $m(Z)$ [GeV]
-      expression: objects['best_zllcandidate_2fcr'].z1.p4.mass
-    ll_mass_2fcr:
-      type: Regular
-      bins: 54
-      start: 12
-      stop: 120
-      label: $m(\ell\ell)$ [GeV]
-      expression: objects['best_zllcandidate_2fcr'].z2.p4.mass
-    zll_mass_2fcr:
+      label: $m_{4e}$ [GeV]
+      expression: objects['mass_4e_1fcr']
+    zll_mass_2mu2e_1fcr:
       type: Regular
       bins: 40
       start: 70
       stop: 870
-      label: $m(Z\ell\ell)$ [GeV]
-      expression: objects['best_zllcandidate_2fcr'].p4.mass
-    z_flavor_2fcr:
-      type: IntCategory
-      categories:
-        - 22
-        - 26
-      label: Zflavor
-      expression: np.abs(objects['best_zllcandidate_2fcr'].z1.l1.pdgId) + np.abs(objects['best_zllcandidate_2fcr'].z1.l2.pdgId)
-    ll_flavor_2fcr:
-      type: IntCategory
-      categories:
-        - 22
-        - 26
-      label: LL flavor
-      expression: np.abs(objects['best_zllcandidate_2fcr'].z2.l1.pdgId) + np.abs(objects['best_zllcandidate_2fcr'].z2.l2.pdgId)
-    2fcr_l3_pt:
-      type: Variable
-      edges:
-        - 5
-        - 7
-        - 10
-        - 20
-        - 30
-        - 40
-        - 50
-        - 80
-      label: 2P2F $p_T(\ell_3)$ [GeV]
-      expression: objects['best_zllcandidate_2fcr'].z2.l1.pt
-    2fcr_l4_pt:
-      type: Variable
-      edges:
-        - 5
-        - 7
-        - 10
-        - 20
-        - 30
-        - 40
-        - 50
-        - 80
-      label: 2P2F $p_T(\ell_4)$ [GeV]
-      expression: objects['best_zllcandidate_2fcr'].z2.l2.pt
-    1fcr_l3_pt:
+      label: $m_{2\mu2e}$ [GeV]
+      expression: objects['mass_2mu2e_1fcr']
+    zll_mass_2e2mu_1fcr:
+      type: Regular
+      bins: 40
+      start: 70
+      stop: 870
+      label: $m_{2e2\mu}$ [GeV]
+      expression: objects['mass_2e2mu_1fcr']
+    zll_mass_4mu_1fcr:
+      type: Regular
+      bins: 40
+      start: 70
+      stop: 870
+      label: $m_{2\mu 2\mu}$ [GeV]
+      expression: objects['mass_4mu_1fcr']
+    l3_pt_1fcr:
       type: Variable
       edges:
         - 5
@@ -241,12 +182,25 @@ histogram_config:
         - 80
       label: 3P1F $p_T(\ell_3)$ [GeV]
       expression: objects['best_zllcandidate_1fcr'].z2.l1.pt
-    1fcr_l3_pass:
-      type: IntCategory
-      categories: [0, 1]
+    l3_eta_1fcr:
+      type: Regular
+      bins: 50
+      start: -2.5
+      stop: 2.5
+      label: 3P1F $\eta(\ell_3)$
+      expression: np.abs(objects['best_zllcandidate_1fcr'].z2.l1.eta)
+    l3_istight_1fcr:
+      type: Boolean
       label: is_tight 3P1F $\ell_3$
       expression: objects['best_zllcandidate_1fcr'].z2.l1.is_tight
-    1fcr_l4_pt:
+    l3_pdgid_1fcr:
+      type: IntCategory
+      categories:
+        - 11
+        - 13
+      label: 3P1F $\ell_3$ pdgid
+      expression: np.abs(objects['best_zllcandidate_1fcr'].z2.l1.pdgId)
+    l4_pt_1fcr:
       type: Variable
       edges:
         - 5
@@ -259,26 +213,104 @@ histogram_config:
         - 80
       label: 3P1F $p_T(\ell_4)$ [GeV]
       expression: objects['best_zllcandidate_1fcr'].z2.l2.pt
-    1fcr_l4_pass:
-      type: IntCategory
-      categories: [0, 1]
+    l4_eta_1fcr:
+      type: Regular
+      bins: 50
+      start: -2.5
+      stop: 2.5
+      label: 3P1F $\eta(\ell_4)$
+      expression: np.abs(objects['best_zllcandidate_1fcr'].z2.l2.eta)
+    l4_istight_1fcr:
+      type: Boolean
       label: is_tight 3P1F $\ell_4$
       expression: objects['best_zllcandidate_1fcr'].z2.l2.is_tight
-  layout:
-    lep_2fcr:
-      - 2fcr_l3_pt
-      - 2fcr_l4_pt
-    lep3_1fcr:
-      - 1fcr_l3_pt
-      - 1fcr_l3_pass
-    lep4_1fcr:
-      - 1fcr_l4_pt
-      - 1fcr_l4_pass
-    zll_1fcr:
-      - zll_mass_1fcr
-      - z_flavor_1fcr
-      - ll_flavor_1fcr
-    zll_2fcr:
-      - zll_mass_2fcr
-      - z_flavor_2fcr
-      - ll_flavor_2fcr
+    l4_pdgid_1fcr:
+      type: IntCategory
+      categories:
+        - 11
+        - 13
+      label: 3P1F $\ell_4$ pdgid
+      expression: np.abs(objects['best_zllcandidate_1fcr'].z2.l2.pdgId)
+    zll_mass_4e_2fcr:
+      type: Regular
+      bins: 40
+      start: 70
+      stop: 870
+      label: $m_{4e}$ [GeV]
+      expression: objects['mass_4e_2fcr']
+    zll_mass_2mu2e_2fcr:
+      type: Regular
+      bins: 40
+      start: 70
+      stop: 870
+      label: $m_{2\mu2e}$ [GeV]
+      expression: objects['mass_2mu2e_2fcr']
+    zll_mass_2e2mu_2fcr:
+      type: Regular
+      bins: 40
+      start: 70
+      stop: 870
+      label: $m_{2e2\mu}$ [GeV]
+      expression: objects['mass_2e2mu_2fcr']
+    zll_mass_4mu_2fcr:
+      type: Regular
+      bins: 40
+      start: 70
+      stop: 870
+      label: $m_{2\mu 2\mu}$ [GeV]
+      expression: objects['mass_4mu_2fcr']
+    l3_pt_2fcr:
+      type: Variable
+      edges:
+        - 5
+        - 7
+        - 10
+        - 20
+        - 30
+        - 40
+        - 50
+        - 80
+      label: 2P2F $p_T(\ell_3)$ [GeV]
+      expression: objects['best_zllcandidate_2fcr'].z2.l1.pt
+    l3_eta_2fcr:
+      type: Regular
+      bins: 50
+      start: -2.5
+      stop: 2.5
+      label: 2P2F $\eta(\ell_3)$
+      expression: np.abs(objects['best_zllcandidate_2fcr'].z2.l1.eta)
+    l3_pdgid_2fcr:
+      type: IntCategory
+      categories:
+        - 11
+        - 13
+      label: 2P2F $\ell_3$ pdgid
+      expression: np.abs(objects['best_zllcandidate_2fcr'].z2.l1.pdgId)
+    l4_pt_2fcr:
+      type: Variable
+      edges:
+        - 5
+        - 7
+        - 10
+        - 20
+        - 30
+        - 40
+        - 50
+        - 80
+      label: 2P2F $p_T(\ell_4)$ [GeV]
+      expression: objects['best_zllcandidate_2fcr'].z2.l2.pt
+    l4_eta_2fcr:
+      type: Regular
+      bins: 50
+      start: -2.5
+      stop: 2.5
+      label: 2P2F $\eta(\ell_4)$
+      expression: np.abs(objects['best_zllcandidate_2fcr'].z2.l2.eta)
+    l4_pdgid_2fcr:
+      type: IntCategory
+      categories:
+        - 11
+        - 13
+      label: 2P2F $\ell_4$ pdgid
+      expression: np.abs(objects['best_zllcandidate_2fcr'].z2.l2.pdgId)
+  layout: individual

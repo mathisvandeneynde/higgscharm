@@ -72,8 +72,6 @@ class CoffeaPlotter:
         variation,
         category,
         histogram,
-        flavor,
-        region,
         other_category=None,
     ):
         """returns histogram by processes/variable/category"""
@@ -85,14 +83,6 @@ class CoffeaPlotter:
             selector[self.pass_axis] = True
         if other_category is not None:
             selector[self.group_by["name"]] = other_category
-        if self.workflow.startswith("zplusll") and flavor:
-            flavor_selector = {
-                "4e": {f"z_flavor_{region}": 0, f"ll_flavor_{region}": 0},
-                "4mu": {f"z_flavor_{region}": 1, f"ll_flavor_{region}": 1},
-                "2e2mu": {f"z_flavor_{region}": 0, f"ll_flavor_{region}": 1},
-                "2mu2e": {f"z_flavor_{region}": 1, f"ll_flavor_{region}": 0},
-            }
-            selector.update(flavor_selector[flavor])
         histogram = histogram[selector].project(variable)
         # if axis type is variable divide by bin width
         if isinstance(self.histogram_config.axes[variable], VariableAxis):
@@ -105,8 +95,6 @@ class CoffeaPlotter:
         category,
         variation,
         histogram,
-        flavor,
-        region,
     ):
         """returns variation histogram by processes/variable/category"""
         # get variable histogram for nominal variation and category
@@ -118,15 +106,6 @@ class CoffeaPlotter:
         if "category" in histogram.axes.name:
             selectorup["category"] = category
             selectordown["category"] = category
-        if self.workflow.startswith("zplusll") and flavor:
-            flavor_selector = {
-                "4e": {f"z_flavor_{region}": 0, f"ll_flavor_{region}": 0},
-                "4mu": {f"z_flavor_{region}": 1, f"ll_flavor_{region}": 1},
-                "2e2mu": {f"z_flavor_{region}": 0, f"ll_flavor_{region}": 1},
-                "2mu2e": {f"z_flavor_{region}": 1, f"ll_flavor_{region}": 0},
-            }
-            selectorup.update(flavor_selector[flavor])
-            selectordown.update(flavor_selector[flavor])
         histogram_up = histogram[selectorup].project(variable)
         histogram_down = histogram[selectordown].project(variable)
         # if axis type is variable divide by bin width
@@ -135,7 +114,7 @@ class CoffeaPlotter:
             histogram_down = divide_by_binwidth(histogram_down)
         return histogram_up, histogram_down
 
-    def collect_histograms_for_plotting(self, variable, category, flavor, region):
+    def collect_histograms_for_plotting(self, variable, category):
         histogram_info = {}
         if "mc" in self.datasets:
             histogram_info["mc"] = {"nominal": {}, "variations": {}}
@@ -158,8 +137,6 @@ class CoffeaPlotter:
                     variable=variable,
                     category=category,
                     variation="nominal",
-                    flavor=flavor,
-                    region=region,
                     histogram=aux_histogram,
                 )
             else:
@@ -177,8 +154,6 @@ class CoffeaPlotter:
                             variation="nominal",
                             other_category=cat,
                             histogram=aux_histogram,
-                            flavor=flavor,
-                            region=region,
                         )
                 else:
                     histogram_info[key]["nominal"][process] = self.get_histogram(
@@ -186,8 +161,6 @@ class CoffeaPlotter:
                         category=category,
                         variation="nominal",
                         histogram=aux_histogram,
-                        flavor=flavor,
-                        region=region,
                     )
 
                 # save variations histograms
@@ -201,8 +174,6 @@ class CoffeaPlotter:
                             category=category,
                             variation=variation,
                             histogram=aux_histogram,
-                            flavor=flavor,
-                            region=region,
                         )
                         if f"{variation}Up" in histogram_info[key]["variations"]:
                             histogram_info[key]["variations"][f"{variation}Up"] += up
@@ -290,7 +261,7 @@ class CoffeaPlotter:
         xmin, xmax = rax.get_xlim()
         rax.hlines(1, xmin, xmax, color="k", linestyle=":")
 
-    def add_text(self, region, category, ax):
+    def add_text(self, variable, category, ax):
         text_map = {
             "ztoee": rf"$ Z \rightarrow ee$ events",
             "ztomumu": rf"$ Z \rightarrow \mu \mu$ events",
@@ -319,7 +290,7 @@ class CoffeaPlotter:
             zplusll_text_map = {
                 "zplusll_os": (
                     "3P+1F control sample"
-                    if region == "1fcr"
+                    if "1fcr" in variable
                     else "2P+2F control sample"
                 ),
                 "zplusll_ss": "SS-SF control sample",
@@ -334,20 +305,13 @@ class CoffeaPlotter:
             )
         )
 
-    def add_xylabels(self, variable, category, flavor, add_ratio, ax, rax):
+    def add_xylabels(self, variable, category, add_ratio, ax, rax):
         ylabel = "Events"
         if isinstance(self.histogram_config.axes[variable], VariableAxis):
             ylabel += " / GeV"
 
         xlabel = self.histogram_config.axes[variable].label
-        if self.workflow.startswith("zplusll") and flavor:
-            xlabels = {
-                "4e": "$m_{4e}$ [GeV]",
-                "4mu": "$m_{4\mu}$ [GeV]",
-                "2e2mu": "$m_{2e2\mu}$ [GeV]",
-                "2mu2e": "$m_{2\mu 2e}$ [GeV]",
-            }
-            xlabel = xlabels[flavor]
+
         if self.workflow in ["zplusl_os", "zplusl_ss"]:
             if category == "electron":
                 xlabel = xlabel.replace(r"\ell", r"e")
@@ -372,8 +336,6 @@ class CoffeaPlotter:
         log: bool = False,
         add_ratio: bool = True,
         blind: bool = False,
-        flavor: str = None,
-        region: str = None,
         extension: str = "png",
     ):
         if blind:
@@ -386,9 +348,7 @@ class CoffeaPlotter:
         plt.rcParams.update(self.style["rcParams"])
 
         # get mc, data and signal histograms
-        histogram_info = self.collect_histograms_for_plotting(
-            variable, category, flavor, region
-        )
+        histogram_info = self.collect_histograms_for_plotting(variable, category)
 
         # get nominal MC histograms
         mc_colors, mc_labels = [], []
@@ -487,10 +447,10 @@ class CoffeaPlotter:
             rax.set_ylim(yratio_limits)
 
         # set axes labels
-        self.add_xylabels(variable, category, flavor, add_ratio, ax, rax)
+        self.add_xylabels(variable, category, add_ratio, ax, rax)
 
         # set plot text
-        self.add_text(region, category, ax)
+        self.add_text(variable, category, ax)
 
         # set log scale
         if log:
@@ -530,8 +490,6 @@ class CoffeaPlotter:
             figname = f"{str(output_path)}/{self.workflow}_{category}_{variable}_{self.pass_axis}_{self.year}.{extension}"
         if self.group_by != "process":
             figname = f"{str(output_path)}/{self.workflow}_{category}_{variable}_{self.year}_groupedby{self.group_by['name']}.{extension}"
-        if flavor and region:
-            figname = f"{str(output_path)}/{self.workflow}_{category}_{variable}_{flavor}_{self.year}.{extension}"
         fig.savefig(figname)
         plt.close()
 

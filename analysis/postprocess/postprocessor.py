@@ -37,13 +37,20 @@ def fill_histograms_from_parquets(
         logging.info(f"Filling {sample} histograms")
 
         # merge sample parquets
-        sample_parquets = glob.glob(
-            f"{output_dir}/parquets_{sample}/{category}/*.parquet"
-        )
-        sample_df = dd.read_parquet(
-            sample_parquets, engine="pyarrow", calculate_divisions=False
-        ).compute()
-        sample_df = sample_df.replace({None: np.nan})
+        sample_df_file = output_dir / f"{sample}.parquet"
+        if sample_df_file.exists():
+            sample_df = pd.read_parquet(sample_df_file)
+        else:
+            sample_parquets = glob.glob(
+                f"{output_dir}/parquets_{sample}/{category}/*.parquet"
+            )
+            sample_df = dd.read_parquet(
+                sample_parquets, engine="pyarrow", calculate_divisions=False
+            ).compute()
+            sample_df = sample_df.replace({None: np.nan})
+            sample_df.to_parquet(
+                f"{output_dir}/{sample}.parquet", engine="pyarrow", index=False
+            )
 
         # build variables map
         variables_map = {}
@@ -112,7 +119,7 @@ def save_histograms_by_sample(
     output_format,
     skipmerging,
 ):
-    """Accumulate, scale, and save histograms for a given sample"""
+    """Accumulate, scale, and save histograms for a single sample"""
     print_header(f"Processing {sample} outputs")
 
     # get histograms
@@ -146,20 +153,33 @@ def save_histograms_by_process(
     process_samples_map: dict,
     categories: list,
     nocutflow: bool,
+    output_format: str,
 ):
-    """Accumulate and save histograms for all samples of a process"""
+    """Accumulate and save all outputs for a given physics process"""
     print_header(f"Processing {process} outputs")
 
-    # gather all output files for this process
-    output_files = []
-    for sample in process_samples_map[process]:
-        output_files += glob.glob(f"{output_dir}/{sample}*.coffea", recursive=True)
-
     # accumulate and save all histograms into a single dictionary
+    coffea_files = []
+    for sample in process_samples_map[process]:
+        coffea_files += glob.glob(f"{output_dir}/{sample}*.coffea", recursive=True)
+
     logging.info(f"Accumulating histograms for process {process}")
-    hist_to_accumulate = [load(f) for f in output_files]
+    hist_to_accumulate = [load(f) for f in coffea_files]
     output_histograms = {process: accumulate(hist_to_accumulate)}
     save(output_histograms, Path(output_dir) / f"{process}.coffea")
+
+    # accumulate and save all parquets into a single parquet file
+    if output_format == "parquet":
+        logging.info(f"Accumulating parquets for process {process}")
+        parquet_files = []
+        for sample in process_samples_map[process]:
+            parquet_files += glob.glob(
+                f"{output_dir}/{sample}*.parquet", recursive=True
+            )
+        process_df = dd.read_parquet(
+            parquet_files, engine="pyarrow", calculate_divisions=False
+        ).compute()
+        process_df.to_parquet(Path(output_dir) / f"{process}.parquet")
 
     # accumulate and save cutflows if requested
     if not nocutflow:
