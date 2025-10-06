@@ -5,6 +5,7 @@ import json
 import subprocess
 import numpy as np
 from pathlib import Path
+from collections import defaultdict
 from analysis.workflows.config import WorkflowConfigBuilder
 
 
@@ -231,3 +232,12 @@ def get_process_era_map(year):
             process_era_map[sample_process] = dataset_configs[sample]["era"]
 
     return process_era_map
+
+def get_process_sample_map(datasets: list[str], year: str) -> dict[str, list[str]]:
+    """map processes to their corresponding samples based on dataset config"""
+    dataset_configs = get_dataset_config(year)
+    process_sample_map = defaultdict(list)
+    for sample in datasets:
+        config = dataset_configs[sample]
+        process_sample_map[config["process"]].append(sample)
+    return dict(process_sample_map)
