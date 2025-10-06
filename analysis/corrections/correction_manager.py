@@ -11,7 +11,7 @@ from analysis.corrections.met import apply_met_phi_corrections
 from analysis.corrections.muon_ss import apply_muon_ss_corrections
 from analysis.corrections.partonshower import add_partonshower_weight
 from analysis.corrections.electron_ss import apply_electron_ss_corrections
-from analysis.corrections.os_weights import add_os_2p2f_weights, add_os_3p1f_weights
+
 
 
 def object_corrector_manager(events, year, dataset, workflow_config):
@@ -94,22 +94,6 @@ def weight_manager(pruned_ev, year, dataset, workflow_config, variation="nominal
             if dataset.startswith("GluGluH"):
                 add_nnlops_weight(
                     events=pruned_ev,
-                    weights_container=weights_container,
-                )
-
-        if "2P2FWeight" in weights_config:
-            if weights_config["2P2FWeight"]:
-                add_os_2p2f_weights(
-                    events=pruned_ev,
-                    year=year,
-                    weights_container=weights_container,
-                )
-
-        if "3P1FWeight" in weights_config:
-            if weights_config["3P1FWeight"]:
-                add_os_3p1f_weights(
-                    events=pruned_ev,
-                    year=year,
                     weights_container=weights_container,
                 )
                 
