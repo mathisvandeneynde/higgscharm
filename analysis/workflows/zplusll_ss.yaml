@@ -77,6 +77,14 @@ object_selection:
       - (objects['zllcandidates'].z1.p4 + objects['zllcandidates'].z2.p4).mass > 100
   best_zllcandidate_sscr:
     field: select_best_sscr_zllcandidate
+  zll_mass_4e_sscr:
+    field: select_mass_4e_sscr
+  zll_mass_2e2mu_sscr:
+    field: select_mass_2e2mu_sscr
+  zll_mass_2mu2e_sscr:
+    field: select_mass_2mu2e_sscr
+  zll_mass_4mu_sscr:
+    field: select_mass_4mu_sscr
 event_selection:
   hlt_paths:
     - SingleMu
@@ -115,29 +123,38 @@ corrections:
       - reco: true
       - trigger: false
 histogram_config:
+  add_syst_axis: true
+  add_weight: true
   axes:
-    zll_mass_sscr:
+    zll_mass_4e_sscr:
       type: Regular
       bins: 40
       start: 70
       stop: 870
-      label: $m(Z\ell\ell)$ [GeV]
-      expression: objects['best_zllcandidate_sscr'].p4.mass
-    z_flavor_sscr:
-      type: IntCategory
-      categories:
-        - 22
-        - 26
-      label: Zflavor
-      expression: np.abs(objects['best_zllcandidate_sscr'].z1.l1.pdgId) + np.abs(objects['best_zllcandidate_sscr'].z1.l2.pdgId)
-    ll_flavor_sscr:
-      type: IntCategory
-      categories:
-        - 22
-        - 26
-      label: LL pdgId
-      expression: np.abs(objects['best_zllcandidate_sscr'].z2.l1.pdgId) + np.abs(objects['best_zllcandidate_sscr'].z2.l2.pdgId)
-    lepton1_pt:
+      label: $m_{4e}$ [GeV]
+      expression: objects['zll_mass_4e_sscr']
+    zll_mass_2mu2e_sscr:
+      type: Regular
+      bins: 40
+      start: 70
+      stop: 870
+      label: $m_{2\mu2e}$ [GeV]
+      expression: objects['zll_mass_2mu2e_sscr']
+    zll_mass_2e2mu_sscr:
+      type: Regular
+      bins: 40
+      start: 70
+      stop: 870
+      label: $m_{2e2\mu}$ [GeV]
+      expression: objects['zll_mass_2e2mu_sscr']
+    zll_mass_4mu_sscr:
+      type: Regular
+      bins: 40
+      start: 70
+      stop: 870
+      label: $m_{4\mu}$ [GeV]
+      expression: objects['zll_mass_4mu_sscr']
+    l1_pt:
       type: Variable
       edges:
         - 5
@@ -150,7 +167,7 @@ histogram_config:
         - 80
       label: $p_T(\ell_3)$ [GeV]
       expression: objects['best_zllcandidate_sscr'].z2.l1.pt
-    lepton1_eta:
+    l1_eta:
       type: Regular
       bins: 50
       start: 0
@@ -164,13 +181,13 @@ histogram_config:
         - 13
       label: $\ell_3$ pdgId
       expression: np.abs(objects['best_zllcandidate_sscr'].z2.l1.pdgId)
-    n_missing_hits_l1:
+    l1_missing_hits:
       type: Integer
       start: 0
       stop: 10
       label: $\ell_3$ n_missing_hits
       expression: objects['best_zllcandidate_sscr'].z2.l1.lostHits
-    lepton2_pt:
+    l2_pt:
       type: Variable
       edges:
         - 5
@@ -183,7 +200,7 @@ histogram_config:
         - 80
       label: $p_T(\ell_4)$ [GeV]
       expression: objects['best_zllcandidate_sscr'].z2.l2.pt
-    lepton2_eta:
+    l2_eta:
       type: Regular
       bins: 50
       start: 0
@@ -197,26 +214,10 @@ histogram_config:
         - 13
       label: $\ell_4$ pdgId
       expression: np.abs(objects['best_zllcandidate_sscr'].z2.l2.pdgId)
-    n_missing_hits_l2:
+    l2_missing_hits:
       type: Integer
       start: 0
       stop: 10
       label: $\ell_4$ n_missing_hits
       expression: objects['best_zllcandidate_sscr'].z2.l2.lostHits
-  layout:
-    zll_sscr:
-      - zll_mass_sscr
-      - z_flavor_sscr
-      - ll_flavor_sscr
-    l3:
-      - lepton1_pt
-      - lepton1_eta
-      - l1_flavor
-      - n_missing_hits_l1
-    l4:
-      - lepton2_pt
-      - lepton2_eta
-      - l2_flavor
-      - n_missing_hits_l2
-  add_syst_axis: true
-  add_weight: true
+  layout: individual

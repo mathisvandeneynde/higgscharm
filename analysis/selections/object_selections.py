@@ -425,6 +425,27 @@ class ObjectSelector:
             self.objects["best_zllcandidate_2fcr"], "4mu"
         )
 
+
+    def select_mass_4e_sscr(self, obj_name):
+        self.objects[obj_name] = select_candidate_mass(
+            self.objects["best_zllcandidate_sscr"], "4e"
+        )
+
+    def select_mass_2e2mu_sscr(self, obj_name):
+        self.objects[obj_name] = select_candidate_mass(
+            self.objects["best_zllcandidate_sscr"], "2e2mu"
+        )
+
+    def select_mass_2mu2e_sscr(self, obj_name):
+        self.objects[obj_name] = select_candidate_mass(
+            self.objects["best_zllcandidate_sscr"], "2mu2e"
+        )
+
+    def select_mass_4mu_sscr(self, obj_name):
+        self.objects[obj_name] = select_candidate_mass(
+            self.objects["best_zllcandidate_sscr"], "4mu"
+        )
+
     # --------------------------------------------------------------------------------
     # HWW
     # --------------------------------------------------------------------------------
