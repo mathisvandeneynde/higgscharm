@@ -371,10 +371,17 @@ class CoffeaPlotter:
         # get nominal MC histograms
         mc_colors, mc_labels = [], []
         if self.group_by == "process":
-            nominal_mc_hists = list(histogram_info["mc"]["nominal"].values())
-            for process in histogram_info["mc"]["nominal"]:
-                mc_labels.append(process)
-                mc_colors.append(self.color_map[process])
+            if (self.workflow == "zzto4l") and ("zz_mass" in variable):
+                mc_labels = ["ggToZZ", "qqToZZ", "H(125)"]
+                nominal_mc_hists = [
+                    histogram_info["mc"]["nominal"][p] for p in mc_labels
+                ]
+                mc_colors = [self.color_map[p] for p in mc_labels]
+            else:
+                nominal_mc_hists = list(histogram_info["mc"]["nominal"].values())
+                for process in histogram_info["mc"]["nominal"]:
+                    mc_labels.append(process)
+                    mc_colors.append(self.color_map[process])
         else:
             nominal_mc_hists = []
             for cat in histogram_info["categories"]:
@@ -425,6 +432,8 @@ class CoffeaPlotter:
         mc_hist_args.update(self.style["mc_hist_kwargs"])
         if mc_colors:
             mc_hist_args.update({"color": mc_colors})
+        if (self.workflow == "zzto4l") and ("zz_mass" in variable):
+            mc_hist_args["sort"] = None
         hep.histplot(**mc_hist_args)
         if ("data" in self.datasets) or (not blind):
             hep.histplot(
