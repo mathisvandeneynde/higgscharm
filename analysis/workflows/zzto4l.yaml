@@ -156,7 +156,7 @@ histogram_config:
       bins: 40
       start: 0
       stop: 400
-      label: $pT_{4\ell}$ [GeV]
+      label: $p_T(4\ell)$ [GeV]
       expression: (objects['best_zzcandidate'].z1.p4 + objects['best_zzcandidate'].z2.p4).pt
     zz_mass_4mu:
       type: Regular
