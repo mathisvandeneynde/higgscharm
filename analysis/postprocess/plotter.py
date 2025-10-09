@@ -309,7 +309,7 @@ class CoffeaPlotter:
             }
             zzto4l_text = (
                 r"$ZZ\rightarrow$"
-                + zzto4l_identifier.get(variable, "$4\ell\ell$")
+                + zzto4l_identifier.get(variable, r"$4\ell$")
                 + " events"
             )
             zzto4l_text_map = {"zzto4l": zzto4l_text}
