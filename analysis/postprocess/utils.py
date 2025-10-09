@@ -119,7 +119,9 @@ def find_kin_and_axis(processed_histograms, name="multiplicity"):
 
 
 def merge_parquets(inpath, outpath, sample_name):
-    parquets = dd.read_parquet(f"{inpath}/*.parquet", engine="pyarrow", calculate_divisions=False)
+    parquets = dd.read_parquet(
+        f"{inpath}/*.parquet", engine="pyarrow", calculate_divisions=False
+    )
     df = parquets.compute()
     outpath = Path(outpath)
     if not outpath.exists():
@@ -170,7 +172,7 @@ def get_lumi_weight(year, sample, metadata):
 def save_cutflows(metadata, categories, sample, weight, output_dir):
     for category in categories:
         logging.info(f"saving {sample} cutflow for category {category}")
-        
+
         category_dir = Path(output_dir) / category
         if not category_dir.exists():
             category_dir.mkdir(parents=True, exist_ok=True)
@@ -187,9 +189,9 @@ def save_cutflows(metadata, categories, sample, weight, output_dir):
 def get_process_dict(output_dir, year, categories):
     folders = glob.glob(str(output_dir / "*"))
     process_dict = defaultdict(list)
-    
+
     dataset_config = get_dataset_config(year)
-    
+
     for folder in folders:
         folder_path = Path(folder)
         name = folder_path.name
@@ -198,15 +200,19 @@ def get_process_dict(output_dir, year, categories):
                 continue
             if category not in process_dict:
                 process_dict[category] = {}
-                
+
             folder_content = glob.glob(f"{folder_path}/*")
-    
+
             # case where there are multiple partitions and the folder includes only .coffea files
-            if any(".coffea" in f for f in folder_content) and not any(category in f for f in folder_content):
+            if any(".coffea" in f for f in folder_content) and not any(
+                category in f for f in folder_content
+            ):
                 if name not in process_dict[category]:
                     process_dict[category][name] = []
             # case where there is only one partition and the main folder includes both the .coffea file and the category folder
-            elif any(".coffea" in f for f in folder_content) and any(category in f for f in folder_content):
+            elif any(".coffea" in f for f in folder_content) and any(
+                category in f for f in folder_content
+            ):
                 for f in folder_content:
                     if category in f:
                         if name not in process_dict[category]:
@@ -216,10 +222,10 @@ def get_process_dict(output_dir, year, categories):
                 actual_name = name.rsplit("_", 1)[0]
                 if actual_name in process_dict[category]:
                     process_dict[category][actual_name].append(str(folder_path))
-    
+
     return dict(process_dict)
 
-    
+
 def merge_parquets_by_sample(output_dir, year, categories):
     """Merge parquet files from subfolders into a single output path per sample and category."""
     print_header("Merging parquet outputs by sample")
@@ -253,10 +259,12 @@ def accumulate_and_save_cutflows(process, process_samples_map, output_dir, categ
             cutflow_df = pd.DataFrame(df_total.sum())
             cutflow_df.columns = [process]
             cutflow_csv = category_dir / f"cutflow_{category}_{process}.csv"
-            logging.info(f"Saving cutflow for process {process}, category {category}")
+            logging.info(
+                f"Saving cutflow for process {process} and category {category}"
+            )
             cutflow_df.to_csv(cutflow_csv)
 
-                    
+
 def load_processed_histograms(
     year: str,
     output_dir: str,

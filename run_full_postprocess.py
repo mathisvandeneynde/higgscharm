@@ -86,7 +86,13 @@ if __name__ == "__main__":
                     ]
                 )
 
-        elif args.workflow in ["zplusl_os", "zplusl_ss"]:
+        elif args.workflow in [
+            "zplusl_os",
+            "zplusl_ss",
+            "zplusl_ss_maximal",
+            "zplusl_ss_minimal",
+            "zplusl_ss_intermediate",
+        ]:
             if not args.nopostprocess:
                 subprocess.run(
                     [
