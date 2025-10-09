@@ -300,6 +300,21 @@ class CoffeaPlotter:
             }
             text_map = {**text_map, **zplusll_text_map}
 
+        if self.workflow == "zzto4l":
+            zzto4l_identifier = {
+                "zz_mass_4e": r"$4e$",
+                "zz_mass_4mu": r"$4\mu$",
+                "zz_mass_2mu2e": r"$2\mu 2e$",
+                "zz_mass_2e2mu": r"$2e2\mu$",
+            }
+            zzto4l_text = (
+                r"$ZZ\rightarrow$"
+                + zzto4l_identifier.get(variable, "$4\ell\ell$")
+                + " events"
+            )
+            zzto4l_text_map = {"zzto4l": zzto4l_text}
+            text_map = {**text_map, **zzto4l_text_map}
+
         ax.add_artist(
             AnchoredText(
                 text_map.get(self.workflow, f"{self.workflow} events") + "\n",
