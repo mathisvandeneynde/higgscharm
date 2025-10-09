@@ -220,4 +220,22 @@ histogram_config:
       stop: 10
       label: $\ell_4$ n_missing_hits
       expression: objects['best_zllcandidate_sscr'].z2.l2.lostHits
-  layout: individual
+  layout:
+    zll_mass_4e_sscr:
+      - zll_mass_4e_sscr
+    zll_mass_4mu_sscr:
+      - zll_mass_4mu_sscr
+    zll_mass_2e2mu_sscr:
+      - zll_mass_2e2mu_sscr
+    zll_mass_2mu2e_sscr:
+      - zll_mass_2mu2e_sscr
+    lep1:
+      - l1_pt
+      - l1_eta
+      - l1_flavor
+      - l1_missing_hits
+    lep2:
+      - l2_pt
+      - l2_eta
+      - l2_flavor
+      - l2_missing_hits
