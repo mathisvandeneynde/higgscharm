@@ -59,7 +59,6 @@ object_selection:
         - (1*objects['zcandidates'].l1.is_tight + 1*objects['zcandidates'].l2.is_tight) == 2
     cuts: 
       - objects['zcandidates'].is_sr
-      - (objects['zcandidates'].p4.mass > 40) & (objects['zcandidates'].p4.mass < 120)
       - ((objects['zcandidates'].l1.p4.pt > 10) & (objects['zcandidates'].l2.p4.pt > 20)) | ((objects['zcandidates'].l1.p4.pt > 20) & (objects['zcandidates'].l2.p4.pt > 10))
   best_zcandidates:
     field: select_best_zcandidate
@@ -68,6 +67,10 @@ object_selection:
     add_cut:
       is_barrel:
         - ak.where(np.abs(objects['other_relaxed_leptons'].pdgId) == 11, np.abs(objects['other_relaxed_leptons'].eta) < 1.479, np.abs(objects['other_relaxed_leptons'].eta) < 1.2)
+  trilepton:
+    field: select_trilepton
+    cuts:
+      - np.abs(objects['trilepton'].mass - 91.1876) < 5
 event_selection:
   hlt_paths:
     - SingleMu
@@ -86,6 +89,7 @@ event_selection:
     atleast_one_zcandidate: ak.num(objects['zcandidates']) >= 1
     ele_flavor: ak.all(np.abs(objects['other_relaxed_leptons'].pdgId) == 11, axis=1)
     mu_flavor: ak.all(np.abs(objects['other_relaxed_leptons'].pdgId) == 13, axis=1)
+    one_trilepton: ak.num(objects['trilepton']) == 1
   categories:
     electron:
       - trigger
@@ -96,6 +100,7 @@ event_selection:
       - ele_flavor
       - atleast_one_zcandidate
       - one_relaxed_lepton
+      - one_trilepton
     muon:
       - trigger
       - lumimask
@@ -105,6 +110,7 @@ event_selection:
       - mu_flavor
       - atleast_one_zcandidate
       - one_relaxed_lepton
+      - one_trilepton
 corrections:
   objects:
     - jets

@@ -469,7 +469,13 @@ if __name__ == "__main__":
                         log=args.log,
                         extension=args.extension,
                     )
-            if args.workflow in ["zplusl_os", "zplusl_ss"]:
+            if args.workflow in [
+                "zplusl_os",
+                "zplusl_ss",
+                "zplusl_ss_maximal",
+                "zplusl_ss_minimal",
+                "zplusl_ss_intermediate",
+            ]:
                 plotter.plot_fake_rate(category)
             subprocess.run(
                 f"tar -zcvf {output_dir}/{category}/{args.workflow}_{args.year}_plots.tar.gz {output_dir}/{category}/*.{args.extension}",

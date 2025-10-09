@@ -59,6 +59,7 @@ object_selection:
         - (1*objects['zcandidates'].l1.is_tight + 1*objects['zcandidates'].l2.is_tight) == 2
     cuts: 
       - objects['zcandidates'].is_sr
+      - (objects['zcandidates'].p4.mass > 60) & (objects['zcandidates'].p4.mass < 120)
       - ((objects['zcandidates'].l1.p4.pt > 10) & (objects['zcandidates'].l2.p4.pt > 20)) | ((objects['zcandidates'].l1.p4.pt > 20) & (objects['zcandidates'].l2.p4.pt > 10))
   best_zcandidates:
     field: select_best_zcandidate
@@ -67,10 +68,6 @@ object_selection:
     add_cut:
       is_barrel:
         - ak.where(np.abs(objects['other_relaxed_leptons'].pdgId) == 11, np.abs(objects['other_relaxed_leptons'].eta) < 1.479, np.abs(objects['other_relaxed_leptons'].eta) < 1.2)
-  trilepton:
-    field: select_trilepton
-    cuts:
-      - np.abs(objects['trilepton'].mass - 91.1876) < 5
 event_selection:
   hlt_paths:
     - SingleMu
@@ -88,7 +85,7 @@ event_selection:
     one_relaxed_lepton: ak.num(objects['other_relaxed_leptons']) == 1
     atleast_one_zcandidate: ak.num(objects['zcandidates']) >= 1
     ele_flavor: ak.all(np.abs(objects['other_relaxed_leptons'].pdgId) == 11, axis=1)
-    trilepton_mass_cut: ak.num(objects['trilepton']) >= 1
+    mu_flavor: ak.all(np.abs(objects['other_relaxed_leptons'].pdgId) == 13, axis=1)
   categories:
     electron:
       - trigger
@@ -97,6 +94,15 @@ event_selection:
       - met_filters
       - met_25
       - ele_flavor
+      - atleast_one_zcandidate
+      - one_relaxed_lepton
+    muon:
+      - trigger
+      - lumimask
+      - atleast_one_goodvertex
+      - met_filters
+      - met_25
+      - mu_flavor
       - atleast_one_zcandidate
       - one_relaxed_lepton
 corrections:
@@ -117,7 +123,7 @@ corrections:
       - trigger: false
 histogram_config:
   axes:
-    loose_lepton_pt:
+    probe_lepton_pt:
       type: Variable
       edges:
         - 5
@@ -130,7 +136,7 @@ histogram_config:
         - 80
       label: $p_T(\ell)$ [GeV]
       expression: objects['other_relaxed_leptons'].pt
-    loose_lepton_eta:
+    probe_lepton_eta:
       type: Regular
       bins: 50
       start: 0
@@ -138,17 +144,11 @@ histogram_config:
       label: $|\eta(\ell)|$
       expression: np.abs(objects['other_relaxed_leptons'].eta)
     is_barrel_lepton:
-      type: Regular
-      bins: 2
-      start: 0
-      stop: 2
+      type: Boolean
       label: is barrel $\ell$
       expression: objects['other_relaxed_leptons'].is_barrel
     is_passing_lepton:
-      type: Regular
-      bins: 2
-      start: 0
-      stop: 2
+      type: Boolean
       label: $\ell$ pass 
       expression: objects['other_relaxed_leptons'].pass_selection
     n_missing_hits:
@@ -158,9 +158,9 @@ histogram_config:
       label: n_missing_hits
       expression: objects['other_relaxed_leptons'].lostHits
   layout:
-    loose_lepton:
-      - loose_lepton_pt
-      - loose_lepton_eta
+    probe_lepton:
+      - probe_lepton_pt
+      - probe_lepton_eta
       - n_missing_hits
       - is_passing_lepton
       - is_barrel_lepton

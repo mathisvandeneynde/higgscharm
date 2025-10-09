@@ -266,7 +266,7 @@ class CoffeaPlotter:
             "ztoee": rf"$ Z \rightarrow ee$ events",
             "ztomumu": rf"$ Z \rightarrow \mu \mu$ events",
         }
-        if self.workflow in ["zplusl_os", "zplusl_ss"]:
+        if self.workflow.startswith("zplusl_"):
             zplusl_method = {
                 "zplusl_os": "(OS)",
                 "zplusl_ss": "(SS)",
@@ -283,6 +283,9 @@ class CoffeaPlotter:
             zplusl_text_map = {
                 "zplusl_os": zplusl_text[category],
                 "zplusl_ss": zplusl_text[category],
+                "zplusl_ss_maximal": zplusl_text[category] + " (maximal)",
+                "zplusl_ss_minimal": zplusl_text[category] + " (minimal)",
+                "zplusl_ss_intermediate": zplusl_text[category] + " (intermediate)",
             }
             text_map = {**text_map, **zplusl_text_map}
 
@@ -312,7 +315,7 @@ class CoffeaPlotter:
 
         xlabel = self.histogram_config.axes[variable].label
 
-        if self.workflow in ["zplusl_os", "zplusl_ss"]:
+        if self.workflow.startswith("zplusl_"):
             if category == "electron":
                 xlabel = xlabel.replace(r"\ell", r"e")
             elif category == "muon":
