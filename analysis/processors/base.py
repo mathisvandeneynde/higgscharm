@@ -8,6 +8,7 @@ from coffea.nanoevents.methods.vector import LorentzVector
 from analysis.utils import dump_lumi, dump_pa_table
 from analysis.workflows.config import WorkflowConfigBuilder
 from analysis.histograms import HistBuilder, fill_histograms
+from analysis.corrections.jetvetomaps import apply_jetvetomaps
 from analysis.corrections.correction_manager import (
     object_corrector_manager,
     weight_manager,
@@ -51,6 +52,9 @@ class BaseProcessor(processor.ProcessorABC):
         event_selection = self.workflow_config.event_selection
         hlt_paths = event_selection["hlt_paths"]
         histograms = deepcopy(self.histograms)
+
+        if "jet_vetomaps" in self.workflow_config.corrections_config["objects"]:
+            events = apply_jetvetomaps(events, year)
 
         # check if dataset is MC or Data
         is_mc = hasattr(events, "genWeight")

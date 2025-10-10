@@ -17,7 +17,7 @@ def object_corrector_manager(events, year, dataset, workflow_config):
     """apply object level corrections"""
     objcorr_config = workflow_config.corrections_config["objects"]
 
-    if "jets" in objcorr_config:
+    if "jec" in objcorr_config:
         # apply JEC/JER corrections
         apply_jec = True
         apply_jer = False
@@ -32,20 +32,20 @@ def object_corrector_manager(events, year, dataset, workflow_config):
             apply_jer=apply_jer,
             apply_junc=apply_junc,
         )
-    if "muons" in objcorr_config:
+    if "muon_ss" in objcorr_config:
         # apply muon scale and smearing corrections
         apply_muon_ss_corrections(
             events=events,
             year=year,
             variation="nominal",
         )
-    if "electrons" in objcorr_config:
+    if "electon_ss" in objcorr_config:
         apply_electron_ss_corrections(
             events=events,
             year=year,
             variation="nominal",
         )
-    if "met" in objcorr_config:
+    if "met_phi" in objcorr_config:
         # apply MET-phi modulation corrections
         if year.startswith("2022"):
             apply_met_phi_corrections(
