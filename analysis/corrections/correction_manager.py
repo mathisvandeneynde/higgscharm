@@ -13,7 +13,6 @@ from analysis.corrections.partonshower import add_partonshower_weight
 from analysis.corrections.electron_ss import apply_electron_ss_corrections
 
 
-
 def object_corrector_manager(events, year, dataset, workflow_config):
     """apply object level corrections"""
     objcorr_config = workflow_config.corrections_config["objects"]
@@ -65,38 +64,41 @@ def weight_manager(pruned_ev, year, dataset, workflow_config, variation="nominal
         if weights_config["genWeight"]:
             weights_container.add("genweight", pruned_ev.genWeight)
 
-        if weights_config["pileupWeight"]:
-            add_pileup_weight(
-                events=pruned_ev,
-                year=year,
-                variation="nominal",
-                weights_container=weights_container,
-            )
-        if weights_config["partonshowerWeight"]:
-            if "PSWeight" in pruned_ev.fields:
-                add_partonshower_weight(
+        if "pileupWeight" in weights_config:
+            if weights_config["pileupWeight"]:
+                add_pileup_weight(
                     events=pruned_ev,
+                    year=year,
+                    variation="nominal",
                     weights_container=weights_container,
                 )
-        if weights_config["lhepdfWeight"]:
-            if "LHEPdfWeight" in pruned_ev.fields:
-                add_lhepdf_weight(
-                    events=pruned_ev,
-                    weights_container=weights_container,
-                )
-        if weights_config["lhescaleWeight"]:
-            if "LHEScaleWeight" in pruned_ev.fields:
-                add_scalevar_weight(
-                    events=pruned_ev, weights_container=weights_container
-                )
-
-        if weights_config["nnlopsWeight"]:
-            if dataset.startswith("GluGluH"):
-                add_nnlops_weight(
-                    events=pruned_ev,
-                    weights_container=weights_container,
-                )
-                
+        if "partonshowerWeight" in weights_config:
+            if weights_config["partonshowerWeight"]:
+                if "PSWeight" in pruned_ev.fields:
+                    add_partonshower_weight(
+                        events=pruned_ev,
+                        weights_container=weights_container,
+                    )
+        if "lhepdfWeight" in weights_config:
+            if weights_config["lhepdfWeight"]:
+                if "LHEPdfWeight" in pruned_ev.fields:
+                    add_lhepdf_weight(
+                        events=pruned_ev,
+                        weights_container=weights_container,
+                    )
+        if "lhescaleWeight" in weights_config:
+            if weights_config["lhescaleWeight"]:
+                if "LHEScaleWeight" in pruned_ev.fields:
+                    add_scalevar_weight(
+                        events=pruned_ev, weights_container=weights_container
+                    )
+        if "nnlopsWeight" in weights_config:
+            if weights_config["nnlopsWeight"]:
+                if dataset.startswith("GluGluH"):
+                    add_nnlops_weight(
+                        events=pruned_ev,
+                        weights_container=weights_container,
+                    )
         if "muon" in weights_config:
             if "selected_muons" in pruned_ev.fields:
                 muon_weights = MuonWeights(
