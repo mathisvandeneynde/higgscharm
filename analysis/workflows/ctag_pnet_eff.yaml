@@ -45,6 +45,7 @@ histogram_config:
   add_syst_axis: false
   axes:
     jet_pt:
+      type: Variable
       edges:
         - 20
         - 30
