@@ -3,11 +3,6 @@ datasets:
     - higgs
     - qqtozz
     - ggtozz
-    - dy_nlo
-    - singletop
-    - diboson
-    - wz
-    - tt
 object_selection:
   jets:
     field: events.Jet
@@ -50,10 +45,17 @@ histogram_config:
   add_syst_axis: false
   axes:
     jet_pt:
-      type: Regular
-      bins: 50
-      start: 20
-      stop: 500
+      edges:
+        - 20
+        - 30
+        - 50
+        - 70
+        - 100
+        - 140
+        - 200
+        - 300
+        - 600
+        - 1000
       label: $p_T(j)$ [GeV]
       expression: objects['jets'].pt
     jet_abseta:
