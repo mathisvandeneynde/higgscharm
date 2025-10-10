@@ -470,6 +470,7 @@ if __name__ == "__main__":
                         yratio_limits=args.yratio_limits,
                         log=args.log,
                         extension=args.extension,
+                        blind=args.blind,
                     )
             if args.workflow.startswith("zplusl_"):
                 plotter.plot_fake_rate(category)

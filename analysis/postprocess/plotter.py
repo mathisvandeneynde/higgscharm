@@ -402,6 +402,8 @@ class CoffeaPlotter:
         variation_histograms = histogram_info["mc"]["variations"]
 
         # get Data histogram
+        if "data" not in self.datasets:
+            blind = True
         if not blind:
             data_histogram = histogram_info["data"]
             self.data_values = data_histogram.values()
@@ -435,7 +437,7 @@ class CoffeaPlotter:
         if (self.workflow == "zzto4l") and ("zz_mass" in variable):
             mc_hist_args["sort"] = None
         hep.histplot(**mc_hist_args)
-        if ("data" in self.datasets) or (not blind):
+        if not blind:
             hep.histplot(
                 data_histogram,
                 label="Data",
