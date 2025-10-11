@@ -172,7 +172,7 @@ histogram_config:
       - jet_abseta
       - jet_flavor
       - jet_pass_loose_wp
-    eff_meduim_wp:
+    eff_medium_wp:
       - jet_pt
       - jet_abseta
       - jet_flavor
