@@ -81,15 +81,7 @@ object_selection:
       - np.abs(events.Jet.eta) < 2.5
       - working_points.jet_id(events, 'tightlepveto')
       - delta_r_higher(events.Jet, objects['leptons'], 0.4)
-  cjets_loose:
-    field: events.Jet
-    cuts:
-      - events.Jet.pt > 20
-      - np.abs(events.Jet.eta) < 2.5
-      - working_points.jet_id(events, 'tightlepveto')
-      - delta_r_higher(events.Jet, objects['leptons'], 0.4)
-      - working_points.jet_particlenet_c(events, 'loose', year)
-  cjets_medium:
+  cjets:
     field: events.Jet
     cuts:
       - events.Jet.pt > 20
@@ -97,14 +89,6 @@ object_selection:
       - working_points.jet_id(events, 'tightlepveto')
       - delta_r_higher(events.Jet, objects['leptons'], 0.4)
       - working_points.jet_particlenet_c(events, 'medium', year)
-  cjets_tight:
-    field: events.Jet
-    cuts:
-      - events.Jet.pt > 20
-      - np.abs(events.Jet.eta) < 2.5
-      - working_points.jet_id(events, 'tightlepveto')
-      - delta_r_higher(events.Jet, objects['leptons'], 0.4)
-      - working_points.jet_particlenet_c(events, 'tight', year)
 event_selection:
   hlt_paths:
     - SingleMu
@@ -141,6 +125,8 @@ corrections:
       - id: false
       - reco: true
       - trigger: false
+    ctagging: 
+      - wp: medium
 histogram_config:
   add_syst_axis: true
   add_weight: true
@@ -258,45 +244,33 @@ histogram_config:
         - 5
       label: Subleading Jet HadronFlavour
       expression: ak.pad_none(objects['jets'], target=2)[:, 1].hadronFlavour
-    cjets_loose_multiplicity:
+    cjets_multiplicity:
       type: Integer
       start: 0
       stop: 14
-      label: Loose cJet Multiplicity
-      expression: ak.num(objects['cjets_loose'])
-    leadingcjets_loose_pt:
+      label: PNet c-tagged (M) Jet Multiplicity
+      expression: ak.num(objects['cjets'])
+    leadingcjets_pt:
       type: Regular
       bins: 50
       start: 20
       stop: 500
-      label: Leading Loose cJet $p_T$ [GeV]
-      expression: ak.pad_none(objects['cjets_loose'], target=2)[:, 0].pt
-    cjets_medium_multiplicity:
-      type: Integer
-      start: 0
-      stop: 14
-      label: Medium cJet Multiplicity
-      expression: ak.num(objects['cjets_medium'])
-    leadingcjets_medium_pt:
+      label: PNet c-tagged (M) Leading Jet $p_T$ [GeV]
+      expression: ak.pad_none(objects['cjets'], target=2)[:, 0].pt
+    leadingcjets_eta:
       type: Regular
       bins: 50
-      start: 20
-      stop: 500
-      label: Leading Medium cJet $p_T$ [GeV]
-      expression: ak.pad_none(objects['cjets_medium'], target=2)[:, 0].pt
-    cjets_tight_multiplicity:
-      type: Integer
-      start: 0
-      stop: 14
-      label: Tight cJet Multiplicity
-      expression: ak.num(objects['cjets_tight'])
-    leadingcjets_tight_pt:
+      start: -2.4
+      stop: 2.4
+      label: PNet c-tagged (M) Leading Jet $\eta$
+      expression: ak.pad_none(objects['cjets'], target=2)[:, 0].eta
+    leadingcjets_phi:
       type: Regular
       bins: 50
-      start: 20
-      stop: 500
-      label: Leading Tight cJet $p_T$ [GeV]
-      expression: ak.pad_none(objects['cjets_tight'], target=2)[:, 0].pt
+      start: -3.14159
+      stop: 3.14159
+      label: PNet c-tagged (M) Leading Jet $\phi$
+      expression: ak.pad_none(objects['cjets'], target=2)[:, 0].phi
   layout:
     zz_inclusive:
       - zz_mass_inclusive
@@ -311,10 +285,6 @@ histogram_config:
       - zz_mass_2mu2e
     jet_multiplicity:
       - jet_multiplicity
-    cjet_multiplicity:
-      - cjets_loose_multiplicity
-      - cjets_medium_multiplicity
-      - cjets_tight_multiplicity
     jet:
       - jet_pt
       - jet_eta
@@ -327,3 +297,9 @@ histogram_config:
       - subleadingjet_flavour
       - subleadingjet_pnet_cvsl
       - subleadingjet_pnet_cvsb
+    cjets_multiplicity:
+      - cjets_multiplicity
+    leading_cjet:
+      - leadingcjets_pt
+      - leadingcjets_eta
+      - leadingcjets_phi

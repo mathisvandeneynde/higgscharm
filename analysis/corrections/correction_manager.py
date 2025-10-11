@@ -1,6 +1,7 @@
 import numpy as np
 from coffea.analysis_tools import Weights
 from analysis.corrections.muon import MuonWeights
+from analysis.corrections.pnet_ctag import CTagCorrector
 from analysis.corrections.pileup import add_pileup_weight
 from analysis.corrections.nnlops import add_nnlops_weight
 from analysis.corrections.lhepdf import add_lhepdf_weight
@@ -147,6 +148,19 @@ def weight_manager(pruned_ev, year, dataset, workflow_config, variation="nominal
                         electron_weights.add_hlt_weights(
                             id_wp=weights_config["electron"]["id"],
                         )
+
+        if "ctagging" in weights_config:
+            if weights_config["ctagging"]:
+                ctag_corrector = CTagCorrector(
+                    events=pruned_ev,
+                    weights=weights_container,
+                    worging_point=weights_config["ctagging"]["wp"],
+                    year=year,
+                    variation=variation,
+                )
+                ctag_corrector.add_ctag_weights(flavor="b")
+                ctag_corrector.add_ctag_weights(flavor="c")
+                ctag_corrector.add_ctag_weights(flavor="light")
     else:
         weights_container.add("weight", np.ones(len(pruned_ev)))
     return weights_container
