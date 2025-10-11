@@ -9,7 +9,7 @@ import importlib.resources
 from coffea import util
 from typing import Type
 from coffea.analysis_tools import Weights
-from analysis.corrections.utils import get_btv_json
+from analysis.corrections.utils import get_btv_json, get_pnet_ctag_mask
 
 
 class CTagCorrector:
@@ -77,17 +77,10 @@ class CTagCorrector:
             "b": self._b_jets,
             "light": self._light_jets,
         }
-
-        ctag_wps_evaluator = self._cset["particleNet_wp_values"]
-        pnet_cvsb_wp = ctag_wps_evaluator.evaluate(self._wp_map[self._wp], "CvB")
-        pnet_cvsl_wp = ctag_wps_evaluator.evaluate(self._wp_map[self._wp], "CvL")
         self._jet_pass_ctag = {
-            "c": (self._jet_map["c"]["btagPNetCvB"] > pnet_cvsb_wp)
-            & (self._jet_map["c"]["btagPNetCvL"] > pnet_cvsl_wp),
-            "b": (self._jet_map["b"]["btagPNetCvB"] > pnet_cvsb_wp)
-            & (self._jet_map["b"]["btagPNetCvL"] > pnet_cvsl_wp),
-            "light": (self._jet_map["light"]["btagPNetCvB"] > pnet_cvsb_wp)
-            & (self._jet_map["light"]["btagPNetCvL"] > pnet_cvsl_wp),
+            "c": get_pnet_ctag_mask(self._jet_map["c"], self._wp, self._year),
+            "b": get_pnet_ctag_mask(self._jet_map["b"], self._wp, self._year),
+            "light": get_pnet_ctag_mask(self._jet_map["light"], self._wp, self._year),
         }
         self.var_naming_map = {
             "c": "CMS_ctag_c",
@@ -198,7 +191,7 @@ class CTagCorrector:
             sf:
                 jet's scale factors
             pass_ctag:
-                mask with jets that pass the b-tagging working point
+                mask with jets that pass the c-tagging working point
         """
         # tagged SF = SF * eff / eff = SF
         tagged_sf = ak.prod(sf.mask[pass_ctag], axis=-1)

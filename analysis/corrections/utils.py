@@ -1,4 +1,5 @@
 import re
+import correctionlib
 import awkward as ak
 from pathlib import Path
 
@@ -97,6 +98,18 @@ def get_btv_json(json_name: str, year: str) -> str:
     else:
         print(f"No json for {json_name}")
     return f"{BTV_PATH}/{BTV_YEARS[year]}/{btv_json}"
+
+
+def get_pnet_ctag_mask(jets, wp, year):
+    cset = correctionlib.CorrectionSet.from_file(
+        get_btv_json(json_name="ctag", year=year)
+    )
+    wp_map = {"tight": "T", "medium": "M", "loose": "L"}
+    ctag_wps_evaluator = cset["particleNet_wp_values"]
+    pnet_cvsb_wp = ctag_wps_evaluator.evaluate(wp_map[wp], "CvB")
+    pnet_cvsl_wp = ctag_wps_evaluator.evaluate(wp_map[wp], "CvL")
+    pass_ctag_wp = (jets.btagPNetCvB > pnet_cvsb_wp) & (jets.btagPNetCvL > pnet_cvsl_wp)
+    return pass_ctag_wp
 
 
 def get_muon_hlt_json(year: str) -> str:
