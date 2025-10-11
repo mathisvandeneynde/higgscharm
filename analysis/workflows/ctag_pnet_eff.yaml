@@ -141,7 +141,7 @@ histogram_config:
       expression: objects['jets'].pt
     jet_abseta:
       type: Regular
-      bins: 50
+      bins: 5
       start: 0
       stop: 2.5
       label: $\eta(j)$
