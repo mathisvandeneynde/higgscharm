@@ -487,7 +487,7 @@ class CoffeaPlotter:
             formatter.set_scientific(False)
             ax.yaxis.set_major_formatter(formatter)
             ax.set_yscale("log")
-            ax.set_ylim(top=np.max(data_histogram.values()) * 100)
+            ax.set_ylim(top=np.max(mc_histogram.values()) * 100)
         else:
             ylim = ax.get_ylim()[1]
             ax.set_ylim(0, ylim + 0.2 * ylim)
