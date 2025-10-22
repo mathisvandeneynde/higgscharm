@@ -14,6 +14,7 @@ from analysis.selections import (
     make_cand,
     select_best_zzcandidate,
     select_candidate_mass,
+    select_candidate_cjet_dphi,
 )
 
 
@@ -464,7 +465,31 @@ class ObjectSelector:
         self.objects[obj_name] = select_candidate_mass(
             self.objects["best_zzcandidate"], "2mu2e"
         )
-        
+
+    def select_dphi_4e(self, obj_name):
+        self.objects[obj_name] = select_candidate_cjet_dphi(
+            self.objects["best_zzcandidate"], "4e", self.objects["cjets"]
+        )
+
+    def select_dphi_4mu(self, obj_name):
+        self.objects[obj_name] = select_candidate_cjet_dphi(
+            self.objects["best_zzcandidate"], "4mu", self.objects["cjets"]
+        )
+
+    def select_dphi_2mu2e(self, obj_name):
+        self.objects[obj_name] = select_candidate_cjet_dphi(
+            self.objects["best_zzcandidate"], "2mu2e", self.objects["cjets"]
+        )
+
+    def select_dphi_2e2mu(self, obj_name):
+        self.objects[obj_name] = select_candidate_cjet_dphi(
+            self.objects["best_zzcandidate"], "2e2mu", self.objects["cjets"]
+        )
+
+    def select_dphi_inclusive(self, obj_name):
+        self.objects[obj_name] = select_candidate_cjet_dphi(
+            self.objects["best_zzcandidate"], "inclusive", self.objects["cjets"]
+        )
 
     # --------------------------------------------------------------------------------
     # HWW
