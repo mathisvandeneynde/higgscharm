@@ -89,6 +89,16 @@ object_selection:
       - working_points.jet_id(events, 'tightlepveto')
       - delta_r_higher(events.Jet, objects['leptons'], 0.4)
       - working_points.jet_particlenet_c(events, 'medium', year)
+  zzcandidate_cjet_dphi_inclusive:
+    field: select_dphi_inclusive
+  zzcandidate_cjet_dphi_4e:
+    field: select_dphi_4e
+  zzcandidate_cjet_dphi_4mu:
+    field: select_dphi_4mu
+  zzcandidate_cjet_dphi_2mu2e:
+    field: select_dphi_2mu2e
+  zzcandidate_cjet_dphi_2e2mu:
+    field: select_dphi_2e2mu
 event_selection:
   hlt_paths:
     - SingleMu
@@ -271,6 +281,41 @@ histogram_config:
       stop: 3.14159
       label: PNet c-tagged (M) Leading Jet $\phi$
       expression: ak.pad_none(objects['cjets'], target=2)[:, 0].phi
+    cjets_h_dphi_inclusive:
+      type: Regular
+      bins: 50
+      start: 0
+      stop: 3.14159
+      label: $|\Delta \phi(\text{c-Jet}, H_{4\ell})|$
+      expression: np.abs(objects['zzcandidate_cjet_dphi_inclusive'])
+    cjets_h_dphi_4e:
+      type: Regular
+      bins: 50
+      start: 0
+      stop: 3.14159
+      label: $|\Delta \phi(\text{c-Jet}, H_{4e})|$
+      expression: np.abs(objects['zzcandidate_cjet_dphi_4e'])
+    cjets_h_dphi_4mu:
+      type: Regular
+      bins: 50
+      start: 0
+      stop: 3.14159
+      label: $|\Delta \phi(\text{c-Jet}, H_{4\mu})|$
+      expression: np.abs(objects['zzcandidate_cjet_dphi_4mu'])
+    cjets_h_dphi_2mu2e:
+      type: Regular
+      bins: 50
+      start: 0
+      stop: 3.14159
+      label: $|\Delta \phi(\text{c-Jet}, H_{2\mu 2e})|$
+      expression: np.abs(objects['zzcandidate_cjet_dphi_2mu2e'])
+    cjets_h_dphi_2e2mu:
+      type: Regular
+      bins: 50
+      start: 0
+      stop: 3.14159
+      label: $|\Delta \phi(\text{c-Jet}, H_{2e2\mu})|$
+      expression: np.abs(objects['zzcandidate_cjet_dphi_2e2mu'])
   layout:
     zz_inclusive:
       - zz_mass_inclusive
@@ -303,3 +348,13 @@ histogram_config:
       - leadingcjets_pt
       - leadingcjets_eta
       - leadingcjets_phi
+    cjets_h_dphi_inclusive:
+      - cjets_h_dphi_inclusive
+    cjets_h_dphi_4e:
+      - cjets_h_dphi_4e
+    cjets_h_dphi_4mu:
+      - cjets_h_dphi_4mu
+    cjets_h_dphi_2mu2e:
+      - cjets_h_dphi_2mu2e
+    cjets_h_dphi_2e2mu:
+      - cjets_h_dphi_2e2mu
