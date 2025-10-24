@@ -196,21 +196,21 @@ histogram_config:
       bins: 50
       start: 20
       stop: 500
-      label: $p_T(j)$ [GeV]
+      label: Jets $p_T$ [GeV]
       expression: objects['jets'].pt
     jet_eta:
       type: Regular
       bins: 50
       start: -2.4
       stop: 2.4
-      label: $\eta(j)$
+      label: Jets $\eta$
       expression: objects['jets'].eta
     jet_phi:
       type: Regular
       bins: 50
       start: -3.14159
       stop: 3.14159
-      label: $\phi(j)$
+      label: Jets $\phi$
       expression: objects['jets'].phi
     leadingjet_pnet_cvsl:
       type: Regular
@@ -261,56 +261,56 @@ histogram_config:
       bins: 50
       start: 20
       stop: 500
-      label: PNet c-tagged (M) Jet $p_T$ [GeV]
+      label: c-Jet $p_T$ [GeV]
       expression: objects['cjets'].pt
     cjets_eta:
       type: Regular
       bins: 50
       start: -2.4
       stop: 2.4
-      label: PNet c-tagged (M) Jet $\eta$
+      label: c-Jet $\eta$
       expression: objects['cjets'].eta
     cjets_phi:
       type: Regular
       bins: 50
       start: -3.14159
       stop: 3.14159
-      label: PNet c-tagged (M) Jet $\phi$
+      label: c-Jet $\phi$
       expression: objects['cjets'].phi
     cjets_h_dphi_inclusive:
       type: Regular
       bins: 50
       start: 0
       stop: 3.14159
-      label: $|\Delta \phi(j, H_{4\ell})|$
+      label: $|\Delta \phi(\text{c-Jet}, H_{4\ell})|$
       expression: np.abs(objects['zzcandidate_cjet_dphi_inclusive'])
     cjets_h_dphi_4e:
       type: Regular
       bins: 50
       start: 0
       stop: 3.14159
-      label: $|\Delta \phi(j, H_{4e})|$
+      label: $|\Delta \phi(\text{c-Jet}, H_{4e})|$
       expression: np.abs(objects['zzcandidate_cjet_dphi_4e'])
     cjets_h_dphi_4mu:
       type: Regular
       bins: 50
       start: 0
       stop: 3.14159
-      label: $|\Delta \phi(j, H_{4\mu})|$
+      label: $|\Delta \phi(\text{c-Jet}, H_{4\mu})|$
       expression: np.abs(objects['zzcandidate_cjet_dphi_4mu'])
     cjets_h_dphi_2mu2e:
       type: Regular
       bins: 50
       start: 0
       stop: 3.14159
-      label: $|\Delta \phi(j, H_{2\mu 2e})|$
+      label: $|\Delta \phi(\text{c-Jet}, H_{2\mu 2e})|$
       expression: np.abs(objects['zzcandidate_cjet_dphi_2mu2e'])
     cjets_h_dphi_2e2mu:
       type: Regular
       bins: 50
       start: 0
       stop: 3.14159
-      label: $|\Delta \phi(j, H_{2e2\mu})|$
+      label: $|\Delta \phi(\text{c-Jet}, H_{2e2\mu})|$
       expression: np.abs(objects['zzcandidate_cjet_dphi_2e2mu'])
   layout:
     zz_inclusive:
