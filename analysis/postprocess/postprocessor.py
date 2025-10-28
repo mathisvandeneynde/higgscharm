@@ -24,10 +24,10 @@ from analysis.postprocess.utils import (
 
 
 def fill_histograms_from_parquets(
-    year, sample, categories, workflow_config, output_dir
+    year, sample, categories, workflow_config, output_dir, nano_version
 ):
     """Build and fill histograms from parquet files for a given sample"""
-    dataset_config = get_dataset_config(year)
+    dataset_config = get_dataset_config(year, nano_version)
     histogram_config = workflow_config.histogram_config
     variables = list(histogram_config.axes.keys())
     histograms = HistBuilder(workflow_config).build_histogram()

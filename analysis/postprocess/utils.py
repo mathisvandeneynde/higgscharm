@@ -154,7 +154,8 @@ def get_lumi_weight(year, sample, metadata):
     with open(lumi_file, "r") as f:
         luminosities = yaml.safe_load(f)
 
-    dataset_config = get_dataset_config(year)
+    nano_version = "9" if year.startswith("201") else "12"
+    dataset_config = get_dataset_config(year, nano_version)
     xsec = dataset_config[sample]["xsec"]
     sumw = metadata["sumw"]
     weight = 1
@@ -194,7 +195,8 @@ def get_process_dict(output_dir, year, categories):
     folders = glob.glob(str(output_dir / "*"))
     process_dict = defaultdict(list)
 
-    dataset_config = get_dataset_config(year)
+    nano_version = "9" if year.startswith("201") else "12"
+    dataset_config = get_dataset_config(year, nano_version)
 
     for folder in folders:
         folder_path = Path(folder)

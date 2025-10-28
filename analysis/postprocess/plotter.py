@@ -506,7 +506,7 @@ class CoffeaPlotter:
                         label.set_visible(False)
         # add CMS info
         hep.cms.lumitext(
-            f"{self.luminosities[self.year] * 1e-3:.1f} fb$^{{-1}}$ ({self.year}, 13.6 TeV)",
+            f"{self.luminosities[self.year] * 1e-3:.1f} fb$^{{-1}}$ ({self.year}, {'13.6' if self.year.startswith('201') else '13'} TeV)",
             ax=ax,
         )
         hep.cms.text("Preliminary", ax=ax)
