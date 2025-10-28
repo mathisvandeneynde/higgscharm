@@ -1,7 +1,11 @@
 import argparse
 import subprocess
 from pathlib import Path
-from analysis.filesets.utils import fileset_checker, get_datasets_to_run_over
+from analysis.filesets.utils import (
+    fileset_checker,
+    get_datasets_to_run_over,
+    check_nano_version,
+)
 
 
 if __name__ == "__main__":
@@ -22,7 +26,16 @@ if __name__ == "__main__":
         "--year",
         dest="year",
         type=str,
-        choices=["2022preEE", "2022postEE", "2023preBPix", "2023postBPix"],
+        choices=[
+            "2016preVFP",
+            "2016postVFP",
+            "2017",
+            "2018",
+            "2022preEE",
+            "2022postEE",
+            "2023preBPix",
+            "2023postBPix",
+        ],
         help="dataset year",
     )
     parser.add_argument(
@@ -49,7 +62,17 @@ if __name__ == "__main__":
         choices=["coffea", "parquet"],
         help="format of output file",
     )
+    parser.add_argument(
+        "--nanov",
+        dest="nanov",
+        type=str,
+        choices=["9", "12", "15"],
+        default="12",
+        help="NanoAOD version",
+    )
     args = parser.parse_args()
+
+    check_nano_version(args.year, args.nanov)
 
     # get datasets to run over for selected workflow and year
     datasets_to_run_over = get_datasets_to_run_over(args.workflow, args.year)
@@ -71,6 +94,8 @@ if __name__ == "__main__":
             str(args.nfiles),
             "--output_format",
             args.output_format,
+            "--nanov",
+            args.nanov,
         ]
         if args.submit:
             cmd_args.append("--submit")

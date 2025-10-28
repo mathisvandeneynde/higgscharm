@@ -27,8 +27,77 @@ def move_proxy() -> str:
     return x509_path
 
 
-def submit_condor(args):
-    """Build condor files. Optionally submit condor job"""
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-w",
+        "--workflow",
+        dest="workflow",
+        required=True,
+        type=str,
+        choices=[
+            f.stem for f in (Path.cwd() / "analysis" / "workflows").glob("*.yaml")
+        ],
+        help="workflow to run",
+    )
+    parser.add_argument(
+        "-y",
+        "--year",
+        dest="year",
+        type=str,
+        choices=[
+            "2016preVFP",
+            "2016postVFP",
+            "2017",
+            "2018",
+            "2022preEE",
+            "2022postEE",
+            "2023preBPix",
+            "2023postBPix",
+        ],
+        help="dataset year",
+    )
+    parser.add_argument(
+        "-d",
+        "--dataset",
+        dest="dataset",
+        type=str,
+        help="dataset",
+    )
+    parser.add_argument(
+        "--nfiles",
+        dest="nfiles",
+        type=int,
+        default=15,
+        help="number of root files to include in each dataset partition (default 10)",
+    )
+    parser.add_argument(
+        "--eos",
+        action="store_true",
+        help="Enable saving outputs to /eos",
+    )
+    parser.add_argument(
+        "--submit",
+        action="store_true",
+        help="Enable Condor job submission. If not provided, it just builds condor files",
+    )
+    parser.add_argument(
+        "--output_format",
+        type=str,
+        default="coffea",
+        choices=["coffea", "root", "parquet"],
+        help="format of output histogram",
+    )
+    parser.add_argument(
+        "--nanov",
+        dest="nanov",
+        type=str,
+        choices=["9", "12", "15"],
+        default="12",
+        help="NanoAOD version",
+    )
+    args = parser.parse_args()
+
     print(f"Creating {args.workflow}-{args.year}-{args.dataset} condor file")
     jobname = f"{args.workflow}_{args.dataset}"
 
@@ -48,7 +117,9 @@ def submit_condor(args):
     jobnum_list = []
     partition_dataset = {}
     fileset_path = Path.cwd() / "analysis" / "filesets"
-    with open(f"{fileset_path}/fileset_{args.year}_NANO_lxplus.json", "r") as f:
+    with open(
+        f"{fileset_path}/fileset_{args.year}_nanov{args.nanov}_lxplus.json", "r"
+    ) as f:
         root_files = json.load(f)[args.dataset]
     root_files_list = divide_list(root_files, args.nfiles)
     for i in range(len(root_files_list)):
@@ -92,59 +163,3 @@ def submit_condor(args):
 
     if args.submit:
         subprocess.run(["condor_submit", local_condor])
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "-w",
-        "--workflow",
-        dest="workflow",
-        required=True,
-        type=str,
-        choices=[
-            f.stem for f in (Path.cwd() / "analysis" / "workflows").glob("*.yaml")
-        ],
-        help="workflow to run",
-    )
-    parser.add_argument(
-        "-y",
-        "--year",
-        dest="year",
-        type=str,
-        choices=["2022preEE", "2022postEE", "2023preBPix", "2023postBPix"],
-        help="dataset year",
-    )
-    parser.add_argument(
-        "-d",
-        "--dataset",
-        dest="dataset",
-        type=str,
-        help="dataset",
-    )
-    parser.add_argument(
-        "--nfiles",
-        dest="nfiles",
-        type=int,
-        default=15,
-        help="number of root files to include in each dataset partition (default 10)",
-    )
-    parser.add_argument(
-        "--eos",
-        action="store_true",
-        help="Enable saving outputs to /eos",
-    )
-    parser.add_argument(
-        "--submit",
-        action="store_true",
-        help="Enable Condor job submission. If not provided, it just builds condor files",
-    )
-    parser.add_argument(
-        "--output_format",
-        type=str,
-        default="coffea",
-        choices=["coffea", "root", "parquet"],
-        help="format of output histogram",
-    )
-    args = parser.parse_args()
-    submit_condor(args)

@@ -53,14 +53,15 @@ def divide_list(lst: list, nfiles: int = 20) -> list:
     return result
 
 
-def get_dataset_config(year):
+def get_dataset_config(year: str, nano_version: str):
     aux_year_map = {
+        "2016": "2016preVFP",
         "2022": "2022preEE",
         "2023": "2023preBPix",
     }
     aux_year = aux_year_map.get(year, year)
     fileset_path = Path.cwd() / "analysis" / "filesets"
-    fileset_file = f"{fileset_path}/{aux_year}_nanov12.yaml"
+    fileset_file = f"{fileset_path}/{aux_year}_nanov{nano_version}.yaml"
     with open(fileset_file, "r") as f:
         dataset_config = yaml.safe_load(f)
     return dataset_config
@@ -74,8 +75,8 @@ def get_dataset_name(dataset):
     return "mc"
 
 
-def get_dataset_era(dataset, year):
-    dataset_config = get_dataset_config(year)
+def get_dataset_era(dataset: str, year: str, nano_version: str):
+    dataset_config = get_dataset_config(year, nano_version)
     for dataset_key in dataset_config:
         if dataset.startswith(dataset_key):
             return dataset_config[dataset_key]["era"]
@@ -151,8 +152,8 @@ def fileset_checker(samples: list, year: str):
         subprocess.run(cmd, shell=True)
 
 
-def get_datasets_map(year: str):
-    dataset_config = get_dataset_config(year)
+def get_datasets_map(year: str, nano_version: str):
+    dataset_config = get_dataset_config(year, nano_version)
     datasets_map = {}
     for sample in dataset_config:
         keys = dataset_config[sample]["key"]
@@ -170,7 +171,7 @@ def get_datasets_map(year: str):
     return datasets_map
 
 
-def get_datasets_to_run_over(workflow: str, year: str):
+def get_datasets_to_run_over(workflow: str, year: str, nano_version: str):
     config_builder = WorkflowConfigBuilder(workflow=workflow)
     workflow_config = config_builder.build_workflow_config()
 
@@ -186,7 +187,7 @@ def get_datasets_to_run_over(workflow: str, year: str):
         samples_keys_to_run_over += signal_samples
 
     datasets_to_run_over = []
-    datasets_map = get_datasets_map(year)
+    datasets_map = get_datasets_map(year, nano_version)
     for key in samples_keys_to_run_over:
         if key not in datasets_map:
             print(f"\n{key} not availabe for {year}!")
@@ -195,9 +196,9 @@ def get_datasets_to_run_over(workflow: str, year: str):
     return datasets_to_run_over
 
 
-def get_workflow_key_process_map(workflow_config, year):
+def get_workflow_key_process_map(workflow_config, year: str, nano_version: str):
     datasets = workflow_config.datasets
-    dataset_configs = get_dataset_config(year)
+    dataset_configs = get_dataset_config(year, nano_version)
     sample_keys = np.concatenate(list(datasets.values())).tolist()
 
     processes = []
@@ -223,8 +224,8 @@ def get_workflow_key_process_map(workflow_config, year):
     return key_process_map
 
 
-def get_process_era_map(year):
-    dataset_configs = get_dataset_config(year)
+def get_process_era_map(year: str, nano_version: str):
+    dataset_configs = get_dataset_config(year, nano_version)
     process_era_map = {}
     for sample in dataset_configs:
         sample_process = dataset_configs[sample]["process"]
@@ -233,11 +234,27 @@ def get_process_era_map(year):
 
     return process_era_map
 
-def get_process_sample_map(datasets: list[str], year: str) -> dict[str, list[str]]:
+
+def get_process_sample_map(
+    datasets: list[str], year: str, nano_version: str
+) -> dict[str, list[str]]:
     """map processes to their corresponding samples based on dataset config"""
-    dataset_configs = get_dataset_config(year)
+    dataset_configs = get_dataset_config(year, nano_version)
     process_sample_map = defaultdict(list)
     for sample in datasets:
         config = dataset_configs[sample]
         process_sample_map[config["process"]].append(sample)
     return dict(process_sample_map)
+
+
+def check_nano_version(year: str, nano_version: str):
+    if year.startswith("201"):
+        if nano_version != "9":
+            raise ValueError(
+                f"Invalid value NanoAOD version. Only NanoAOD version '9' is available for {year} campaign"
+            )
+    else:
+        if args.nanov != "12":
+            raise ValueError(
+                f"Invalid value NanoAOD version. Only NanoAOD version '12' is available for {year} campaign"
+            )

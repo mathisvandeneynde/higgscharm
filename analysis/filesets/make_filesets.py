@@ -7,9 +7,19 @@ from coffea.dataset_tools.dataset_query import DataDiscoveryCLI
 
 
 if __name__ == "__main__":
-    years = ["2022preEE", "2022postEE", "2023preBPix", "2023postBPix"]
+    years = [
+        "2016preVFP",
+        "2016postVFP",
+        "2017",
+        "2018",
+        "2022preEE",
+        "2022postEE",
+        "2023preBPix",
+        "2023postBPix",
+    ]
     parser = argparse.ArgumentParser()
     parser.add_argument(
+        "-y",
         "--year",
         dest="year",
         type=str,
@@ -21,11 +31,19 @@ if __name__ == "__main__":
         type=str,
         help="(Optional) List of samples to use. If omitted, all available samples will be used",
     )
+    parser.add_argument(
+        "--nanov",
+        dest="version",
+        type=str,
+        choices=["9", "12", "15"],
+        default="12",
+        help="NanoAOD version",
+    )
     args = parser.parse_args()
 
     # open dataset configs
     filesets_dir = Path.cwd() / "analysis" / "filesets"
-    datasets_dir = filesets_dir / f"{args.year}_nanov12.yaml"
+    datasets_dir = filesets_dir / f"{args.year}_nanov{args.nanov}.yaml"
     with open(datasets_dir, "r") as f:
         dataset_configs = yaml.safe_load(f)
 
@@ -41,7 +59,7 @@ if __name__ == "__main__":
             das_queries[sample] = query
         else:
             print(f"No available query for: {sample}")
-            
+
     # create a dataset_definition dict for each yeare
     dataset_definition = {}
     for dataset_key, query in das_queries.items():
@@ -74,6 +92,6 @@ if __name__ == "__main__":
             new_dataset[dataset_key] = root_files
     # save new fileset and drop 'dataset_discovery' fileset
     os.remove(f"dataset_discovery_{args.year}.json")
-    fileset_file = filesets_dir / f"fileset_{args.year}_NANO_lxplus.json"
+    fileset_file = filesets_dir / f"fileset_{args.year}_nanov{args.nanov}_lxplus.json"
     with open(fileset_file, "w") as json_file:
         json.dump(new_dataset, json_file, indent=4, sort_keys=True)
