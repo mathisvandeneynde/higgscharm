@@ -57,7 +57,9 @@ def object_corrector_manager(events, year, dataset, workflow_config, nano_versio
             )
 
 
-def weight_manager(pruned_ev, year, dataset, nano_version, workflow_config, variation="nominal"):
+def weight_manager(
+    pruned_ev, year, dataset, nano_version, workflow_config, variation="nominal"
+):
     """apply event level corrections (weights)"""
     # get weights config info
     weights_config = workflow_config.corrections_config["event_weights"]
@@ -108,6 +110,7 @@ def weight_manager(pruned_ev, year, dataset, nano_version, workflow_config, vari
                 muon_weights = MuonWeights(
                     events=pruned_ev,
                     year=year,
+                    nano_version=nano_version,
                     variation=variation,
                     weights=weights_container,
                 )
@@ -133,9 +136,9 @@ def weight_manager(pruned_ev, year, dataset, nano_version, workflow_config, vari
                 electron_weights = ElectronWeights(
                     events=pruned_ev,
                     year=year,
-                    weights=weights_container,
+                    nano_version=nano_version,
                     variation=variation,
-                    nano_version=nano_version
+                    weights=weights_container,
                 )
                 if "id" in weights_config["electron"]:
                     if weights_config["electron"]["id"]:
