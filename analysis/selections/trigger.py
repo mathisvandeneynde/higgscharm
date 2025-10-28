@@ -6,15 +6,17 @@ from analysis.filesets.utils import get_dataset_name
 
 
 def get_hltpaths_from_flag(flag, year):
-    if year.startswith("2022"):
-        year_key = 2022
+    if year.startswith("2016"):
+        year = "2016"
+    elif year.startswith("2022"):
+        year = "2022"
     elif year.startswith("2023"):
-        year_key = 2023
+        year = "2023"
     with importlib.resources.open_text(
         f"analysis.selections", f"trigger_flags.yaml"
     ) as file:
         hlt_paths = yaml.safe_load(file)
-    return hlt_paths[year_key][flag]
+    return hlt_paths[int(year)][flag]
 
 
 def trigger_from_flag(events, flag, year):
