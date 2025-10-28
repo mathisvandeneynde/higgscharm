@@ -21,7 +21,7 @@ def add_pileup_weight(
         weights_container:
             Weight object from coffea.analysis_tools
         year:
-            dataset year {2022preEE, 2022postEE, 2023preBPix, 2023postBPix}
+            dataset year {2016preVFP, 2016postVFP, 2017, 2018, 2022preEE, 2022postEE, 2023preBPix, 2023postBPix}
         variation:
             if 'nominal' (default) add 'nominal', 'up' and 'down'
             variations to weights container. else, add only 'nominal' weights.
@@ -31,6 +31,10 @@ def add_pileup_weight(
         get_pog_json(json_name="pileup", year=year)
     )
     year_to_corr = {
+        "2016preVFP": "Collisions16_UltraLegacy_goldenJSON",
+        "2016postVFP": "Collisions16_UltraLegacy_goldenJSON",
+        "2017": "Collisions17_UltraLegacy_goldenJSON",
+        "2018": "Collisions18_UltraLegacy_goldenJSON",
         "2022preEE": "Collisions2022_355100_357900_eraBCD_GoldenJson",
         "2022postEE": "Collisions2022_359022_362760_eraEFG_GoldenJson",
         "2023preBPix": "Collisions2023_366403_369802_eraBC_GoldenJson",
@@ -46,13 +50,13 @@ def add_pileup_weight(
         down_sf = cset[year_to_corr[year]].evaluate(ak.to_numpy(nti), "down")
         # add pileup scale factors to weights container
         weights_container.add(
-            name="pileup",
+            name="CMS_pileup",
             weight=nominal_sf,
             weightUp=up_sf,
             weightDown=down_sf,
         )
     else:
         weights_container.add(
-            name="pileup",
+            name="CMS_pileup",
             weight=nominal_sf,
         )
