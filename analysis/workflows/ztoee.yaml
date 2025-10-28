@@ -30,7 +30,8 @@ object_selection:
     cuts:
       - events.Jet.pt > 20
       - np.abs(events.Jet.eta) < 2.5
-      - working_points.jet_id(events, 'tightlepveto')
+      - working_points.jet_id(events, year, 'tightlepveto')
+      - working_points.jet_pileup_id(events, year, 'tight')
       - delta_r_higher(events.Jet, objects['muons'], 0.4)
       - delta_r_higher(events.Jet, objects['electrons'], 0.4)
   dielectrons:
@@ -73,8 +74,8 @@ corrections:
     genWeight: true
     pileupWeight: true
     partonshowerWeight: true
-    lhepdfWeight: true
-    lhescaleWeight: true
+    lhepdfWeight: false
+    lhescaleWeight: false
     nnlopsWeight: false
     electron:
       - id: wp80iso
@@ -266,14 +267,14 @@ histogram_config:
       start: 0
       stop: 1
       label: Leading Jet CvsL
-      expression: ak.pad_none(objects['jets'], target=2)[:, 0].btagPNetCvL
+      expression: ak.pad_none(objects['jets'], target=2)[:, 0].btagPNetCvL if hasattr(objects['jets'], 'btagPNetCvL') else ak.pad_none(objects['jets'], target=2)[:, 0].btagDeepFlavCvL
     leadingjet_cvsb:
       type: Regular
       bins: 50
       start: 0
       stop: 1
       label: Leading Jet CvsB
-      expression: ak.pad_none(objects['jets'], target=2)[:, 0].btagPNetCvB
+      expression: ak.pad_none(objects['jets'], target=2)[:, 0].btagPNetCvB if hasattr(objects['jets'], 'btagPNetCvB') else ak.pad_none(objects['jets'], target=2)[:, 0].btagDeepFlavCvB
     leadingjet_flavour:
       type: IntCategory
       categories:
@@ -282,68 +283,37 @@ histogram_config:
         - 5
       label: HadronFlavour
       expression: ak.pad_none(objects['jets'], target=2)[:, 0].hadronFlavour
-    subleadingjet_cvsl:
-      type: Regular
-      bins: 50
-      start: 0
-      stop: 1
-      label: Subleading Jet CvsL
-      expression: ak.pad_none(objects['jets'], target=2)[:, 1].btagPNetCvL
-    subleadingjet_cvsb:
-      type: Regular
-      bins: 50
-      start: 0
-      stop: 1
-      label: Subleading Jet CvsB
-      expression: ak.pad_none(objects['jets'], target=2)[:, 1].btagPNetCvB
-    subleadingjet_flavour:
-      type: IntCategory
-      categories:
-        - 0
-        - 4
-        - 5
-      label: HadronFlavour
-      expression: ak.pad_none(objects['jets'], target=2)[:, 1].hadronFlavour
     npvs:
       type: Integer
       start: 0
       stop: 60
-      label: npvs
+      label: vertex multiplicity
       expression: events.PV.npvsGood
   layout: 
-    dielectron_mass: 
+    vertex:
+      - npvs
+    dielectron: 
       - dielectron_mass
-    dielectron_pt: 
       - dielectron_pt
-    dielectron_eta: 
       - dielectron_eta
-    dielectron_phi: 
       - dielectron_phi
-    dielectron_dr: 
+    dielectron_delta: 
       - dielectron_dr
-    dielectron_deta: 
       - dielectron_deta
-    leading_electron_pt: 
+    leading_electron: 
       - leading_electron_pt
-    leading_electron_eta: 
       - leading_electron_eta
-    leading_electron_phi: 
       - leading_electron_phi
-    subleading_electron_pt: 
+    subleading_electron: 
       - subleading_electron_pt
-    subleading_electron_eta: 
       - subleading_electron_eta
-    subleading_electron_phi: 
       - subleading_electron_phi
-    jet_pt: 
+    jet: 
       - jet_pt
-    jet_eta: 
       - jet_eta
-    jet_phi: 
       - jet_phi
-    jet_dr: 
+    jet_d: 
       - jet_dr
-    jet_deta: 
       - jet_deta
     jet_multiplicity: 
       - jet_multiplicity
@@ -351,9 +321,3 @@ histogram_config:
       - leadingjet_flavour
       - leadingjet_cvsb
       - leadingjet_cvsl
-    subleading_jet:
-      - subleadingjet_flavour
-      - subleadingjet_cvsb
-      - subleadingjet_cvsl
-    vertex:
-      - npvs
