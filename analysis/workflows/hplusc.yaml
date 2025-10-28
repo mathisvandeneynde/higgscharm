@@ -112,12 +112,14 @@ event_selection:
     lumimask: get_lumi_mask(events, year)
     atleast_one_goodvertex: events.PV.npvsGood > 0
     atleast_one_zz: ak.num(objects['zzcandidates']) >= 1
+    one_cjet: ak.num(objects['cjets']) == 1
   categories:
     base:
       - trigger
       - lumimask
       - atleast_one_goodvertex
       - atleast_one_zz
+      - one_cjet
 corrections:
   objects:
     - jec
@@ -154,7 +156,7 @@ histogram_config:
       start: 0
       stop: 400
       label: $p_T(4\ell)$ [GeV]
-      expression: (objects['best_zzcandidate'].z1.p4 + objects['best_zzcandidate'].z2.p4).pt
+      expression: objects['best_zzcandidate'].p4.pt
     zz_mass_4mu:
       type: Regular
       bins: 66
@@ -194,21 +196,21 @@ histogram_config:
       bins: 50
       start: 20
       stop: 500
-      label: $p_T(j)$ [GeV]
+      label: Jets $p_T$ [GeV]
       expression: objects['jets'].pt
     jet_eta:
       type: Regular
       bins: 50
       start: -2.4
       stop: 2.4
-      label: $\eta(j)$
+      label: Jets $\eta$
       expression: objects['jets'].eta
     jet_phi:
       type: Regular
       bins: 50
       start: -3.14159
       stop: 3.14159
-      label: $\phi(j)$
+      label: Jets $\phi$
       expression: objects['jets'].phi
     leadingjet_pnet_cvsl:
       type: Regular
@@ -254,33 +256,27 @@ histogram_config:
         - 5
       label: Subleading Jet HadronFlavour
       expression: ak.pad_none(objects['jets'], target=2)[:, 1].hadronFlavour
-    cjets_multiplicity:
-      type: Integer
-      start: 0
-      stop: 14
-      label: PNet c-tagged (M) Jet Multiplicity
-      expression: ak.num(objects['cjets'])
-    leadingcjets_pt:
+    cjets_pt:
       type: Regular
       bins: 50
       start: 20
       stop: 500
-      label: PNet c-tagged (M) Leading Jet $p_T$ [GeV]
-      expression: ak.pad_none(objects['cjets'], target=2)[:, 0].pt
-    leadingcjets_eta:
+      label: c-Jet $p_T$ [GeV]
+      expression: objects['cjets'].pt
+    cjets_eta:
       type: Regular
       bins: 50
       start: -2.4
       stop: 2.4
-      label: PNet c-tagged (M) Leading Jet $\eta$
-      expression: ak.pad_none(objects['cjets'], target=2)[:, 0].eta
-    leadingcjets_phi:
+      label: c-Jet $\eta$
+      expression: objects['cjets'].eta
+    cjets_phi:
       type: Regular
       bins: 50
       start: -3.14159
       stop: 3.14159
-      label: PNet c-tagged (M) Leading Jet $\phi$
-      expression: ak.pad_none(objects['cjets'], target=2)[:, 0].phi
+      label: c-Jet $\phi$
+      expression: objects['cjets'].phi
     cjets_h_dphi_inclusive:
       type: Regular
       bins: 50
@@ -342,12 +338,10 @@ histogram_config:
       - subleadingjet_flavour
       - subleadingjet_pnet_cvsl
       - subleadingjet_pnet_cvsb
-    cjets_multiplicity:
-      - cjets_multiplicity
-    leading_cjet:
-      - leadingcjets_pt
-      - leadingcjets_eta
-      - leadingcjets_phi
+    cjet:
+      - cjets_pt
+      - cjets_eta
+      - cjets_phi
     cjets_h_dphi_inclusive:
       - cjets_h_dphi_inclusive
     cjets_h_dphi_4e:
