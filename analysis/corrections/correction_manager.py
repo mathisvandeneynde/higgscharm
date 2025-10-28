@@ -41,11 +41,14 @@ def object_corrector_manager(events, year, dataset, workflow_config, nano_versio
             year=year,
         )
     if "electon_ss" in objcorr_config:
-        apply_electron_ss_corrections(
-            events=events,
-            year=year,
-            variation="nominal",
-        )
+        # electron scale and smearing corrections are applied only to run3 datasets
+        # they are already applied in nanov9 datasets
+        if year.startswith("202"):
+            apply_electron_ss_corrections(
+                events=events,
+                year=year,
+                variation="nominal",
+            )
     if "met_phi" in objcorr_config:
         # apply MET-phi modulation corrections
         if year.startswith("2022"):
