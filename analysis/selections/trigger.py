@@ -126,49 +126,107 @@ def trigger_mask(events, hlt_paths, dataset, year):
     return dataset_masks.get(dataset_name, all_combined_mask)
 
 
-def trigger_match(leptons, trigobjs, hlt_path):
+def trigger_match(leptons: ak.Array, trigobjs: ak.Array, hlt_path: str, year: str):
     """
     Returns DeltaR matched trigger objects
 
     leptons:
-        Leptons array
+        electrons or muons arrays
     trigobjs:
-        trigobjs array
+        trigger objects array
     hlt_path:
-        trigger to match (IsoMu24, Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass3p8, Ele30_WPTight_Gsf)
+        trigger to match
+    year:
+        dataset year {2016preVFP, 2016postVFP, 2017, 2018, 2022preEE, 2022postEE, 2023preBPix, 2023postBPix}
 
-    how to:
     https://twiki.cern.ch/twiki/bin/viewauth/CMS/EgammaNanoAOD#Trigger_bits_how_to
-
-    NanoAOD docs:
-    https://cms-nanoaod-integration.web.cern.ch/autoDoc/NanoAODv11/2022postEE/doc_WZ_TuneCP5_13p6TeV_pythia8_Run3Summer22EENanoAODv11-126X_mcRun3_2022_realistic_postEE_v1-v1.html#TrigObj
     """
     match_configs = {
-        # filterbit: 3 => 1mu
-        # id: 13 => mu
-        "IsoMu24": {
-            "pt": trigobjs.pt > 23,
-            "id": abs(trigobjs.id) == 13,
-            "filterbit": trigobjs.filterBits & (0x1 << 3) > 0,
+        "run2": {
+            "IsoMu24": {
+                "pt": trigobjs.pt > 22,
+                "id": abs(trigobjs.id) == 13,
+                "filterbit": (trigobjs.filterBits & 8) > 0,
+            },
+            "IsoMu27": {
+                "pt": trigobjs.pt > 25,
+                "filterbit": (trigobjs.filterBits & 8) > 0,
+                "id": abs(trigobjs.id) == 13,
+            },
+            "Mu50": {
+                "pt": trigobjs.pt > 45,
+                "filterbit": (trigobjs.filterBits & 1024) > 0,
+                "id": abs(trigobjs.id) == 13,
+            },
+            "OldMu100": {
+                "pt": trigobjs.pt > 95,
+                "filterbit": (trigobjs.filterBits & 2048) > 0,
+                "id": abs(trigobjs.id) == 13,
+            },
+            "TkMu100": {
+                "pt": trigobjs.pt > 95,
+                "filterbit": (trigobjs.filterBits & 2048) > 0,
+                "id": abs(trigobjs.id) == 13,
+            },
+            "Ele35_WPTight_Gsf": {
+                "pt": trigobjs.pt > 33,
+                "filterbit": (trigobjs.filterBits & 2) > 0,
+                "id": abs(trigobjs.id) == 11,
+            },
+            "Ele32_WPTight_Gsf": {
+                "pt": trigobjs.pt > 30,
+                "filterbit": (trigobjs.filterBits & 2) > 0,
+                "id": abs(trigobjs.id) == 11,
+            },
+            "Ele27_WPTight_Gsf": {
+                "pt": trigobjs.pt > 25,
+                "filterbit": (trigobjs.filterBits & 2) > 0,
+                "id": abs(trigobjs.id) == 11,
+            },
+            "Photon175": {
+                "pt": trigobjs.pt > 25,
+                "filterbit": (trigobjs.filterBits & 8192) > 0,
+                "id": abs(trigobjs.id) == 11,
+            },
+            "Photon200": {
+                "pt": trigobjs.pt > 25,
+                "filterbit": (trigobjs.filterBits & 8192) > 0,
+                "id": abs(trigobjs.id) == 11,
+            },
+            "IsoTkMu24": {
+                "pt": trigobjs.pt > 22,
+                "filterbit": (trigobjs.filterBits & 8) > 0,
+                "id": abs(trigobjs.id) == 13,
+            },
         },
-        # filterbit: 0 => TrkIsoVVL
-        # id: 13 => mu
-        "Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass3p8": {
-            "pt": trigobjs.pt > 7,
-            "id": abs(trigobjs.id) == 13,
-            "filterbit": trigobjs.filterBits & (0x1 << 0) > 0,
-        },
-        # filterbit: 1 => 1e (WPTight)
-        # id: 11 => ele
-        "Ele30_WPTight_Gsf": {
-            "pt": trigobjs.pt > 28,
-            "id": abs(trigobjs.id) == 11,
-            "filterbit": trigobjs.filterBits & (0x1 << 1) > 0,
+        "run3": {
+            # filterbit: 3 => 1mu
+            # id: 13 => mu
+            "IsoMu24": {
+                "pt": trigobjs.pt > 23,
+                "id": abs(trigobjs.id) == 13,
+                "filterbit": trigobjs.filterBits & (0x1 << 3) > 0,
+            },
+            # filterbit: 0 => TrkIsoVVL
+            # id: 13 => mu
+            "Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass3p8": {
+                "pt": trigobjs.pt > 7,
+                "id": abs(trigobjs.id) == 13,
+                "filterbit": trigobjs.filterBits & (0x1 << 0) > 0,
+            },
+            # filterbit: 1 => 1e (WPTight)
+            # id: 11 => ele
+            "Ele30_WPTight_Gsf": {
+                "pt": trigobjs.pt > 28,
+                "id": abs(trigobjs.id) == 11,
+                "filterbit": trigobjs.filterBits & (0x1 << 1) > 0,
+            },
         },
     }
-    pass_pt = match_configs[hlt_path]["pt"]
-    pass_id = match_configs[hlt_path]["id"]
-    pass_filterbit = match_configs[hlt_path]["filterbit"]
+    run_key = "run2" if year.startswith("201") else "run3"
+    pass_pt = match_configs[run_key][hlt_path]["pt"]
+    pass_id = match_configs[run_key][hlt_path]["id"]
+    pass_filterbit = match_configs[run_key][hlt_path]["filterbit"]
     trigger_cands = trigobjs[pass_pt & pass_id & pass_filterbit]
     delta_r = leptons.metric_table(trigger_cands)
     pass_delta_r = delta_r < 0.1
@@ -186,6 +244,7 @@ def trigger_match_mask(events, hlt_paths, year, leptons):
                     leptons=leptons,
                     trigobjs=events.TrigObj,
                     hlt_path=hlt_path,
+                    year=year,
                 )
                 trigger_match_mask = trigger_match_mask | trig_obj_mask
     return trigger_match_mask
