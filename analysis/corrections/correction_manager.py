@@ -39,7 +39,6 @@ def object_corrector_manager(events, year, dataset, workflow_config, nano_versio
         apply_muon_ss_corrections(
             events=events,
             year=year,
-            variation="nominal",
         )
     if "electon_ss" in objcorr_config:
         apply_electron_ss_corrections(
