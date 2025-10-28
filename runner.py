@@ -62,23 +62,20 @@ if __name__ == "__main__":
         choices=["coffea", "parquet"],
         help="format of output file",
     )
-    parser.add_argument(
-        "--nanov",
-        dest="nanov",
-        type=str,
-        choices=["9", "12", "15"],
-        default="12",
-        help="NanoAOD version",
-    )
     args = parser.parse_args()
 
-    check_nano_version(args.year, args.nanov)
+    nano_version = "9" if args.year.startswith("201") else "12"
+    check_nano_version(args.year, nano_version)
 
     # get datasets to run over for selected workflow and year
-    datasets_to_run_over = get_datasets_to_run_over(args.workflow, args.year)
+    datasets_to_run_over = get_datasets_to_run_over(
+        args.workflow, args.year, nano_version
+    )
 
     # check if the input fileset for the given year exists, generate it otherwise
-    fileset_checker(samples=datasets_to_run_over, year=args.year)
+    fileset_checker(
+        samples=datasets_to_run_over, year=args.year, nano_version=nano_version
+    )
 
     # submit (or prepare) a job for each dataset using the given arguments
     cmd = ["python3", "submit_condor.py"]
@@ -94,8 +91,6 @@ if __name__ == "__main__":
             str(args.nfiles),
             "--output_format",
             args.output_format,
-            "--nanov",
-            args.nanov,
         ]
         if args.submit:
             cmd_args.append("--submit")

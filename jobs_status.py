@@ -30,7 +30,16 @@ def parse_args():
         "--year",
         type=str,
         required=True,
-        choices=["2022preEE", "2022postEE", "2023preBPix", "2023postBPix"],
+        choices=[
+            "2016preVFP",
+            "2016postVFP",
+            "2017",
+            "2018",
+            "2022preEE",
+            "2022postEE",
+            "2023preBPix",
+            "2023postBPix",
+        ],
         help="dataset year",
     )
     parser.add_argument(
@@ -190,7 +199,8 @@ def update_input_filesets(
     )
     subprocess.run(["python3", "fetch.py", "--year", year, "--samples", samples_str])
 
-    fileset_path = fileset_dir / f"fileset_{year}_NANO_lxplus.json"
+    nano_version = "9" if args.year.startswith("201") else "12"
+    fileset_path = fileset_dir / f"fileset_{year}_nanov{nano_version}_lxplus.json"
     all_filesets = json.loads(fileset_path.read_text())
 
     for dataset in datasets_with_missing_jobs:

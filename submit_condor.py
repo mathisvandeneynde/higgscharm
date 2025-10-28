@@ -88,15 +88,11 @@ if __name__ == "__main__":
         choices=["coffea", "root", "parquet"],
         help="format of output histogram",
     )
-    parser.add_argument(
-        "--nanov",
-        dest="nanov",
-        type=str,
-        choices=["9", "12", "15"],
-        default="12",
-        help="NanoAOD version",
-    )
     args = parser.parse_args()
+
+    # check if the fileset for the given year exists, generate it otherwise
+    nano_version = "9" if args.year.startswith("201") else "12"
+    fileset_checker(samples=[args.dataset], year=args.year, nano_version=nano_version)
 
     print(f"Creating {args.workflow}-{args.year}-{args.dataset} condor file")
     jobname = f"{args.workflow}_{args.dataset}"
@@ -111,14 +107,13 @@ if __name__ == "__main__":
     if not log_dir.exists():
         log_dir.mkdir(parents=True, exist_ok=True)
 
-    # check if the fileset for the given year exists, generate it otherwise
-    fileset_checker(samples=[args.dataset], year=args.year)
     # save partitions json and jobnums to job directory
     jobnum_list = []
     partition_dataset = {}
     fileset_path = Path.cwd() / "analysis" / "filesets"
+
     with open(
-        f"{fileset_path}/fileset_{args.year}_nanov{args.nanov}_lxplus.json", "r"
+        f"{fileset_path}/fileset_{args.year}_nanov{nano_version}_lxplus.json", "r"
     ) as f:
         root_files = json.load(f)[args.dataset]
     root_files_list = divide_list(root_files, args.nfiles)
