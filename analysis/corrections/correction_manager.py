@@ -57,7 +57,7 @@ def object_corrector_manager(events, year, dataset, workflow_config, nano_versio
             )
 
 
-def weight_manager(pruned_ev, year, dataset, workflow_config, variation="nominal"):
+def weight_manager(pruned_ev, year, dataset, nano_version, workflow_config, variation="nominal"):
     """apply event level corrections (weights)"""
     # get weights config info
     weights_config = workflow_config.corrections_config["event_weights"]
@@ -135,6 +135,7 @@ def weight_manager(pruned_ev, year, dataset, workflow_config, variation="nominal
                     year=year,
                     weights=weights_container,
                     variation=variation,
+                    nano_version=nano_version
                 )
                 if "id" in weights_config["electron"]:
                     if weights_config["electron"]["id"]:
@@ -143,9 +144,13 @@ def weight_manager(pruned_ev, year, dataset, workflow_config, variation="nominal
                         )
                 if "reco" in weights_config["electron"]:
                     if weights_config["electron"]["reco"]:
-                        electron_weights.add_reco_weights("RecoBelow20")
-                        electron_weights.add_reco_weights("Reco20to75")
-                        electron_weights.add_reco_weights("RecoAbove75")
+                        if nano_version == "9":
+                            electron_weights.add_reco_weights("RecoAbove20")
+                            electron_weights.add_reco_weights("RecoBelow20")
+                        else:
+                            electron_weights.add_reco_weights("RecoBelow20")
+                            electron_weights.add_reco_weights("Reco20to75")
+                            electron_weights.add_reco_weights("RecoAbove75")
                 if "trigger" in weights_config["electron"]:
                     if weights_config["electron"]["trigger"]:
                         electron_weights.add_hlt_weights(

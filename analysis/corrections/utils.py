@@ -16,6 +16,10 @@ POG_JSONS = {
     "jec": ["JME", "jet_jerc.json.gz"],
 }
 POG_YEARS = {
+    "2016postVFP": "2016postVFP_UL",
+    "2016preVFP": "2016preVFP_UL",
+    "2017": "2017_UL",
+    "2018": "2018_UL",
     "2022preEE": "2022_Summer22",
     "2022postEE": "2022_Summer22EE",
     "2023preBPix": "2023_Summer23",
@@ -52,7 +56,7 @@ def get_pog_json(json_name: str, year: str) -> str:
         json_name:
             pog json name
         year:
-            dataset year {2022preEE, 2022postEE, 2023preBPix, 2023postBPix}
+            dataset year
     """
     if json_name in POG_JSONS:
         pog_json = POG_JSONS[json_name]
@@ -70,7 +74,7 @@ def get_egamma_json(year: str) -> str:
         json_name:
             json name
         year:
-            dataset year {2022preEE, 2022postEE, 2023preBPix, 2023postBPix}
+            dataset year
     """
     """
     if json_name in EGAMMA_JSONS:
@@ -91,7 +95,7 @@ def get_btv_json(json_name: str, year: str) -> str:
         json_name:
             pog json name
         year:
-            dataset year {2022preEE, 2022postEE, 2023preBPix, 2023postBPix}
+            dataset year
     """
     if json_name in BTV_JSONS:
         btv_json = BTV_JSONS[json_name]
@@ -114,6 +118,20 @@ def get_pnet_ctag_mask(jets, wp, year):
 
 def get_muon_hlt_json(year: str) -> str:
     return f"{Path.cwd()}/analysis/data/{year}_Muon_HLT_Eff.json"
+
+
+def get_electron_hlt_json(
+    kind: str,
+    year: str,
+) -> str:
+    """
+
+    Parameters:
+    -----------
+        kind: {SF, MCEff, DataEff}
+        year: {2016preVFP, 2016postVFP, 2017, 2018, 2022preEE, 2022postEE, 2023preBPix, 2023postBPix}
+    """
+    return f"{Path.cwd()}/analysis/data/EGamma_HLT_{kind}_{year}.json.gz"
 
 
 def unflat_sf(sf: ak.Array, in_limit_mask: ak.Array, n: ak.Array):
