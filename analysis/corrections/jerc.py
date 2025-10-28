@@ -20,19 +20,20 @@ with importlib.resources.open_text(
 
 def jec_names_and_sources(year):
     names = {}
+    algo = JEC_PARAMS["algorithm"][year]
     suffix = {
         "jec_names": [
-            f"_{level}_AK4PFPuppi" for level in JEC_PARAMS["jec_levels_mc"][year]
+            f"_{level}_{algo}" for level in JEC_PARAMS["jec_levels_mc"][year]
         ],
         "jec_names_data": [
-            f"_{level}_AK4PFPuppi" for level in JEC_PARAMS["jec_levels_data"][year]
+            f"_{level}_{algo}" for level in JEC_PARAMS["jec_levels_data"][year]
         ],
-        "junc_names": ["_Uncertainty_AK4PFPuppi"],
-        "junc_names_data": ["_Uncertainty_AK4PFPuppi"],
-        "junc_sources": ["_UncertaintySources_AK4PFPuppi"],
-        "junc_sources_data": ["_UncertaintySources_AK4PFPuppi"],
-        "jer_names": ["_PtResolution_AK4PFPuppi"],
-        "jersf_names": ["_SF_AK4PFPuppi"],
+        "junc_names": [f"_Uncertainty_{algo}"],
+        "junc_names_data": [f"_Uncertainty_{algo}"],
+        "junc_sources": [f"_UncertaintySources_{algo}"],
+        "junc_sources_data": [f"_UncertaintySources_{algo}"],
+        "jer_names": [f"_PtResolution_{algo}"],
+        "jersf_names": [f"_SF_{algo}"],
     }
     for key, suff in suffix.items():
         if "data" in key:
@@ -97,6 +98,7 @@ def apply_jerc_corrections(
     events,
     year,
     dataset,
+    nano_version,
     apply_jec,
     apply_jer,
     apply_junc,
@@ -116,7 +118,11 @@ def apply_jerc_corrections(
         events["Jet", "pt_gen"] = ak.values_astype(
             ak.fill_none(jets.matched_gen.pt, 0), np.float32
         )
-    events["Jet", "rho"] = ak.ones_like(jets.pt) * events.Rho.fixedGridRhoFastjetAll
+    events["Jet", "rho"] = (
+        ak.ones_like(jets.pt) * events.Rho.fixedGridRhoFastjetAll
+        if hasattr(events, "Rho")
+        else ak.broadcast_arrays(events.fixedGridRhoFastjetAll, jets.pt)[0]
+    )
 
     # set inputs for jec, jer and junc stack
     names = jec_names_and_sources(year)
@@ -158,11 +164,15 @@ def apply_jerc_corrections(
         "JetA": "area",
         "ptGenJet": "pt_gen",
         "Rho": "rho",
-        "METpt": None,
-        "METphi": None,
+        "METpt": "pt",
+        "METphi": "phi",
         "JetPhi": "phi",
-        "UnClusteredEnergyDeltaX": None,
-        "UnClusteredEnergyDeltaY": None,
+        "UnClusteredEnergyDeltaX": (
+            "MetUnclustEnUpDeltaX" if hasattr(events, "Rho") else None
+        ),
+        "UnClusteredEnergyDeltaY": (
+            "MetUnclustEnUpDeltaY" if hasattr(events, "Rho") else None
+        ),
     }
     if apply_jec:
         jec_name_map.update(
@@ -171,7 +181,7 @@ def apply_jerc_corrections(
                 "massRaw": "mass_raw",
             }
         )
-    era = get_dataset_era(dataset, year)
+    era = get_dataset_era(dataset, year, nano_version)
     if era in ["mc", "signal"]:
         # create MC factory with jec, jer and junc stack
         stack = JECStack(jec_options)

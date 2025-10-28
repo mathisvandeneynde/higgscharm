@@ -14,7 +14,7 @@ from analysis.corrections.partonshower import add_partonshower_weight
 from analysis.corrections.electron_ss import apply_electron_ss_corrections
 
 
-def object_corrector_manager(events, year, dataset, workflow_config):
+def object_corrector_manager(events, year, dataset, workflow_config, nano_version):
     """apply object level corrections"""
     objcorr_config = workflow_config.corrections_config["objects"]
 
@@ -29,6 +29,7 @@ def object_corrector_manager(events, year, dataset, workflow_config):
             events,
             year=year,
             dataset=dataset,
+            nano_version=nano_version,
             apply_jec=apply_jec,
             apply_jer=apply_jer,
             apply_junc=apply_junc,

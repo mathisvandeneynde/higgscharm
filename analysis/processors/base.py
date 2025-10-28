@@ -33,11 +33,13 @@ class BaseProcessor(processor.ProcessorABC):
         year: str,
         output_format: str,
         output_location: str,
+        nano_version: str,
     ):
         self.year = year
         self.workflow = workflow
         self.output_format = output_format
         self.output_location = output_location
+        self.nano_version = nano_version
 
         config_builder = WorkflowConfigBuilder(workflow)
         self.workflow_config = config_builder.build_workflow_config()
@@ -108,6 +110,7 @@ class BaseProcessor(processor.ProcessorABC):
             year=year,
             dataset=dataset,
             workflow_config=self.workflow_config,
+            nano_version=self.nano_version,
         )
 
         # --------------------------------------------------------------
