@@ -33,7 +33,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--nanov",
-        dest="version",
+        dest="nanov",
         type=str,
         choices=["9", "12", "15"],
         default="12",
