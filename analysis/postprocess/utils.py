@@ -154,8 +154,7 @@ def get_lumi_weight(year, sample, metadata):
     with open(lumi_file, "r") as f:
         luminosities = yaml.safe_load(f)
 
-    nano_version = "9" if year.startswith("201") else "12"
-    dataset_config = get_dataset_config(year, nano_version)
+    dataset_config = get_dataset_config(year)
     xsec = dataset_config[sample]["xsec"]
     sumw = metadata["sumw"]
     weight = 1
@@ -192,12 +191,11 @@ def save_cutflows(metadata, categories, sample, weight, output_dir):
 
 
 def get_process_dict(output_dir, year, categories):
-    folders = glob.glob(str(output_dir / "*"))
+    dataset_config = get_dataset_config(year)
+
     process_dict = defaultdict(list)
 
-    nano_version = "9" if year.startswith("201") else "12"
-    dataset_config = get_dataset_config(year, nano_version)
-
+    folders = glob.glob(str(output_dir / "*"))
     for folder in folders:
         folder_path = Path(folder)
         name = folder_path.name

@@ -505,8 +505,10 @@ class CoffeaPlotter:
                     if i % 5 != 0:  # Show only every 5th tick
                         label.set_visible(False)
         # add CMS info
+        lumi = self.luminosities[self.year] * 1e-3
+        energy = "13" if self.year.startswith("201") else "13.6"
         hep.cms.lumitext(
-            f"{self.luminosities[self.year] * 1e-3:.1f} fb$^{{-1}}$ ({self.year}, {'13.6' if self.year.startswith('201') else '13'} TeV)",
+            f"{lumi:.1f} fb$^{{-1}}$ ({self.year}, {energy} TeV)",
             ax=ax,
         )
         hep.cms.text("Preliminary", ax=ax)
