@@ -1,7 +1,6 @@
 import argparse
 import subprocess
 from pathlib import Path
-from analysis.filesets.utils import check_nano_version
 
 
 if __name__ == "__main__":
@@ -44,7 +43,6 @@ if __name__ == "__main__":
         )
 
     nano_version = "9" if args.year.startswith("201") else "12"
-    check_nano_version(args.year, nano_version)
 
     sites_file = Path.cwd() / "analysis" / "filesets" / f"{args.year}_sites.yaml"
     if not sites_file.exists():
@@ -53,5 +51,5 @@ if __name__ == "__main__":
 
 
     samples_str = " ".join(args.samples) if args.samples else ""
-    cmd = f"singularity exec -B /afs -B /cvmfs {args.image} python3 analysis/filesets/make_filesets.py --year {args.year} --nanov {nano_version} --samples {samples_str}"
+    cmd = f"singularity exec -B /afs -B /cvmfs {args.image} python3 analysis/filesets/make_filesets.py --year {args.year} --samples {samples_str}"
     subprocess.run(cmd, shell=True)

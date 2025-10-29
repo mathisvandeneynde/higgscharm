@@ -4,7 +4,6 @@ from pathlib import Path
 from analysis.filesets.utils import (
     fileset_checker,
     get_datasets_to_run_over,
-    check_nano_version,
 )
 
 
@@ -64,18 +63,11 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    nano_version = "9" if args.year.startswith("201") else "12"
-    check_nano_version(args.year, nano_version)
-
     # get datasets to run over for selected workflow and year
-    datasets_to_run_over = get_datasets_to_run_over(
-        args.workflow, args.year, nano_version
-    )
+    datasets_to_run_over = get_datasets_to_run_over(args.workflow, args.year)
 
     # check if the input fileset for the given year exists, generate it otherwise
-    fileset_checker(
-        samples=datasets_to_run_over, year=args.year, nano_version=nano_version
-    )
+    fileset_checker(samples=datasets_to_run_over, year=args.year)
 
     # submit (or prepare) a job for each dataset using the given arguments
     cmd = ["python3", "submit_condor.py"]

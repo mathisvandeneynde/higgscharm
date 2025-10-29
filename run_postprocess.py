@@ -200,8 +200,6 @@ if __name__ == "__main__":
     clear_output_directory(output_dir, "txt")
     setup_logger(output_dir)
 
-    nano_version = "9" if args.year.startswith("201") else "12"
-
     config_builder = WorkflowConfigBuilder(workflow=args.workflow)
     workflow_config = config_builder.build_workflow_config()
     histogram_config = workflow_config.histogram_config
@@ -228,7 +226,7 @@ if __name__ == "__main__":
             sample_name = get_sample_name(output_file, args.year)
             grouped_outputs[sample_name].append(output_file)
 
-        process_samples_map = get_process_sample_map(grouped_outputs.keys(), args.year, nano_version)
+        process_samples_map = get_process_sample_map(grouped_outputs.keys(), args.year)
 
         if args.output_format == "parquet":
             if not args.skipmerging:
@@ -280,7 +278,7 @@ if __name__ == "__main__":
 
                 columns_to_drop = []
                 key_process_map = get_workflow_key_process_map(
-                    workflow_config, args.year, nano_version
+                    workflow_config, args.year
                 )
                 if "signal" in workflow_config.datasets:
                     signal_keys = [k for k in workflow_config.datasets["signal"]]

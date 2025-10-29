@@ -181,7 +181,7 @@ def apply_jerc_corrections(
                 "massRaw": "mass_raw",
             }
         )
-    era = get_dataset_era(dataset, year, nano_version)
+    era = get_dataset_era(dataset, year)
     if era in ["mc", "signal"]:
         # create MC factory with jec, jer and junc stack
         stack = JECStack(jec_options)

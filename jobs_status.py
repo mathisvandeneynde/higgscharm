@@ -264,11 +264,13 @@ if __name__ == "__main__":
     args = parse_args()
 
     if args.reset:
+        nano_version = "9" if args.year.startswith("201") else "12"
         subprocess.run(f"rm -rf condor/{args.workflow}/{args.year}", shell=True)
         subprocess.run(f"rm -rf condor/logs/{args.workflow}/{args.year}", shell=True)
         subprocess.run(f"rm -rf analysis/filesets/{args.year}_sites.yaml", shell=True)
         subprocess.run(
-            f"rm -rf analysis/filesets/fileset_{args.year}_NANO_lxplus.json", shell=True
+            f"rm -rf analysis/filesets/fileset_{args.year}_nanov{nano_version}_lxplus.json",
+            shell=True,
         )
         reset_cmd = f"python3 runner.py -w {args.workflow} -y {args.year} --output_format {args.output_format}"
         if args.eos:

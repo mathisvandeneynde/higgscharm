@@ -91,8 +91,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # check if the fileset for the given year exists, generate it otherwise
-    nano_version = "9" if args.year.startswith("201") else "12"
-    fileset_checker(samples=[args.dataset], year=args.year, nano_version=nano_version)
+    fileset_checker(samples=[args.dataset], year=args.year)
 
     print(f"Creating {args.workflow}-{args.year}-{args.dataset} condor file")
     jobname = f"{args.workflow}_{args.dataset}"
@@ -112,6 +111,7 @@ if __name__ == "__main__":
     partition_dataset = {}
     fileset_path = Path.cwd() / "analysis" / "filesets"
 
+    nano_version = "9" if args.year.startswith("201") else "12"
     with open(
         f"{fileset_path}/fileset_{args.year}_nanov{nano_version}_lxplus.json", "r"
     ) as f:
