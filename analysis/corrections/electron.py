@@ -30,8 +30,6 @@ class ElectronWeights:
             syst variation
         id_wp:
             ID working point {wp80iso, wp90iso}
-        nano_version:
-            NanoAOD version. '9' for Run2 datasets, and '12' for Run3 datasets
 
     more info: https://twiki.cern.ch/twiki/bin/view/CMS/EgammSFandSSRun3#Scale_factors_and_correction_AN1
     """
@@ -41,7 +39,6 @@ class ElectronWeights:
         events: ak.Array,
         weights: Type[Weights],
         year: str,
-        nano_version: str,
         variation: str,
     ) -> None:
         self.events = events
@@ -49,7 +46,7 @@ class ElectronWeights:
         self.weights = weights
         self.year = year
         self.variation = variation
-        self.nano_version = nano_version
+        self.nano_version = "9" if year.startswith("201") else "12"
 
         self.flat_electrons = ak.flatten(self.electrons)
         self.electrons_counts = ak.num(self.electrons)

@@ -98,7 +98,6 @@ def apply_jerc_corrections(
     events,
     year,
     dataset,
-    nano_version,
     apply_jec,
     apply_jer,
     apply_junc,

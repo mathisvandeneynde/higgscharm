@@ -96,7 +96,6 @@ if __name__ == "__main__":
             year=args.year,
             output_format=args.output_format,
             output_location=output_location,
-            nano_version="9" if args.year.startswith("201") else "12",
         ),
         executor=processor.futures_executor,
         executor_args={"schema": NanoAODSchema, "workers": 4},

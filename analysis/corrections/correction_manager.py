@@ -14,7 +14,7 @@ from analysis.corrections.partonshower import add_partonshower_weight
 from analysis.corrections.electron_ss import apply_electron_ss_corrections
 
 
-def object_corrector_manager(events, year, dataset, workflow_config, nano_version):
+def object_corrector_manager(events, year, dataset, workflow_config):
     """apply object level corrections"""
     objcorr_config = workflow_config.corrections_config["objects"]
 
@@ -29,7 +29,6 @@ def object_corrector_manager(events, year, dataset, workflow_config, nano_versio
             events,
             year=year,
             dataset=dataset,
-            nano_version=nano_version,
             apply_jec=apply_jec,
             apply_jer=apply_jer,
             apply_junc=apply_junc,
@@ -58,7 +57,7 @@ def object_corrector_manager(events, year, dataset, workflow_config, nano_versio
 
 
 def weight_manager(
-    pruned_ev, year, dataset, nano_version, workflow_config, variation="nominal"
+    pruned_ev, year, dataset, workflow_config, variation="nominal"
 ):
     """apply event level corrections (weights)"""
     # get weights config info
@@ -110,7 +109,6 @@ def weight_manager(
                 muon_weights = MuonWeights(
                     events=pruned_ev,
                     year=year,
-                    nano_version=nano_version,
                     variation=variation,
                     weights=weights_container,
                 )
@@ -136,7 +134,6 @@ def weight_manager(
                 electron_weights = ElectronWeights(
                     events=pruned_ev,
                     year=year,
-                    nano_version=nano_version,
                     variation=variation,
                     weights=weights_container,
                 )
@@ -147,7 +144,7 @@ def weight_manager(
                         )
                 if "reco" in weights_config["electron"]:
                     if weights_config["electron"]["reco"]:
-                        if nano_version == "9":
+                        if year.startswith("201"):
                             electron_weights.add_reco_weights("RecoAbove20")
                             electron_weights.add_reco_weights("RecoBelow20")
                         else:

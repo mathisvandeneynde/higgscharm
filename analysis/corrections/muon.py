@@ -28,8 +28,6 @@ class MuonWeights:
             ID working point {loose, medium, tight}
         iso_wp:
             Iso working point {loose, medium, tight}
-        nano_version:
-            NanoAOD version. '9' for Run2 datasets, and '12' for Run3 datasets
 
     more info at:
     https://cms-nanoaod-integration.web.cern.ch/commonJSONSFs/summaries/MUO_2022preEE_Summer22EE_muon_Z.html
@@ -40,7 +38,6 @@ class MuonWeights:
         events: ak.Array,
         weights: Type[Weights],
         year: str,
-        nano_version: str,
         variation: str = "nominal",
     ) -> None:
         self.events = events
@@ -48,7 +45,7 @@ class MuonWeights:
         self.weights = weights
         self.year = year
         self.variation = variation
-        self.nano_version = nano_version
+        self.nano_version = "9" if year.startswith("201") else "12"
 
         self.flat_muons = ak.flatten(self.muons)
         self.muons_counts = ak.num(self.muons)
