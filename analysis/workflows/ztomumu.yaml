@@ -281,7 +281,7 @@ histogram_config:
       bins: 50
       start: 0
       stop: 1
-      label: Leading Jet CvsB (PNet)
+      label: Leading Jet CvsB
       expression: ak.pad_none(objects['jets'], target=2)[:, 0].btagPNetCvB if hasattr(objects['jets'], 'btagPNetCvB') else ak.pad_none(objects['jets'], target=2)[:, 0].btagDeepFlavCvB
     npvs:
       type: Integer
