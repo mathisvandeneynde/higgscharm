@@ -15,6 +15,10 @@ def apply_jetvetomaps(events, year: str, mapname: str = "jetvetomap"):
     taken from: https://cms-nanoaod-integration.web.cern.ch/commonJSONSFs/summaries/JME_2022_Summer22EE_jetvetomaps.html
     """
     vetomap_names = {
+        "2016preVFP": "Summer19UL16_V1",
+        "2016postVFP": "Summer19UL16_V1",
+        "2017": "Summer19UL17_V1",
+        "2018": "Summer19UL18_V1",
         "2022preEE": "Summer22_23Sep2023_RunCD_V1",
         "2022postEE": "Summer22EE_23Sep2023_RunEFG_V1",
         "2023preBPix": "Summer23Prompt23_RunC_V1",
