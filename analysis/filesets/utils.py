@@ -53,6 +53,16 @@ def divide_list(lst: list, nfiles: int = 20) -> list:
     return result
 
 
+def get_nano_version(year: str):
+    if year.startswith("201"):
+        nano_version = "9"
+    elif year == "2024":
+        nano_version = "15"
+    else:
+        nano_version = "12"
+    return nano_version
+
+
 def get_dataset_config(year: str):
     aux_year_map = {
         "2016": "2016preVFP",
@@ -61,7 +71,7 @@ def get_dataset_config(year: str):
     }
     aux_year = aux_year_map.get(year, year)
     fileset_path = Path.cwd() / "analysis" / "filesets"
-    nano_version = "9" if year.startswith("201") else "12"
+    nano_version = get_nano_version(year)
     fileset_file = f"{fileset_path}/{aux_year}_nanov{nano_version}.yaml"
     with open(fileset_file, "r") as f:
         dataset_config = yaml.safe_load(f)

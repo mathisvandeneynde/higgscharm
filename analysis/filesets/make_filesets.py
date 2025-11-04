@@ -3,6 +3,7 @@ import yaml
 import json
 import argparse
 from pathlib import Path
+from analysis.filesets.utils import get_nano_version
 from coffea.dataset_tools.dataset_query import DataDiscoveryCLI
 
 
@@ -16,6 +17,7 @@ if __name__ == "__main__":
         "2022postEE",
         "2023preBPix",
         "2023postBPix",
+        "2024",
     ]
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -34,8 +36,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # open dataset configs
-    nano_version = "9" if args.year.startswith("201") else "12"
     filesets_dir = Path.cwd() / "analysis" / "filesets"
+    nano_version = get_nano_version(args.year)
     datasets_dir = filesets_dir / f"{args.year}_nanov{nano_version}.yaml"
     with open(datasets_dir, "r") as f:
         dataset_configs = yaml.safe_load(f)

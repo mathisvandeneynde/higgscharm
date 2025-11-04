@@ -1,7 +1,7 @@
 import argparse
 import subprocess
 from pathlib import Path
-
+from analysis.filesets.utils import get_nano_version
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -19,6 +19,7 @@ if __name__ == "__main__":
             "2022postEE",
             "2023preBPix",
             "2023postBPix",
+            "2024",
         ],
     )
     parser.add_argument(
@@ -42,8 +43,6 @@ if __name__ == "__main__":
             "VOMS proxy expired or non-existing: please run 'voms-proxy-init --voms cms'"
         )
 
-    nano_version = "9" if args.year.startswith("201") else "12"
-
     sites_file = Path.cwd() / "analysis" / "filesets" / f"{args.year}_sites.yaml"
     if not sites_file.exists():
         cmd = f"python3 analysis/filesets/build_sites.py --year {args.year}"
@@ -51,5 +50,5 @@ if __name__ == "__main__":
 
 
     samples_str = " ".join(args.samples) if args.samples else ""
-    cmd = f"singularity exec -B /afs -B /cvmfs {args.image} python3 analysis/filesets/make_filesets.py --year {args.year} --samples {samples_str}"
+    cmd = f"singularity exec -B /afs -B /cvmfs {args.image} python3 -m analysis.filesets.make_filesets --year {args.year} --samples {samples_str}"
     subprocess.run(cmd, shell=True)
