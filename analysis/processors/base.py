@@ -44,6 +44,37 @@ class BaseProcessor(processor.ProcessorABC):
         self.histogram_config = self.workflow_config.histogram_config
         self.histograms = HistBuilder(self.workflow_config).build_histogram()
 
+    def add_cutflow(
+        self, events, output, objects, selection_manager, weight_manager, dataset
+    ):
+        sumw = ak.sum(events.genWeight) if hasattr(events, "genWeight") else len(events)
+        for category, category_cuts in self.workflow_config.event_selection[
+            "categories"
+        ].items():
+            output["metadata"].update({category: {"cutflow": {"initial": sumw}}})
+            selections = []
+            for cut_name in category_cuts:
+                selections.append(cut_name)
+                current_selection = selection_manager.all(*selections)
+                if ak.sum(current_selection) != 0:
+                    pruned_ev_cutflow = events[current_selection]
+                    for obj in objects:
+                        pruned_ev_cutflow[f"selected_{obj}"] = objects[obj][
+                            current_selection
+                        ]
+                    weights_container_cutflow = weight_manager(
+                        pruned_ev=pruned_ev_cutflow,
+                        year=self.year,
+                        workflow_config=self.workflow_config,
+                        variation="nominal",
+                        dataset=dataset,
+                    )
+                    output["metadata"][category]["cutflow"][cut_name] = ak.sum(
+                        weights_container_cutflow.weight()
+                    )
+                else:
+                    output["metadata"][category]["cutflow"][cut_name] = 0
+
     def process(self, events):
         year = self.year
         dataset = events.metadata["dataset"]
@@ -99,6 +130,10 @@ class BaseProcessor(processor.ProcessorABC):
         for selection, mask in event_selection["selections"].items():
             selection_manager.add(selection, eval(mask))
 
+        # add cutflow to metadata
+        self.add_cutflow(
+            events, output, objects, selection_manager, weight_manager, dataset
+        )
         # --------------------------------------------------------------
         # Histogram filling / array dumping
         # --------------------------------------------------------------
@@ -140,7 +175,6 @@ class BaseProcessor(processor.ProcessorABC):
                     output["metadata"][category]["cutflow"][cut_name] = ak.sum(
                         weights_container_cutflow.weight()
                     )
-
                 # save number of events after selection to metadata
                 weighted_final_nevents = ak.sum(weights_container.weight())
                 output["metadata"][category].update(
