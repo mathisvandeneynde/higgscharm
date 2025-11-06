@@ -1,39 +1,3 @@
-EGammav1B:
-  era: B
-  process: Data
-  key: electron
-  query: SingleElectron/Run2016B-ver1_HIPM_UL2016_MiniAODv2_NanoAODv9-v2/NANOAOD
-  xsec: null
-EGammav2B:
-  era: B
-  process: Data
-  key: electron
-  query: SingleElectron/Run2016B-ver2_HIPM_UL2016_MiniAODv2_NanoAODv9-v2/NANOAOD
-  xsec: null
-EGammaC:
-  era: C
-  process: Data
-  key: electron
-  query: SingleElectron/Run2016C-HIPM_UL2016_MiniAODv2_NanoAODv9-v2/NANOAOD
-  xsec: null
-EGammaD:
-  era: D
-  process: Data
-  key: electron
-  query: SingleElectron/Run2016D-HIPM_UL2016_MiniAODv2_NanoAODv9-v2/NANOAOD
-  xsec: null
-EGammaE:
-  era: E
-  process: Data
-  key: electron
-  query: SingleElectron/Run2016E-HIPM_UL2016_MiniAODv2_NanoAODv9-v2/NANOAOD
-  xsec: null
-EGammaF:
-  era: F
-  process: Data
-  key: electron
-  query: SingleElectron/Run2016F-HIPM_UL2016_MiniAODv2_NanoAODv9-v2/NANOAOD
-  xsec: null
 SingleMuonv1B:
   era: B
   process: Data
@@ -46,11 +10,83 @@ SingleMuonv2B:
   key: muon
   query: SingleMuon/Run2016B-ver2_HIPM_UL2016_MiniAODv2_NanoAODv9-v2/NANOAOD
   xsec: null
+EGammav1B:
+  era: B
+  process: Data
+  key: electron
+  query: SingleElectron/Run2016B-ver1_HIPM_UL2016_MiniAODv2_NanoAODv9-v2/NANOAOD
+  xsec: null
+EGammav2B:
+  era: B
+  process: Data
+  key: electron
+  query: SingleElectron/Run2016B-ver2_HIPM_UL2016_MiniAODv2_NanoAODv9-v2/NANOAOD
+  xsec: null
+DoubleMuonv1B:
+  era: B
+  process: Data
+  key: double_muon
+  query: DoubleMuon/Run2016B-ver1_HIPM_UL2016_MiniAODv2_NanoAODv9-v2/NANOAOD
+  xsec: null
+DoubleMuonv2B:
+  era: B
+  process: Data
+  key: double_muon
+  query: DoubleMuon/Run2016B-ver2_HIPM_UL2016_MiniAODv2_NanoAODv9-v2/NANOAOD
+  xsec: null
+DoubleEGv1B:
+  era: B
+  process: Data
+  key: double_electron
+  query: DoubleEG/Run2016B-ver1_HIPM_UL2016_MiniAODv2_NanoAODv9-v2/NANOAOD
+  xsec: null
+DoubleEGv2B:
+  era: B
+  process: Data
+  key: double_electron
+  query: DoubleEG/Run2016B-ver2_HIPM_UL2016_MiniAODv2_NanoAODv9-v3/NANOAOD
+  xsec: null
+MuonEGv1B:
+  era: B
+  process: Data
+  key: muon_electron
+  query: MuonEG/Run2016B-ver1_HIPM_UL2016_MiniAODv2_NanoAODv9-v2/NANOAOD
+  xsec: null
+MuonEGv2B:
+  era: B
+  process: Data
+  key: muon_electron
+  query: MuonEG/Run2016B-ver2_HIPM_UL2016_MiniAODv2_NanoAODv9-v2/NANOAOD
+  xsec: null
 SingleMuonC:
   era: C
   process: Data
   key: muon
   query: SingleMuon/Run2016C-HIPM_UL2016_MiniAODv2_NanoAODv9-v2/NANOAOD
+  xsec: null
+EGammaC:
+  era: C
+  process: Data
+  key: electron
+  query: SingleElectron/Run2016C-HIPM_UL2016_MiniAODv2_NanoAODv9-v2/NANOAOD
+  xsec: null
+DoubleMuonC:
+  era: C
+  process: Data
+  key: double_muon
+  query: DoubleMuon/Run2016C-HIPM_UL2016_MiniAODv2_NanoAODv9-v2/NANOAOD
+  xsec: null
+DoubleEGC:
+  era: C
+  process: Data
+  key: double_electron
+  query: DoubleEG/Run2016C-HIPM_UL2016_MiniAODv2_NanoAODv9-v2/NANOAOD
+  xsec: null
+MuonEGC:
+  era: C
+  process: Data
+  key: muon_electron
+  query: MuonEG/Run2016C-HIPM_UL2016_MiniAODv2_NanoAODv9-v2/NANOAOD
   xsec: null
 SingleMuonD:
   era: D
@@ -58,17 +94,89 @@ SingleMuonD:
   key: muon
   query: SingleMuon/Run2016D-HIPM_UL2016_MiniAODv2_NanoAODv9-v2/NANOAOD
   xsec: null
+EGammaD:
+  era: D
+  process: Data
+  key: electron
+  query: SingleElectron/Run2016D-HIPM_UL2016_MiniAODv2_NanoAODv9-v2/NANOAOD
+  xsec: null
+DoubleMuonD:
+  era: D
+  process: Data
+  key: double_muon
+  query: DoubleMuon/Run2016D-HIPM_UL2016_MiniAODv2_NanoAODv9-v2/NANOAOD
+  xsec: null
+DoubleEGD:
+  era: D
+  process: Data
+  key: double_electron
+  query: DoubleEG/Run2016D-HIPM_UL2016_MiniAODv2_NanoAODv9-v2/NANOAOD
+  xsec: null
+MuonEGD:
+  era: D
+  process: Data
+  key: muon_electron
+  query: MuonEG/Run2016D-HIPM_UL2016_MiniAODv2_NanoAODv9-v2/NANOAOD
+  xsec: null
 SingleMuonE:
   era: E
   process: Data
   key: muon
   query: SingleMuon/Run2016E-HIPM_UL2016_MiniAODv2_NanoAODv9-v2/NANOAOD
   xsec: null
+EGammaE:
+  era: E
+  process: Data
+  key: electron
+  query: SingleElectron/Run2016E-HIPM_UL2016_MiniAODv2_NanoAODv9-v2/NANOAOD
+  xsec: null
+DoubleMuonE:
+  era: E
+  process: Data
+  key: double_muon
+  query: DoubleMuon/Run2016E-HIPM_UL2016_MiniAODv2_NanoAODv9-v2/NANOAOD
+  xsec: null
+DoubleEGE:
+  era: E
+  process: Data
+  key: double_electron
+  query: DoubleEG/Run2016E-HIPM_UL2016_MiniAODv2_NanoAODv9-v2/NANOAOD
+  xsec: null
+MuonEGE:
+  era: E
+  process: Data
+  key: muon_electron
+  query: MuonEG/Run2016E-HIPM_UL2016_MiniAODv2_NanoAODv9-v2/NANOAOD
+  xsec: null
 SingleMuonF:
   era: F
   process: Data
   key: muon
   query: SingleMuon/Run2016F-HIPM_UL2016_MiniAODv2_NanoAODv9-v2/NANOAOD
+  xsec: null
+EGammaF:
+  era: F
+  process: Data
+  key: electron
+  query: SingleElectron/Run2016F-HIPM_UL2016_MiniAODv2_NanoAODv9-v2/NANOAOD
+  xsec: null
+DoubleMuonF:
+  era: F
+  process: Data
+  key: double_muon
+  query: DoubleMuon/Run2016F-HIPM_UL2016_MiniAODv2_NanoAODv9-v2/NANOAOD
+  xsec: null
+DoubleEGF:
+  era: F
+  process: Data
+  key: double_electron
+  query: DoubleEG/Run2016F-HIPM_UL2016_MiniAODv2_NanoAODv9-v2/NANOAOD
+  xsec: null
+MuonEGF:
+  era: F
+  process: Data
+  key: muon_electron
+  query: MuonEG/Run2016F-HIPM_UL2016_MiniAODv2_NanoAODv9-v2/NANOAOD
   xsec: null
 DYJetsToLL_10to50:
   era: mc
@@ -150,3 +258,99 @@ ZZ:
     - zz
   query: ZZ_TuneCP5_13TeV-pythia8/RunIISummer20UL16NanoAODAPVv9-106X_mcRun2_asymptotic_preVFP_v11-v1/NANOAODSIM
   xsec: 12.17
+WZto3LNu:
+  era: mc
+  query: WZTo3LNu_TuneCP5_13TeV-amcatnloFXFX-pythia8/RunIISummer20UL16NanoAODAPVv9-106X_mcRun2_asymptotic_preVFP_v11-v1/NANOAODSIM
+  process: WZ
+  key: wz
+  xsec: 4.430
+ZZto4L:
+  era: mc
+  query: ZZTo4L_TuneCP5_13TeV_powheg_pythia8/RunIISummer20UL16NanoAODAPVv9-106X_mcRun2_asymptotic_preVFP_v11-v1/NANOAODSIM
+  process: qqToZZ
+  key: qqtozz
+  xsec: 1.256
+GluGluToContinToZZTo4e:
+  era: mc
+  query: GluGluToContinToZZTo4e_TuneCP5_13TeV-mcfm701-pythia8/RunIISummer20UL16NanoAODAPVv9-106X_mcRun2_asymptotic_preVFP_v11-v2/NANOAODSIM
+  process: ggToZZ
+  key: ggtozz
+  xsec: 0.00159
+GluGluToContinToZZTo4mu:
+  era: mc
+  query: GluGluToContinToZZTo4mu_TuneCP5_13TeV-mcfm701-pythia8/RunIISummer20UL16NanoAODAPVv9-106X_mcRun2_asymptotic_preVFP_v11-v2/NANOAODSIM
+  process: ggToZZ
+  key: ggtozz
+  xsec: 0.00159
+GluGluToContinToZZTo4tau:
+  era: mc
+  query: GluGluToContinToZZTo4tau_TuneCP5_13TeV-mcfm701-pythia8/RunIISummer20UL16NanoAODAPVv9-106X_mcRun2_asymptotic_preVFP_v11-v2/NANOAODSIM
+  process: ggToZZ
+  key: ggtozz
+  xsec: 0.00159
+GluGluToContinToZZTo2e2mu:
+  era: mc
+  query: GluGluToContinToZZTo2e2mu_TuneCP5_13TeV-mcfm701-pythia8/RunIISummer20UL16NanoAODAPVv9-106X_mcRun2_asymptotic_preVFP_v11-v2/NANOAODSIM
+  process: ggToZZ
+  key: ggtozz
+  xsec: 0.00319
+GluGluToContinToZZTo2e2tau:
+  era: mc
+  query: GluGluToContinToZZTo2e2tau_TuneCP5_13TeV-mcfm701-pythia8/RunIISummer20UL16NanoAODAPVv9-106X_mcRun2_asymptotic_preVFP_v11-v2/NANOAODSIM
+  process: ggToZZ
+  key: ggtozz
+  xsec: 0.00319
+GluGluToContinToZZTo2mu2tau:
+  era: mc
+  query: GluGluToContinToZZTo2mu2tau_TuneCP5_13TeV-mcfm701-pythia8/RunIISummer20UL16NanoAODAPVv9-106X_mcRun2_asymptotic_preVFP_v11-v2/NANOAODSIM
+  process: ggToZZ
+  key: ggtozz
+  xsec: 0.00319
+GluGluHToZZTo4L:
+  era: mc
+  query: GluGluHToZZTo4L_M125_TuneCP5_13TeV_powheg2_JHUGenV7011_pythia8/RunIISummer20UL16NanoAODAPVv9-106X_mcRun2_asymptotic_preVFP_v11-v1/NANOAODSIM
+  process: H(125) 
+  key: higgs
+  xsec: 12.18
+VBF_HToZZTo4L:
+  era: mc
+  query: VBF_HToZZTo4L_M125_TuneCP5_13TeV_powheg2_JHUGenV7011_pythia8/RunIISummer20UL16NanoAODAPVv9-106X_mcRun2_asymptotic_preVFP_v11-v1/NANOAODSIM
+  process: H(125) 
+  key: higgs
+  xsec: 1.044
+WplusH_HToZZTo4L:
+  era: mc
+  query: WplusH_HToZZTo4L_M125_TuneCP5_13TeV_powheg2-minlo-HWJ_JHUGenV7011_pythia8/RunIISummer20UL16NanoAODAPVv9-106X_mcRun2_asymptotic_preVFP_v11-v1/NANOAODSIM
+  process: H(125) 
+  key: higgs
+  xsec: 0.232
+WminusH_HToZZTo4L:
+  era: mc
+  query: WminusH_HToZZTo4L_M125_TuneCP5_13TeV_powheg2-minlo-HWJ_JHUGenV7011_pythia8/RunIISummer20UL16NanoAODAPVv9-106X_mcRun2_asymptotic_preVFP_v11-v1/NANOAODSIM
+  process: H(125) 
+  key: higgs
+  xsec: 0.147
+ZH_HToZZ_4L:
+  era: mc
+  query: ZH_HToZZ_4LFilter_M125_TuneCP5_13TeV_powheg2-minlo-HZJ_JHUGenV7011_pythia8/RunIISummer20UL16NanoAODAPVv9-106X_mcRun2_asymptotic_preVFP_v11-v1/NANOAODSIM
+  process: H(125) 
+  key: higgs
+  xsec: 0.668
+ttH_HToZZ_4L:
+  era: mc
+  query: ttH_HToZZ_4LFilter_M125_TuneCP5_13TeV_powheg2_JHUGenV7011_pythia8/RunIISummer20UL16NanoAODAPVv9-106X_mcRun2_asymptotic_preVFP_v11-v1/NANOAODSIM
+  process: H(125) 
+  key: higgs
+  xsec: 0.393
+bbH_HToZZTo4L:
+  era: mc
+  query: bbH_HToZZTo4L_M125_TuneCP2_13TeV-jhugenv7011-pythia8/RunIISummer20UL16NanoAODAPVv9-106X_mcRun2_asymptotic_preVFP_v11-v2/NANOAODSIM
+  process: H(125) 
+  key: higgs
+  xsec: 0.135
+tqH_HToZZTo4L:
+  era: mc
+  query: tqH_HToZZTo4L_M125_TuneCP5_13TeV-jhugenv7011-pythia8/RunIISummer20UL16NanoAODAPVv9-106X_mcRun2_asymptotic_preVFP_v11-v1/NANOAODSIM
+  process: H(125) 
+  key: higgs
+  xsec: 0.0213

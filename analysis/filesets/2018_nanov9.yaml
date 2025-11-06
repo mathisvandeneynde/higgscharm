@@ -1,32 +1,26 @@
+SingleMuonA:
+  era: A
+  process: Data
+  key: muon
+  query: SingleMuon/Run2018A-UL2018_MiniAODv2_NanoAODv9-v2/NANOAOD
+  xsec: null
 EGammaA:
   era: A
   process: Data
   key: electron
   query: EGamma/Run2018A-UL2018_MiniAODv2_NanoAODv9-v1/NANOAOD
   xsec: null
-EGammaB:
-  era: B
-  process: Data
-  key: electron
-  query: EGamma/Run2018B-UL2018_MiniAODv2_NanoAODv9-v1/NANOAOD
-  xsec: null
-EGammaC:
-  era: C
-  process: Data
-  key: electron
-  query: EGamma/Run2018C-UL2018_MiniAODv2_NanoAODv9-v1/NANOAOD
-  xsec: null
-EGammaD:
-  era: D
-  process: Data
-  key: electron
-  query: EGamma/Run2018D-UL2018_MiniAODv2_NanoAODv9-v3/NANOAOD
-  xsec: null
-SingleMuonA:
+DoubleMuonA:
   era: A
   process: Data
-  key: muon
-  query: SingleMuon/Run2018A-UL2018_MiniAODv2_NanoAODv9-v2/NANOAOD
+  key: double_muon
+  query: DoubleMuon/Run2018A-UL2018_MiniAODv2_NanoAODv9-v1/NANOAOD
+  xsec: null
+MuonEGA:
+  era: A
+  process: Data
+  key: muon_electron
+  query: MuonEG/Run2018A-UL2018_MiniAODv2_NanoAODv9-v1/NANOAOD
   xsec: null
 SingleMuonB:
   era: B
@@ -34,17 +28,71 @@ SingleMuonB:
   key: muon
   query: SingleMuon/Run2018B-UL2018_MiniAODv2_NanoAODv9-v2/NANOAOD
   xsec: null
+EGammaB:
+  era: B
+  process: Data
+  key: electron
+  query: EGamma/Run2018B-UL2018_MiniAODv2_NanoAODv9-v1/NANOAOD
+  xsec: null
+DoubleMuonB:
+  era: B
+  process: Data
+  key: double_muon
+  query: DoubleMuon/Run2018B-UL2018_MiniAODv2_NanoAODv9-v1/NANOAOD
+  xsec: null
+MuonEGB:
+  era: B
+  process: Data
+  key: muon_electron
+  query: MuonEG/Run2018B-UL2018_MiniAODv2_NanoAODv9-v1/NANOAOD
+  xsec: null
 SingleMuonC:
   era: C
   process: Data
   key: muon
   query: SingleMuon/Run2018C-UL2018_MiniAODv2_NanoAODv9-v2/NANOAOD
   xsec: null
+EGammaC:
+  era: C
+  process: Data
+  key: electron
+  query: EGamma/Run2018C-UL2018_MiniAODv2_NanoAODv9-v1/NANOAOD
+  xsec: null
+DoubleMuonC:
+  era: C
+  process: Data
+  key: double_muon
+  query: DoubleMuon/Run2018C-UL2018_MiniAODv2_NanoAODv9-v1/NANOAOD
+  xsec: null
+MuonEGC:
+  era: C
+  process: Data
+  key: muon_electron
+  query: MuonEG/Run2018C-UL2018_MiniAODv2_NanoAODv9-v1/NANOAOD
+  xsec: nul
 SingleMuonD:
   era: D
   process: Data
   key: muon
   query: SingleMuon/Run2018D-UL2018_MiniAODv2_NanoAODv9-v1/NANOAOD
+  xsec: null
+EGammaD:
+  era: D
+  process: Data
+  key: electron
+  query: EGamma/Run2018D-UL2018_MiniAODv2_NanoAODv9-v3/NANOAOD
+  xsec: null
+DoubleMuonD:
+  era: D
+  process: Data
+  key: double_muon
+  query: DoubleMuon/Run2018D-UL2018_MiniAODv2_NanoAODv9-v2/NANOAOD
+  xsec: null
+MuonEGD:
+  era: D
+  process: Data
+  key: muon_electron
+  query: MuonEG/Run2018D-UL2018_MiniAODv2_NanoAODv9-v1/NANOAOD
   xsec: null
 DYJetsToLL_10to50:
   era: mc
@@ -126,3 +174,99 @@ ZZ:
     - zz
   query: ZZ_TuneCP5_13TeV-pythia8/RunIISummer20UL18NanoAODv9-106X_upgrade2018_realistic_v16_L1v1-v1/NANOAODSIM
   xsec: 12.17
+WZto3LNu:
+  era: mc
+  query: WZTo3LNu_TuneCP5_13TeV-amcatnloFXFX-pythia8/RunIISummer20UL18NanoAODv9-106X_upgrade2018_realistic_v16_L1v1-v2/NANOAODSIM
+  process: WZ
+  key: wz
+  xsec: 4.430
+ZZto4L:
+  era: mc
+  query: ZZTo4L_TuneCP5_13TeV_powheg_pythia8/RunIISummer20UL18NanoAODv9-106X_upgrade2018_realistic_v16_L1v1-v2/NANOAODSIM
+  process: qqToZZ
+  key: qqtozz
+  xsec: 1.256
+GluGluToContinToZZTo4e:
+  era: mc
+  query: GluGluToContinToZZTo4e_TuneCP5_13TeV-mcfm701-pythia8/RunIISummer20UL18NanoAODv9-106X_upgrade2018_realistic_v16_L1v1-v2/NANOAODSIM
+  process: ggToZZ
+  key: ggtozz
+  xsec: 0.00159
+GluGluToContinToZZTo4mu:
+  era: mc
+  query: GluGluToContinToZZTo4mu_TuneCP5_13TeV-mcfm701-pythia8/RunIISummer20UL18NanoAODv9-106X_upgrade2018_realistic_v16_L1v1-v2/NANOAODSIM
+  process: ggToZZ
+  key: ggtozz
+  xsec: 0.00159
+GluGluToContinToZZTo4tau:
+  era: mc
+  query: GluGluToContinToZZTo4tau_TuneCP5_13TeV-mcfm701-pythia8/RunIISummer20UL18NanoAODv9-106X_upgrade2018_realistic_v16_L1v1-v2/NANOAODSIM
+  process: ggToZZ
+  key: ggtozz
+  xsec: 0.00159
+GluGluToContinToZZTo2e2mu:
+  era: mc
+  query: GluGluToContinToZZTo2e2mu_TuneCP5_13TeV-mcfm701-pythia8/RunIISummer20UL18NanoAODv9-106X_upgrade2018_realistic_v16_L1v1-v2/NANOAODSIM
+  process: ggToZZ
+  key: ggtozz
+  xsec: 0.00319
+GluGluToContinToZZTo2e2tau:
+  era: mc
+  query: GluGluToContinToZZTo2e2tau_TuneCP5_13TeV-mcfm701-pythia8/RunIISummer20UL18NanoAODv9-106X_upgrade2018_realistic_v16_L1v1-v2/NANOAODSIM
+  process: ggToZZ
+  key: ggtozz
+  xsec: 0.00319
+GluGluToContinToZZTo2mu2tau:
+  era: mc
+  query: GluGluToContinToZZTo2mu2tau_TuneCP5_13TeV-mcfm701-pythia8/RunIISummer20UL18NanoAODv9-106X_upgrade2018_realistic_v16_L1v1-v2/NANOAODSIM
+  process: ggToZZ
+  key: ggtozz
+  xsec: 0.00319
+GluGluHToZZTo4L:
+  era: mc
+  query: GluGluHToZZTo4L_M125_TuneCP5_13TeV_powheg2_JHUGenV7011_pythia8/RunIISummer20UL18NanoAODv9-106X_upgrade2018_realistic_v16_L1v1-v1/NANOAODSIM
+  process: H(125) 
+  key: higgs
+  xsec: 12.18
+VBF_HToZZTo4L:
+  era: mc
+  query: VBF_HToZZTo4L_M125_TuneCP5_13TeV_powheg2_JHUGenV7011_pythia8/RunIISummer20UL18NanoAODv9-106X_upgrade2018_realistic_v16_L1v1-v1/NANOAODSIM
+  process: H(125) 
+  key: higgs
+  xsec: 1.044
+WplusH_HToZZTo4L:
+  era: mc
+  query: WplusH_HToZZTo4L_M125_TuneCP5_13TeV_powheg2-minlo-HWJ_JHUGenV7011_pythia8/RunIISummer20UL18NanoAODv9-106X_upgrade2018_realistic_v16_L1v1-v1/NANOAODSIM
+  process: H(125) 
+  key: higgs
+  xsec: 0.232
+WminusH_HToZZTo4L:
+  era: mc
+  query: WminusH_HToZZTo4L_M125_TuneCP5_13TeV_powheg2-minlo-HWJ_JHUGenV7011_pythia8/RunIISummer20UL18NanoAODv9-106X_upgrade2018_realistic_v16_L1v1-v2/NANOAODSIM
+  process: H(125) 
+  key: higgs
+  xsec: 0.147
+ZH_HToZZ_4L:
+  era: mc
+  query: ZH_HToZZ_4LFilter_M125_TuneCP5_13TeV_powheg2-minlo-HZJ_JHUGenV7011_pythia8/RunIISummer20UL18NanoAODv9-106X_upgrade2018_realistic_v16_L1v1-v2/NANOAODSIM
+  process: H(125) 
+  key: higgs
+  xsec: 0.668
+ttH_HToZZ_4L:
+  era: mc
+  query: ttH_HToZZ_4LFilter_M125_TuneCP5_13TeV_powheg2_JHUGenV7011_pythia8/RunIISummer20UL18NanoAODv9-106X_upgrade2018_realistic_v16_L1v1-v2/NANOAODSIM
+  process: H(125) 
+  key: higgs
+  xsec: 0.393
+bbH_HToZZTo4L:
+  era: mc
+  query: bbH_HToZZTo4L_M125_TuneCP2_13TeV-jhugenv7011-pythia8/RunIISummer20UL18NanoAODv9-106X_upgrade2018_realistic_v16_L1v1-v2/NANOAODSIM
+  process: H(125) 
+  key: higgs
+  xsec: 0.135
+tqH_HToZZTo4L:
+  era: mc
+  query: tqH_HToZZTo4L_M125_TuneCP5_13TeV-jhugenv7011-pythia8/RunIISummer20UL18NanoAODv9-106X_upgrade2018_realistic_v16_L1v1-v2/NANOAODSIM
+  process: H(125) 
+  key: higgs
+  xsec: 0.0213
