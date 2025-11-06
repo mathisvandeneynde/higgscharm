@@ -1,9 +1,9 @@
 import numpy as np
 import awkward as ak
-from .utils import get_ctag_mask
 from analysis.filesets.utils import get_nano_version
+from analysis.working_points.utils import get_ctag_mask
 
-
+    
 class WorkingPoints:
 
     # -----------------------------------------------------------------
