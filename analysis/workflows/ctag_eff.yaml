@@ -74,15 +74,15 @@ object_selection:
     field: events.Jet
     add_cut:
       pass_loose_wp:
-        - working_points.jet_particlenet_c(events, 'loose', year)
+        - working_points.jet_ctagging(events, 'loose', year)
       pass_medium_wp:
-        - working_points.jet_particlenet_c(events, 'medium', year)
+        - working_points.jet_ctagging(events, 'medium', year)
       pass_tight_wp:
-        - working_points.jet_particlenet_c(events, 'tight', year)
+        - working_points.jet_ctagging(events, 'tight', year)
     cuts:
       - events.Jet.pt > 20
       - np.abs(events.Jet.eta) < 2.5
-      - working_points.jet_id(events, 'tightlepveto')
+      - working_points.jet_id(events, year, 'tightlepveto')
       - delta_r_higher(events.Jet, objects['leptons'], 0.4)
 event_selection:
   hlt_paths:

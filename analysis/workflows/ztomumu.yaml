@@ -68,6 +68,7 @@ event_selection:
 corrections:
   objects:
     - jec
+    - jet_vetomaps
     - muon_ss
     - electon_ss
   event_weights:
@@ -77,11 +78,8 @@ corrections:
     lhepdfWeight: false
     lhescaleWeight: false
     nnlopsWeight: false
-    electron:
-      - id: false
-      - reco: false
-      - trigger: false
-    muon:
+    electron: false
+    muon: 
       - id: tight
       - iso: tight
       - trigger: true
@@ -275,14 +273,14 @@ histogram_config:
       start: 0
       stop: 1
       label: Leading Jet CvsL
-      expression: ak.pad_none(objects['jets'], target=2)[:, 0].btagPNetCvL if hasattr(objects['jets'], 'btagPNetCvL') else ak.pad_none(objects['jets'], target=2)[:, 0].btagDeepFlavCvL
+      expression: ak.pad_none(objects['jets'], target=2)[:, 0].btagUParTAK4CvL if hasattr(objects['jets'], 'btagUParTAK4CvL') else ak.pad_none(objects['jets'], target=2)[:, 0].btagPNetCvL if hasattr(objects['jets'], 'btagPNetCvL') else ak.pad_none(objects['jets'], target=2)[:, 0].btagDeepFlavCvL
     leadingjet_cvsb:
       type: Regular
       bins: 50
       start: 0
       stop: 1
       label: Leading Jet CvsB
-      expression: ak.pad_none(objects['jets'], target=2)[:, 0].btagPNetCvB if hasattr(objects['jets'], 'btagPNetCvB') else ak.pad_none(objects['jets'], target=2)[:, 0].btagDeepFlavCvB
+      expression: ak.pad_none(objects['jets'], target=2)[:, 0].btagUParTAK4CvB if hasattr(objects['jets'], 'btagUParTAK4CvB') else ak.pad_none(objects['jets'], target=2)[:, 0].btagPNetCvB if hasattr(objects['jets'], 'btagPNetCvB') else ak.pad_none(objects['jets'], target=2)[:, 0].btagDeepFlavCvB
     npvs:
       type: Integer
       start: 0
@@ -292,28 +290,39 @@ histogram_config:
   layout:
     vertex:
       - npvs
-    dimuon:
+    dimuon_mass:
       - dimuon_mass
+    dimuon_pt:
       - dimuon_pt
+    dimuon_eta:
       - dimuon_eta
+    dimuon_phi:
       - dimuon_phi
-    dimuon_delta:
+    dimuon_dr:
       - dimuon_dr
+    dimuon_deta:
       - dimuon_deta
-    leading_muon:
+    leading_muon_pt:
       - leading_muon_pt
+    leading_muon_eta:
       - leading_muon_eta
+    leading_muon_phi:
       - leading_muon_phi
-    subleading_muon:
+    subleading_muon_pt:
       - subleading_muon_pt
+    subleading_muon_eta:
       - subleading_muon_eta
+    subleading_muon_phi:
       - subleading_muon_phi
-    jet: 
+    jet_pt: 
       - jet_pt
+    jet_eta:
       - jet_eta
+    jet_phi:
       - jet_phi
-    jet_d: 
+    jet_dr: 
       - jet_dr
+    jet_deta:
       - jet_deta
     jet_multiplicity:
       - jet_multiplicity
