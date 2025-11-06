@@ -39,6 +39,7 @@ def parse_args():
             "2022postEE",
             "2023preBPix",
             "2023postBPix",
+            "2024"
         ],
         help="dataset year",
     )
