@@ -1,15 +1,14 @@
-import re
-import json
-import glob
-import pathlib
 import correctionlib
 import numpy as np
 import awkward as ak
 import importlib.resources
 from coffea import util
 from typing import Type
+from pathlib import Path
 from coffea.analysis_tools import Weights
-from analysis.corrections.utils import get_btv_json, get_pnet_ctag_mask
+from analysis.filesets.utils import get_nano_version
+from analysis.corrections.utils import correction_files
+from analysis.working_points.utils import get_ctag_mask
 
 
 class CTagCorrector:
@@ -25,7 +24,7 @@ class CTagCorrector:
         worging_point:
             worging point {loose, medium, tight}
         year:
-            dataset year {2022preEE, 2022postEE, 2023preBPix, 2023PostBPix}
+            dataset year {2022preEE, 2022postEE, 2023preBPix, 2023PostBPix, 2024}
         variation:
             if 'nominal' (default) add 'nominal', 'up' and 'down' variations to weights container
     """
@@ -43,24 +42,42 @@ class CTagCorrector:
         self._weights = weights
         self._variation = variation
 
+        # set tagger
+        self._nano_version = get_nano_version(year)
+        if self._nano_version == "9":
+            tagger = "deepjet"
+        elif self._nano_version == "12":
+            tagger = "pnet"
+        elif self._nano_version == "15":
+            tagger = "upart"
+        self._tagger = tagger
+
         # check available ctag SFs
         self._wp_map = {"tight": "T", "medium": "M", "loose": "L"}
-        if self._wp not in self._wp_map:
-            raise ValueError(
-                f"There are no available c-tag SFs for the working point. Please specify {list(self._wp_map.keys())}"
-            )
 
         # load c-tagging efficiency look-up table
+        ctag_eff_file = (
+            Path.cwd()
+            / "analysis"
+            / "data"
+            / "ctag_efficiencies"
+            / f"ctag_eff_{tagger}_{self._wp}_{self._year}.coffea"
+        )
+        if not ctag_eff_file.exists():
+            raise ValueError(
+                f"There are no available c-tag efficiencies for tagger '{tagger}', year '{self._year}', and wp '{self._wp}'"
+            )
         with importlib.resources.path(
-            "analysis.data",
-            f"ctag_pnet_eff_{self._wp}_{self._year}.coffea",
+            "analysis.data.ctag_efficiencies",
+            f"ctag_eff_{tagger}_{self._wp}_{self._year}.coffea",
         ) as filename:
             self._efflookup = util.load(str(filename))
 
         # load correction set
         self._cset = correctionlib.CorrectionSet.from_file(
-            get_btv_json(json_name="ctag", year=year)
+            correction_files["ctagging"][year]
         )
+
         # select b, c and light jets
         self._flavors = {"b": 5, "c": 4, "light": 0}
         self._c_jets = events.selected_jets[
@@ -78,9 +95,11 @@ class CTagCorrector:
             "light": self._light_jets,
         }
         self._jet_pass_ctag = {
-            "c": get_pnet_ctag_mask(self._jet_map["c"], self._wp, self._year),
-            "b": get_pnet_ctag_mask(self._jet_map["b"], self._wp, self._year),
-            "light": get_pnet_ctag_mask(self._jet_map["light"], self._wp, self._year),
+            "c": get_ctag_mask(self._jet_map["c"], self._year, self._wp, self._tagger),
+            "b": get_ctag_mask(self._jet_map["b"], self._year, self._wp, self._tagger),
+            "light": get_ctag_mask(
+                self._jet_map["light"], self._year, self._wp, self._tagger
+            ),
         }
         self.var_naming_map = {
             "c": "CMS_ctag_c",
@@ -140,7 +159,7 @@ class CTagCorrector:
 
     def get_sf(self, flavor: str, syst: str = "central") -> ak.Array:
         """
-        compute the scale factors for b, c or light jets
+        compute the c-tagging scale factors for b, c or light jets
 
         Parameters:
         -----------
@@ -149,11 +168,6 @@ class CTagCorrector:
             syst:
                 Name of the systematic {central, up, down}
         """
-        cset_keys = {
-            "b": "particleNet_tnp",
-            "c": "particleNet_wc",
-            "light": "particleNet_light",
-        }
         # until correctionlib handles jagged data natively we have to flatten and unflatten
         j, nj = ak.flatten(self._jet_map[flavor]), ak.num(self._jet_map[flavor])
 
@@ -166,16 +180,48 @@ class CTagCorrector:
         jets_pt = ak.fill_none(in_jets.pt, 0.0)
         jets_eta = ak.fill_none(np.abs(in_jets.eta), 0.0)
         jets_hadron_flavour = ak.fill_none(in_jets.hadronFlavour, self._flavors[flavor])
-        if flavor == "c":
+
+        # set keys to access correction set
+        cset_keys = {
+            "9": {
+                "b": "deepJet_wp",
+                "c": "deepJet_wp",
+                "light": "deepJet_wp",
+            },
+            "12": {
+                "b": "particleNet_tnp",
+                "c": "particleNet_wc",
+                "light": "particleNet_light",
+            },
+        }
+        if self._nano_version == "9":
+            # 'incl' for light jets, 'wcharm' for b/c jets
+            method = "wcharm" if flavor != "light" else "incl"
+            # The uncertainties are to be decorrelated between c jets ('wcharm'), b jets ('TnP') and light jets ('incl')
             if syst != "central":
-                syst += "_stat"
-        sf = self._cset[cset_keys[flavor]].evaluate(
-            syst,
-            self._wp_map[self._wp],
-            np.array(jets_hadron_flavour),
-            np.array(jets_eta),
-            np.array(jets_pt),
-        )
+                if flavor == "b":
+                    method = "TnP"
+
+            sf = self._cset[cset_keys[self._nano_version][flavor]].evaluate(
+                syst,
+                method,
+                self._wp_map[self._wp],
+                np.array(jets_hadron_flavour),
+                np.array(jets_eta),
+                np.array(jets_pt),
+            )
+        if self._nano_version == "12":
+            if flavor == "c":
+                if syst != "central":
+                    syst += "_stat"
+
+            sf = self._cset[cset_keys[self._nano_version][flavor]].evaluate(
+                syst,
+                self._wp_map[self._wp],
+                np.array(jets_hadron_flavour),
+                np.array(jets_eta),
+                np.array(jets_pt),
+            )
         sf = ak.where(in_jet_mask, sf, ak.ones_like(sf))
         return ak.unflatten(sf, nj)
 

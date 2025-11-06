@@ -4,10 +4,8 @@ import numpy as np
 import awkward as ak
 from typing import Type
 from coffea.analysis_tools import Weights
-from analysis.working_points import working_points
-from analysis.selections.trigger import trigger_match_mask
-from analysis.selections.event_selections import get_trigger_mask
-from analysis.corrections.utils import get_pog_json, unflat_sf, get_muon_hlt_json
+from analysis.filesets.utils import get_nano_version
+from analysis.corrections.utils import correction_files, unflat_sf
 
 
 class MuonWeights:
@@ -21,7 +19,7 @@ class MuonWeights:
         weights:
             Weights container
         year:
-            Year of the dataset {2016preVFP, 2016postVFP, 2017, 2018, 2022preEE, 2022postEE, 2023preBPix, 2023postBPix}
+            Year of the dataset {2016preVFP, 2016postVFP, 2017, 2018, 2022preEE, 2022postEE, 2023preBPix, 2023postBPix, 2024}
         variation:
             syst variation
         id_wp:
@@ -29,8 +27,7 @@ class MuonWeights:
         iso_wp:
             Iso working point {loose, medium, tight}
 
-    more info at:
-    https://cms-nanoaod-integration.web.cern.ch/commonJSONSFs/summaries/MUO_2022preEE_Summer22EE_muon_Z.html
+    more info at: https://cms-analysis-corrections.docs.cern.ch/corrections/MUO/
     """
 
     def __init__(
@@ -45,24 +42,18 @@ class MuonWeights:
         self.weights = weights
         self.year = year
         self.variation = variation
-        self.nano_version = "9" if year.startswith("201") else "12"
+        self.nano_version = get_nano_version(year)
 
         self.flat_muons = ak.flatten(self.muons)
         self.muons_counts = ak.num(self.muons)
 
-        year_key_map = {
-            "2016preVFP": "2016",
-            "2016postVFP": "2016",
-            "2022preEE": "2022",
-            "2022postEE": "2022",
-            "2023preBPix": "2023",
-            "2023postBPix": "2023",
-        }
-        self.year_key = year_key_map.get(year, year)
-
-        # get muon correction set
+        # get muon id/iso/HLT correction set
         self.cset = correctionlib.CorrectionSet.from_file(
-            get_pog_json(json_name="muon", year=year)
+            correction_files["muon"][year]
+        )
+        # get muon HLT eff correction set
+        self.cset_eff = correctionlib.CorrectionSet.from_file(
+            correction_files["muon_hlt"][year]
         )
 
     def add_id_weights(self, id_wp):
@@ -76,14 +67,14 @@ class MuonWeights:
             down_weights = self.get_id_weights(id_wp, variation="systdown")
             # add scale factors to weights container
             self.weights.add(
-                name=f"CMS_eff_m_id_{self.year_key}",
+                name=f"CMS_eff_m_id_{self.year[:4]}",
                 weight=nominal_weights,
                 weightUp=up_weights,
                 weightDown=down_weights,
             )
         else:
             self.weights.add(
-                name=f"CMS_eff_m_id_{self.year_key}",
+                name=f"CMS_eff_m_id_{self.year[:4]}",
                 weight=nominal_weights,
             )
 
@@ -99,7 +90,7 @@ class MuonWeights:
             down_weights = self.get_iso_weights(id_wp, iso_wp, variation="systdown")
             # add nominal, up and down weights to weights container
             self.weights.add(
-                name=f"muon_iso",
+                name=f"CMS_eff_m_iso_{self.year[:4]}",
                 weight=nominal_weights,
                 weightUp=up_weights,
                 weightDown=down_weights,
@@ -107,7 +98,7 @@ class MuonWeights:
         else:
             # add nominal weights to weights container
             self.weights.add(
-                name=f"muon_iso",
+                name=f"CMS_eff_m_iso_{self.year[:4]}",
                 weight=nominal_weights,
             )
 
@@ -137,7 +128,7 @@ class MuonWeights:
             """
             # add nominal, up and down weights to weights container
             self.weights.add(
-                name=f"muon_trigger",
+                name=f"CMS_eff_m_trigger_{self.year[:4]}",
                 weight=nominal_weights,
                 # weightUp=up_weights,
                 # weightDown=down_weights,
@@ -145,7 +136,7 @@ class MuonWeights:
         else:
             # add nominal weights to weights container
             self.weights.add(
-                name=f"muon_trigger",
+                name=f"CMS_eff_m_trigger_{self.year[:4]}",
                 weight=nominal_weights,
             )
 
@@ -158,8 +149,8 @@ class MuonWeights:
         }
         # get muons that pass the id wp, and within SF binning
         muon_pt_mask = self.flat_muons.pt > 15.0
-        if self.nano_version == "9":
-            muon_pt_mask = muon_pt_mask & (self.flat_muons.pt < 199.999)
+        if self.nano_version == "15":
+            muon_pt_mask = self.flat_muons.pt > 10.0
         muon_eta_mask = np.abs(self.flat_muons.eta) < 2.399
         in_muon_mask = muon_pt_mask & muon_eta_mask
         in_muons = self.flat_muons.mask[in_muon_mask]
@@ -182,23 +173,6 @@ class MuonWeights:
     def get_iso_weights(self, id_wp, iso_wp, variation):
         """Compute muon iso weights"""
         iso_corrections = {
-            "12": {
-                "loose": {
-                    "loose": "NUM_LoosePFIso_DEN_LooseID",
-                    "medium": "NUM_LoosePFIso_DEN_MediumID",
-                    "tight": "NUM_LoosePFIso_DEN_TightID",
-                },
-                "medium": {
-                    "loose": None,
-                    "medium": None,
-                    "tight": None,
-                },
-                "tight": {
-                    "loose": None,
-                    "medium": "NUM_TightPFIso_DEN_MediumID",
-                    "tight": "NUM_TightPFIso_DEN_TightID",
-                },
-            },
             "9": {
                 "loose": {
                     "loose": "NUM_LooseRelIso_DEN_LooseID",
@@ -216,6 +190,40 @@ class MuonWeights:
                     "tight": "NUM_TightRelIso_DEN_TightIDandIPCut",
                 },
             },
+            "12": {
+                "loose": {
+                    "loose": "NUM_LoosePFIso_DEN_LooseID",
+                    "medium": "NUM_LoosePFIso_DEN_MediumID",
+                    "tight": "NUM_LoosePFIso_DEN_TightID",
+                },
+                "medium": {
+                    "loose": None,
+                    "medium": None,
+                    "tight": None,
+                },
+                "tight": {
+                    "loose": None,
+                    "medium": "NUM_TightPFIso_DEN_MediumID",
+                    "tight": "NUM_TightPFIso_DEN_TightID",
+                },
+            },
+            "15": {
+                "loose": {
+                    "loose": "NUM_LoosePFIso_DEN_LooseID",
+                    "medium": "NUM_LoosePFIso_DEN_MediumID",
+                    "tight": "NUM_LoosePFIso_DEN_TightID",
+                },
+                "medium": {
+                    "loose": None,
+                    "medium": None,
+                    "tight": None,
+                },
+                "tight": {
+                    "loose": None,
+                    "medium": "NUM_TightPFIso_DEN_MediumID",
+                    "tight": "NUM_TightPFIso_DEN_TightID",
+                },
+            },
         }
         correction_name = iso_corrections[self.nano_version][iso_wp][id_wp]
         if correction_name is None:
@@ -224,16 +232,18 @@ class MuonWeights:
             )
 
         # get 'in-limits' muons
-        muon_pt_mask = self.flat_muons.pt > (
-            15.0 if self.nano_version == "12" else 29.0
-        )
+        muon_pt_mask = self.flat_muons.pt > 15.0
+        if self.nano_version == "15":
+            muon_pt_mask = self.flat_muons.pt > 10.0
         muon_eta_mask = np.abs(self.flat_muons.eta) < 2.399
         in_muon_mask = muon_pt_mask & muon_eta_mask
         in_muons = self.flat_muons.mask[in_muon_mask]
 
         # get muons pT and abseta (replace None values with some 'in-limit' value)
         muon_pt = ak.fill_none(in_muons.pt, 15)
-        muon_eta = np.abs(ak.fill_none(in_muons.eta, 0.0))
+        muon_eta = ak.fill_none(in_muons.eta, 0.0)
+        if self.nano_version == "9":
+            muon_eta = np.abs(muon_eta)
 
         weights = unflat_sf(
             self.cset[correction_name].evaluate(
@@ -272,7 +282,8 @@ class MuonWeights:
 
         # get muons pT and abseta (replace None values with some 'in-limit' value)
         muon_pt = ak.fill_none(in_muons.pt, 30.0)
-        muon_eta = ak.fill_none(np.abs(in_muons.eta), 0)
+        muon_eta = ak.fill_none(in_muons.eta, 0)
+        muon_abseta = ak.fill_none(np.abs(in_muons.eta), 0)
 
         hlt_path_id_map = {
             "2016preVFP": "NUM_IsoMu24_or_IsoTkMu24_DEN_CutBasedIdTight_and_PFIsoTight",
@@ -283,21 +294,23 @@ class MuonWeights:
             "2022postEE": "NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight",
             "2023preBPix": "NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight",
             "2023postBPix": "NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight",
+            "2024": "NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight",
         }
 
         if kind == "single":
             # for single muon events, compute SF from POG SF
             sf = self.cset[hlt_path_id_map[self.year]].evaluate(
-                muon_eta, muon_pt, variation
+                muon_abseta, muon_pt, variation
             )
             nominal_sf = unflat_sf(sf, in_muons_mask, self.muons_counts)
+
         elif kind == "double":
             # for double muon events, compute SF from data/mc muon hlt efficiencies
-            double_cset = correctionlib.CorrectionSet.from_file(
-                get_muon_hlt_json(year=self.year)
-            )
-            data_eff = double_cset["Muon-HLT-DataEff"].evaluate(
-                variation, hlt_path_id_map[self.year], muon_eta, muon_pt
+            data_eff = self.cset_eff["Muon-HLT-DataEff"].evaluate(
+                variation,
+                hlt_path_id_map[self.year],
+                muon_abseta if self.nano_version == "9" else muon_eta,
+                muon_pt,
             )
             data_eff = ak.where(in_muons_mask, data_eff, ak.ones_like(data_eff))
             data_eff = ak.unflatten(data_eff, self.muons_counts)
@@ -310,8 +323,11 @@ class MuonWeights:
             )
             full_data_eff = ak.fill_none(full_data_eff, 1)
 
-            mc_eff = double_cset["Muon-HLT-McEff"].evaluate(
-                variation, hlt_path_id_map[self.year], muon_eta, muon_pt
+            mc_eff = self.cset_eff["Muon-HLT-McEff"].evaluate(
+                variation,
+                hlt_path_id_map[self.year],
+                muon_abseta if self.nano_version == "9" else muon_eta,
+                muon_pt,
             )
             mc_eff = ak.where(in_muons_mask, mc_eff, ak.ones_like(mc_eff))
             mc_eff = ak.unflatten(mc_eff, self.muons_counts)

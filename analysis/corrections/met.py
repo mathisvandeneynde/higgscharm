@@ -29,7 +29,7 @@ def apply_met_phi_corrections(
         The xy-Shift correction reduces the MET phi modulation. The distribution of true MET is independent of phi because of the rotational symmetry of the collisions around the beam axis. However, we observe that the reconstructed MET does depend on phi. The MET phi distribution has roughly a sinusoidal curve with the period of 2pi. The possible causes of the modulation include anisotropic detector responses, inactive calorimeter cells or tracking regions, the detector misalignment, the displacement of the beam spot. The amplitude of the modulation increases roughly linearly with the number of the pile-up interactions. We can reduce the amplitude of the phi modulation by shifting the origin of the coordinate in the transverse momentum plane as a function of different particle species and in bins of eta.
     """
     cset = correctionlib.CorrectionSet.from_file(
-        "analysis/data/met_xy_corrections.json"
+        "analysis/data/met/met_xy_corrections.json"
     )
     events["PuppiMET", "pt_raw"] = ak.ones_like(events.PuppiMET.pt) * events.PuppiMET.pt
     events["PuppiMET", "phi_raw"] = (

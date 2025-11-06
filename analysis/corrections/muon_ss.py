@@ -6,6 +6,7 @@ from pathlib import Path
 from random import random
 from scipy.special import erfinv, erf
 from analysis.corrections.met import update_met
+from analysis.corrections.utils import correction_files
 from coffea.lookup_tools import txt_converters, rochester_lookup
 
 
@@ -401,8 +402,7 @@ def apply_muon_ss_corrections_run3(
     events["Muon", "pt_raw"] = ak.ones_like(events.Muon.pt) * events.Muon.pt
 
     # get correction set
-    json_path = Path.cwd() / "analysis" / "data" / f"{year}_muonSS.json.gz"
-    cset = correctionlib.CorrectionSet.from_file(str(json_path))
+    cset = correctionlib.CorrectionSet.from_file(correction_files["muon_ss"][year])
 
     if hasattr(events, "genWeight"):
         # MC: both scale correction to gen Z peak AND resolution correction to Z width in data
@@ -444,7 +444,7 @@ def apply_muon_ss_corrections_run2(events, year):
     """apply rochester corrections for Run2"""
     # https://twiki.cern.ch/twiki/bin/viewauth/CMS/RochcorMuon
     rochester_data = txt_converters.convert_rochester_file(
-        f"analysis/data/RoccoR{year}UL.txt", loaduncs=True
+        correction_files["muon_ss"][year], loaduncs=True
     )
     rochester = rochester_lookup.rochester_lookup(rochester_data)
 

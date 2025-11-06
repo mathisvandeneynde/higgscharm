@@ -1,137 +1,127 @@
-import re
-import correctionlib
 import awkward as ak
 from pathlib import Path
 
-# summary of pog scale factors: https://cms-nanoaod-integration.web.cern.ch/commonJSONSFs/
-# CorrectionLib files are available from
-POG_CORRECTION_PATH = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration"
-POG_JSONS = {
-    "pileup": ["LUM", "puWeights.json.gz"],
-    "muon": ["MUO", "muon_Z.json.gz"],
-    "electron_id": ["EGM", "electron.json.gz"],
-    "electron_hlt": ["EGM", "electronHlt.json.gz"],
-    "electron_ss": ["EGM", "electronSS.json.gz"],
-    "jetvetomaps": ["JME", "jetvetomaps.json.gz"],
-    "jec": ["JME", "jet_jerc.json.gz"],
+
+# summary of pog scale factors: https://cms-analysis-corrections.docs.cern.ch/
+correction_files = {
+    "pileup": {
+        "2016preVFP": "/cvmfs/cms-griddata.cern.ch/cat/metadata/LUM/Run2-2016preVFP-UL-NanoAODv9/2021-09-10/puWeights.json.gz",
+        "2026postVFP": "/cvmfs/cms-griddata.cern.ch/cat/metadata/LUM/Run2-2016postVFP-UL-NanoAODv9/2021-09-10/puWeights.json.gz",
+        "2017": "/cvmfs/cms-griddata.cern.ch/cat/metadata/LUM/Run2-2017-UL-NanoAODv9/2021-09-10/puWeights.json.gz",
+        "2018": "/cvmfs/cms-griddata.cern.ch/cat/metadata/LUM/Run2-2018-UL-NanoAODv9/2021-09-10/puWeights.json.gz",
+        "2022preEE": "/cvmfs/cms-griddata.cern.ch/cat/metadata/LUM/Run3-22CDSep23-Summer22-NanoAODv12/2024-01-31/puWeights.json.gz",
+        "2022postEE": "/cvmfs/cms-griddata.cern.ch/cat/metadata/LUM/Run3-22EFGSep23-Summer22EE-NanoAODv12/2024-01-31/puWeights.json.gz",
+        "2023preBPix": "/cvmfs/cms-griddata.cern.ch/cat/metadata/LUM/Run3-23CSep23-Summer23-NanoAODv12/2024-01-31/puWeights.json.gz",
+        "2023postBPix": "/cvmfs/cms-griddata.cern.ch/cat/metadata/LUM/Run3-23DSep23-Summer23BPix-NanoAODv12/2024-01-31/puWeights.json.gz",
+        "2024": f"{Path.cwd()}/analysis/data/pileup/2024_puWeights.json.gz",  # taken from /eos/cms/store/user/evourlio/pileupJson_forHiggsDNA
+    },
+    "muon": {
+        "2016preVFP": "/cvmfs/cms-griddata.cern.ch/cat/metadata/MUO/Run2-2016preVFP-UL-NanoAODv9/2024-07-02/muon_Z.json.gz",
+        "2026postVFP": "/cvmfs/cms-griddata.cern.ch/cat/metadata/MUO/Run2-2016postVFP-UL-NanoAODv9/2024-07-02/muon_Z.json.gz",
+        "2017": "/cvmfs/cms-griddata.cern.ch/cat/metadata/MUO/Run2-2017-UL-NanoAODv9/2024-07-02/muon_Z.json.gz",
+        "2018": "/cvmfs/cms-griddata.cern.ch/cat/metadata/MUO/Run2-2018-UL-NanoAODv9/2024-07-02/muon_Z.json.gz",
+        "2022preEE": "/cvmfs/cms-griddata.cern.ch/cat/metadata/MUO/Run3-22CDSep23-Summer22-NanoAODv12/2025-08-14/muon_Z.json.gz",
+        "2022postEE": "/cvmfs/cms-griddata.cern.ch/cat/metadata/MUO/Run3-22EFGSep23-Summer22EE-NanoAODv12/2025-08-14/muon_Z.json.gz",
+        "2023preBPix": "/cvmfs/cms-griddata.cern.ch/cat/metadata/MUO/Run3-23CSep23-Summer23-NanoAODv12/2025-08-14/muon_Z.json.gz",
+        "2023postBPix": "/cvmfs/cms-griddata.cern.ch/cat/metadata/MUO/Run3-23DSep23-Summer23BPix-NanoAODv12/2025-08-14/muon_Z.json.gz",
+        "2024": "/cvmfs/cms-griddata.cern.ch/cat/metadata/MUO/Run3-24CDEReprocessingFGHIPrompt-Summer24-NanoAODv15/2025-10-17/muon_Z.json.gz",
+    },
+    "muon_hlt": {
+        "2016preVFP": f"{Path.cwd()}/analysis/data/muon_hlt/2016preVFP_Muon_HLT_Eff.json",
+        "2026postVFP": f"{Path.cwd()}/analysis/data/muon_hlt/2016postVFP_Muon_HLT_Eff.json",
+        "2017": f"{Path.cwd()}/analysis/data/muon_hlt/2017_Muon_HLT_Eff.json",
+        "2018": f"{Path.cwd()}/analysis/data/muon_hlt/2018_Muon_HLT_Eff.json",
+        "2022preEE": f"{Path.cwd()}/analysis/data/muon_hlt/2022preEE_Muon_HLT_Eff.json",
+        "2022postEE": f"{Path.cwd()}/analysis/data/muon_hlt/2022postEE_Muon_HLT_Eff.json",
+        "2023preBPix": f"{Path.cwd()}/analysis/data/muon_hlt/2023preBPix_Muon_HLT_Eff.json",
+        "2023postBPix": f"{Path.cwd()}/analysis/data/muon_hlt/2023postBPix_Muon_HLT_Eff.json",
+        "2024": f"{Path.cwd()}/analysis/data/muon_hlt/2024_Muon_HLT_Eff.json",
+    },
+    "muon_ss": {
+        "2016preVFP": f"{Path.cwd()}/analysis/data/rochester/RoccoR2016preVFPUL.txt",
+        "2026postVFP": f"{Path.cwd()}/analysis/data/rochester/RoccoR2016postVFPUL.txt",
+        "2017": f"{Path.cwd()}/analysis/data/rochester/RoccoR2017UL.txt",
+        "2018": f"{Path.cwd()}/analysis/data/rochester/RoccoR2018UL.json",
+        "2022preEE": "/cvmfs/cms-griddata.cern.ch/cat/metadata/MUO/Run3-22CDSep23-Summer22-NanoAODv12/2025-08-14/muon_scalesmearing.json.gz",
+        "2022postEE": "/cvmfs/cms-griddata.cern.ch/cat/metadata/MUO/Run3-22EFGSep23-Summer22EE-NanoAODv12/2025-08-14/muon_scalesmearing.json.gz",
+        "2023preBPix": "/cvmfs/cms-griddata.cern.ch/cat/metadata/MUO/Run3-23CSep23-Summer23-NanoAODv12/2025-08-14/muon_scalesmearing.json.gz",
+        "2023postBPix": "/cvmfs/cms-griddata.cern.ch/cat/metadata/MUO/Run3-23DSep23-Summer23BPix-NanoAODv12/2025-08-14/muon_scalesmearing.json.gz",
+        "2024": "/cvmfs/cms-griddata.cern.ch/cat/metadata/MUO/Run3-24CDEReprocessingFGHIPrompt-Summer24-NanoAODv15/2025-10-17/muon_scalesmearing.json.gz",
+    },
+    "electron_id": {
+        "2016preVFP": "/cvmfs/cms-griddata.cern.ch/cat/metadata/EGM/Run2-2016preVFP-UL-NanoAODv9/2024-07-02/electron.json.gz",
+        "2016postVFP": "/cvmfs/cms-griddata.cern.ch/cat/metadata/EGM/Run2-2016postVFP-UL-NanoAODv9/2024-07-02/electron.json.gz",
+        "2017": "/cvmfs/cms-griddata.cern.ch/cat/metadata/EGM/Run2-2017-UL-NanoAODv9/2024-07-02/electron.json.gz",
+        "2018": "/cvmfs/cms-griddata.cern.ch/cat/metadata/EGM/Run2-2018-UL-NanoAODv9/2024-07-02/electron.json.gz",
+        "2022preEE": "/cvmfs/cms-griddata.cern.ch/cat/metadata/EGM/Run3-22CDSep23-Summer22-NanoAODv12/2025-10-22/electron.json.gz",
+        "2022postEE": "/cvmfs/cms-griddata.cern.ch/cat/metadata/EGM/Run3-22EFGSep23-Summer22EE-NanoAODv12/2025-10-22/electron.json.gz",
+        "2023preBPix": "/cvmfs/cms-griddata.cern.ch/cat/metadata/EGM/Run3-23CSep23-Summer23-NanoAODv12/2025-10-22/electron.json.gz",
+        "2023postBPix": "/cvmfs/cms-griddata.cern.ch/cat/metadata/EGM/Run3-23DSep23-Summer23BPix-NanoAODv12/2025-10-22/electron.json.gz",
+        "2024": "/cvmfs/cms-griddata.cern.ch/cat/metadata/EGM/Run3-24CDEReprocessingFGHIPrompt-Summer24-NanoAODv15/2025-10-22/electronID.json.gz",
+    },
+    "electron_reco": {
+        "2016preVFP": "/cvmfs/cms-griddata.cern.ch/cat/metadata/EGM/Run2-2016preVFP-UL-NanoAODv9/2024-07-02/electron.json.gz",
+        "2016postVFP": "/cvmfs/cms-griddata.cern.ch/cat/metadata/EGM/Run2-2016postVFP-UL-NanoAODv9/2024-07-02/electron.json.gz",
+        "2017": "/cvmfs/cms-griddata.cern.ch/cat/metadata/EGM/Run2-2017-UL-NanoAODv9/2024-07-02/electron.json.gz",
+        "2018": "/cvmfs/cms-griddata.cern.ch/cat/metadata/EGM/Run2-2018-UL-NanoAODv9/2024-07-02/electron.json.gz",
+        "2022preEE": "/cvmfs/cms-griddata.cern.ch/cat/metadata/EGM/Run3-22CDSep23-Summer22-NanoAODv12/2025-10-22/electron.json.gz",
+        "2022postEE": "/cvmfs/cms-griddata.cern.ch/cat/metadata/EGM/Run3-22EFGSep23-Summer22EE-NanoAODv12/2025-10-22/electron.json.gz",
+        "2023preBPix": "/cvmfs/cms-griddata.cern.ch/cat/metadata/EGM/Run3-23CSep23-Summer23-NanoAODv12/2025-10-22/electron.json.gz",
+        "2023postBPix": "/cvmfs/cms-griddata.cern.ch/cat/metadata/EGM/Run3-23DSep23-Summer23BPix-NanoAODv12/2025-10-22/electron.json.gz",
+        "2024": "/cvmfs/cms-griddata.cern.ch/cat/metadata/EGM/Run3-24CDEReprocessingFGHIPrompt-Summer24-NanoAODv15/2025-10-22/electron.json.gz",
+    },
+    "electron_hlt": {
+        "2016preVFP": f"{Path.cwd()}/analysis/data/electron_hlt/EGamma_HLT_SF_2016preVFP.json.gz",
+        "2016postVFP": f"{Path.cwd()}/analysis/data/electron_hlt/EGamma_HLT_SF_2016postVFP.json.gz",
+        "2017": f"{Path.cwd()}/analysis/data/electron_hlt/EGamma_HLT_SF_2017.json.gz",
+        "2018": f"{Path.cwd()}/analysis/data/electron_hlt/EGamma_HLT_SF_2018.json.gz",
+        "2022preEE": "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/EGM/2022_Summer22/electronHlt.json.gz",
+        "2022postEE": "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/EGM/2022_Summer22EE/electronHlt.json.gz",
+        "2023preBPix": "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/EGM/2023_Summer23/electronHlt.json.gz",
+        "2023postBPix": "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG/EGM/2023_Summer23BPix/electronHlt.json.gz",
+    },
+    "electron_hlt_mc_eff": {
+        "2016preVFP": f"{Path.cwd()}/analysis/data/electron_hlt/EGamma_HLT_MCEff_2016preVFP.json.gz",
+        "2016postVFP": f"{Path.cwd()}/analysis/data/electron_hlt/EGamma_HLT_MCEff_2016postVFP.json.gz",
+        "2017": f"{Path.cwd()}/analysis/data/electron_hlt/EGamma_HLT_MCEff_2017.json.gz",
+        "2018": f"{Path.cwd()}/analysis/data/electron_hlt/EGamma_HLT_MCEff_2018.json.gz",
+    },
+    "electron_hlt_data_eff": {
+        "2016preVFP": f"{Path.cwd()}/analysis/data/electron_hlt/EGamma_HLT_DataEff_2016preVFP.json.gz",
+        "2016postVFP": f"{Path.cwd()}/analysis/data/electron_hlt/EGamma_HLT_DataEff_2016postVFP.json.gz",
+        "2017": f"{Path.cwd()}/analysis/data/electron_hlt/EGamma_HLT_DataEff_2017.json.gz",
+        "2018": f"{Path.cwd()}/analysis/data/electron_hlt/EGamma_HLT_DataEff_2018.json.gz",
+    },
+    "electron_ss": {
+        "2022preEE": "/cvmfs/cms-griddata.cern.ch/cat/metadata/EGM/Run3-22CDSep23-Summer22-NanoAODv12/latest/electronSS_EtDependent.json.gz",
+        "2022postEE": "/cvmfs/cms-griddata.cern.ch/cat/metadata/EGM/Run3-22EFGSep23-Summer22EE-NanoAODv12/latest/electronSS_EtDependent.json.gz",
+        "2023preBPix": "/cvmfs/cms-griddata.cern.ch/cat/metadata/EGM/Run3-23CSep23-Summer23-NanoAODv12/latest/electronSS_EtDependent.json.gz",
+        "2023postBPix": "/cvmfs/cms-griddata.cern.ch/cat/metadata/EGM/Run3-23DSep23-Summer23BPix-NanoAODv12/latest/electronSS_EtDependent.json.gz",
+        "2024": "/cvmfs/cms-griddata.cern.ch/cat/metadata/EGM/Run3-24CDEReprocessingFGHIPrompt-Summer24-NanoAODv15/latest/electronSS_EtDependent.json.gz",
+    },
+    "jetvetomaps": {
+        "2016preVFP": "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/Run2-2016preVFP-UL-NanoAODv9/2025-04-11/jetvetomaps.json.gz",
+        "2026postVFP": "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/Run2-2016postVFP-UL-NanoAODv9/2025-04-11/jetvetomaps.json.gz",
+        "2017": "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/Run2-2017-UL-NanoAODv9/2025-04-11/jetvetomaps.json.gz",
+        "2018": "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/Run2-2018-UL-NanoAODv9/2025-04-11/jetvetomaps.json.gz",
+        "2022preEE": "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/Run3-22CDSep23-Summer22-NanoAODv12/2025-09-23/jetvetomaps.json.gz",
+        "2022postEE": "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/Run3-22EFGSep23-Summer22EE-NanoAODv12/2025-10-07/jetvetomaps.json.gz",
+        "2023preBPix": "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/Run3-23CSep23-Summer23-NanoAODv12/2025-10-07/jetvetomaps.json.gz",
+        "2023postBPix": "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/Run3-23DSep23-Summer23BPix-NanoAODv12/2025-10-07/jetvetomaps.json.gz",
+        "2024": "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/Run3-24CDEReprocessingFGHIPrompt-Summer24-NanoAODv15/2025-07-17/jetvetomaps.json.gz",
+    },
+    "ctagging": {
+        "2016preVFP": "/cvmfs/cms-griddata.cern.ch/cat/metadata/BTV/Run2-2016preVFP-UL-NanoAODv9/2025-08-19/ctagging.json.gz",
+        "2016postVFP": "/cvmfs/cms-griddata.cern.ch/cat/metadata/BTV/Run2-2016postVFP-UL-NanoAODv9/2025-08-19/ctagging.json.gz",
+        "2017": "/cvmfs/cms-griddata.cern.ch/cat/metadata/BTV/Run2-2017-UL-NanoAODv9/2025-08-19/ctagging.json.gz",
+        "2018": "/cvmfs/cms-griddata.cern.ch/cat/metadata/BTV/Run2-2018-UL-NanoAODv9/2025-08-19/ctagging.json.gz",
+        "2022preEE": "/cvmfs/cms-griddata.cern.ch/cat/metadata/BTV/Run3-22CDSep23-Summer22-NanoAODv12/2025-08-20/ctagging.json.gz",
+        "2022postEE": "/cvmfs/cms-griddata.cern.ch/cat/metadata/BTV/Run3-22EFGSep23-Summer22EE-NanoAODv12/2025-08-20/ctagging.json.gz",
+        "2023preBPix": "/cvmfs/cms-griddata.cern.ch/cat/metadata/BTV/Run3-23CSep23-Summer23-NanoAODv12/2025-08-20/ctagging.json.gz",
+        "2023postBPix": "/cvmfs/cms-griddata.cern.ch/cat/metadata/BTV/Run3-23DSep23-Summer23BPix-NanoAODv12/2025-08-20/ctagging.json.gz",
+        "2024": "/cvmfs/cms-griddata.cern.ch/cat/metadata/BTV/Run3-24CDEReprocessingFGHIPrompt-Summer24-NanoAODv15/2025-08-19/ctagging.json.gz",
+    },
 }
-POG_YEARS = {
-    "2016postVFP": "2016postVFP_UL",
-    "2016preVFP": "2016preVFP_UL",
-    "2017": "2017_UL",
-    "2018": "2018_UL",
-    "2022preEE": "2022_Summer22",
-    "2022postEE": "2022_Summer22EE",
-    "2023preBPix": "2023_Summer23",
-    "2023postBPix": "2023_Summer23BPix",
-}
-# summary of corrections: https://twiki.cern.ch/twiki/bin/view/CMS/EgammSFandSSRun3#JSONs
-EGAMMA_CORRECTION_PATH = "/eos/cms/store/group/phys_egamma/ScaleFactors"
-EGAMMA_YEARS = {
-    "2022preEE": "Data2022/ForRe-recoBCD",
-    "2022postEE": "Data2022/ForRe-recoE+PromptFG",
-    "2023preBPix": "Data2023/ForPrompt23C",
-    "2023postBPix": "Data2023/ForPrompt23D",
-}
-EGAMMA_JSONS = {"electron_ss": ["SS", "electronSS.json.gz"]}
-
-BTV_PATH = "/cvmfs/cms-griddata.cern.ch/cat/metadata/BTV"
-BTV_JSONS = {
-    "ctag": "ctagging.json.gz",
-}
-BTV_YEARS = {
-    "2022preEE": "Run3-22CDSep23-Summer22-NanoAODv12/2025-08-20",
-    "2022postEE": "Run3-22EFGSep23-Summer22EE-NanoAODv12/2025-08-20",
-    "2023preBPix": "Run3-23CSep23-Summer23-NanoAODv12/2025-08-20",
-    "2023postBPix": "Run3-23DSep23-Summer23BPix-NanoAODv12/2025-08-20",
-}
-
-
-def get_pog_json(json_name: str, year: str) -> str:
-    """
-    returns pog json file path
-
-    Parameters:
-    -----------
-        json_name:
-            pog json name
-        year:
-            dataset year
-    """
-    if json_name in POG_JSONS:
-        pog_json = POG_JSONS[json_name]
-    else:
-        print(f"No json for {json_name}")
-    return f"{POG_CORRECTION_PATH}/POG/{pog_json[0]}/{POG_YEARS[year]}/{pog_json[1]}"
-
-
-def get_egamma_json(year: str) -> str:
-    """
-    returns egamma json file path
-
-    Parameters:
-    -----------
-        json_name:
-            json name
-        year:
-            dataset year
-    """
-    """
-    if json_name in EGAMMA_JSONS:
-        egamma_json = EGAMMA_JSONS[json_name]
-    else:
-        print(f"No json for {json_name}")
-    return f"{EGAMMA_CORRECTION_PATH}/{EGAMMA_YEARS[year]}/{egamma_json[0]}/{egamma_json[1]}"
-    """
-    return f"{Path.cwd()}/analysis/data/{year}_electronSS.json.gz"
-
-
-def get_btv_json(json_name: str, year: str) -> str:
-    """
-    returns BTV json file path
-
-    Parameters:
-    -----------
-        json_name:
-            pog json name
-        year:
-            dataset year
-    """
-    if json_name in BTV_JSONS:
-        btv_json = BTV_JSONS[json_name]
-    else:
-        print(f"No json for {json_name}")
-    return f"{BTV_PATH}/{BTV_YEARS[year]}/{btv_json}"
-
-
-def get_pnet_ctag_mask(jets, wp, year):
-    cset = correctionlib.CorrectionSet.from_file(
-        get_btv_json(json_name="ctag", year=year)
-    )
-    wp_map = {"tight": "T", "medium": "M", "loose": "L"}
-    ctag_wps_evaluator = cset["particleNet_wp_values"]
-    pnet_cvsb_wp = ctag_wps_evaluator.evaluate(wp_map[wp], "CvB")
-    pnet_cvsl_wp = ctag_wps_evaluator.evaluate(wp_map[wp], "CvL")
-    pass_ctag_wp = (jets.btagPNetCvB > pnet_cvsb_wp) & (jets.btagPNetCvL > pnet_cvsl_wp)
-    return pass_ctag_wp
-
-
-def get_muon_hlt_json(year: str) -> str:
-    return f"{Path.cwd()}/analysis/data/{year}_Muon_HLT_Eff.json"
-
-
-def get_electron_hlt_json(
-    kind: str,
-    year: str,
-) -> str:
-    """
-
-    Parameters:
-    -----------
-        kind: {SF, MCEff, DataEff}
-        year: {2016preVFP, 2016postVFP, 2017, 2018, 2022preEE, 2022postEE, 2023preBPix, 2023postBPix}
-    """
-    return f"{Path.cwd()}/analysis/data/EGamma_HLT_{kind}_{year}.json.gz"
 
 
 def unflat_sf(sf: ak.Array, in_limit_mask: ak.Array, n: ak.Array):

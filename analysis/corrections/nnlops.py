@@ -16,9 +16,11 @@ def add_nnlops_weight(events, weights_container, generator="powheg"):
     Warning is thrown if ggh or glugluh is not in the name.
     """
     data_path = f"{Path.cwd()}.analysis.data"
-    with importlib.resources.open_text("analysis.data", "NNLOPS_reweight.json") as file:
-        nnlops_reweight = json.load(file)  
-        
+    with importlib.resources.open_text(
+        "analysis.data.nnlops", "NNLOPS_reweight.json"
+    ) as file:
+        nnlops_reweight = json.load(file)
+
     # Load reweight factors for specific generator
     nnlops_reweight = nnlops_reweight[generator]
 
