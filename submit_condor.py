@@ -111,7 +111,7 @@ if __name__ == "__main__":
     partition_dataset = {}
     fileset_path = Path.cwd() / "analysis" / "filesets"
 
-    nano_version = get_nano_version(year)
+    nano_version = get_nano_version(args.year)
     with open(
         f"{fileset_path}/fileset_{args.year}_nanov{nano_version}_lxplus.json", "r"
     ) as f:
