@@ -10,14 +10,19 @@ def get_hltpaths_from_flag(flag, year):
         f"analysis.selections", f"trigger_flags.yaml"
     ) as file:
         hlt_paths = yaml.safe_load(file)
-    return hlt_paths[int(year[:4])][flag]
+    trigger_flags = hlt_paths[int(year[:4])]
+    if flag in trigger_flags:
+        return trigger_flags[flag]
+    else:
+        print(f"Trigger flag {flag} is not defined for year {year}")
 
 
 def trigger_from_flag(events, flag, year):
-    hlt_paths = get_hltpaths_from_flag(flag, year)
     trigger_mask = np.zeros(len(events), dtype="bool")
-    for hlt_path in hlt_paths:
-        trigger_mask = trigger_mask | events.HLT[hlt_path]
+    hlt_paths = get_hltpaths_from_flag(flag, year)
+    if hlt_paths:
+        for hlt_path in hlt_paths:
+            trigger_mask = trigger_mask | events.HLT[hlt_path]
     return trigger_mask
 
 
