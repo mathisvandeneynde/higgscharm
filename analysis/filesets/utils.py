@@ -144,7 +144,7 @@ def extract_xrootd_errors(error_files: list) -> set:
 
 def fileset_checker(samples: list, year: str):
     """check if the fileset for the given year exists, generate it otherwise"""
-    nano_version = "9" if year.startswith("201") else "12"
+    nano_version = get_nano_version(year)
     filesets_path = Path.cwd() / "analysis" / "filesets"
     fileset_file = filesets_path / f"fileset_{year}_nanov{nano_version}_lxplus.json"
 

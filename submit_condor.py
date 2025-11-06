@@ -3,9 +3,8 @@ import json
 import argparse
 import subprocess
 from pathlib import Path
-from analysis.filesets.utils import divide_list
 from analysis.utils import make_output_directory
-from analysis.filesets.utils import fileset_checker
+from analysis.filesets.utils import divide_list, get_nano_version, fileset_checker
 
 
 def move_proxy() -> str:
@@ -112,7 +111,7 @@ if __name__ == "__main__":
     partition_dataset = {}
     fileset_path = Path.cwd() / "analysis" / "filesets"
 
-    nano_version = "9" if args.year.startswith("201") else "12"
+    nano_version = get_nano_version(year)
     with open(
         f"{fileset_path}/fileset_{args.year}_nanov{nano_version}_lxplus.json", "r"
     ) as f:
