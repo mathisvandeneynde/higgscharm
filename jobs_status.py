@@ -9,7 +9,7 @@ from pathlib import Path
 from datetime import datetime, timedelta
 from analysis.utils import make_output_directory
 from analysis.filesets.xrootd_sites import xroot_to_site
-from analysis.filesets.utils import divide_list, modify_site_list, extract_xrootd_errors
+from analysis.filesets.utils import divide_list, modify_site_list, extract_xrootd_errors, get_nano_version
 
 
 def parse_args():
@@ -200,7 +200,7 @@ def update_input_filesets(
     )
     subprocess.run(["python3", "fetch.py", "--year", year, "--samples", samples_str])
 
-    nano_version = "9" if args.year.startswith("201") else "12"
+    nano_version = get_nano_version(year)
     fileset_path = fileset_dir / f"fileset_{year}_nanov{nano_version}_lxplus.json"
     all_filesets = json.loads(fileset_path.read_text())
 
@@ -265,7 +265,7 @@ if __name__ == "__main__":
     args = parse_args()
 
     if args.reset:
-        nano_version = "9" if args.year.startswith("201") else "12"
+        nano_version = get_nano_version(args.year)
         subprocess.run(f"rm -rf condor/{args.workflow}/{args.year}", shell=True)
         subprocess.run(f"rm -rf condor/logs/{args.workflow}/{args.year}", shell=True)
         subprocess.run(f"rm -rf analysis/filesets/{args.year}_sites.yaml", shell=True)
