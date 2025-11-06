@@ -1,6 +1,7 @@
 import numpy as np
 import awkward as ak
-from analysis.corrections.utils import get_pnet_ctag_mask
+from .utils import get_ctag_mask
+from analysis.filesets.utils import get_nano_version
 
 
 class WorkingPoints:
@@ -74,7 +75,7 @@ class WorkingPoints:
                     )
                 )
             )
-            wps["bdt_id"] = bdt_id
+            wps["bdt"] = bdt_id
 
         if wp not in wps:
             raise ValueError(
@@ -129,8 +130,8 @@ class WorkingPoints:
         # Run 3 NanoAODs have a bug in jetId
         # Implement fix from:
         # https://twiki.cern.ch/twiki/bin/viewauth/CMS/JetID13p6TeV#nanoAOD_Flags
-        if year == "2024":
-            # NanoV15
+        nano_version = get_nano_version(year)
+        if nano_version == "15":
             barrel = (
                 (events.Jet.neHEF < 0.99)
                 & (events.Jet.neEmEF < 0.9)
@@ -164,8 +165,7 @@ class WorkingPoints:
                 jetid_tight & (events.Jet.muEF < 0.8) & (events.Jet.chEmEF < 0.8),
                 jetid_tight,
             )
-        elif year.startswith("202"):
-            # NanoV12
+        elif nano_version == "12":
             jetid_tight = ak.where(
                 np.abs(events.Jet.eta) <= 2.7,
                 (events.Jet.jetId >= 2)
@@ -186,8 +186,7 @@ class WorkingPoints:
                 jetid_tight & (events.Jet.muEF < 0.8) & (events.Jet.chEmEF < 0.8),
                 jetid_tight,
             )
-        else:
-            # NanoV9
+        elif nano_version == "9":
             jetid_tight = events.Jet.jetId == 2
             jetid_tightlepveto = events.Jet.jetId == 6
 
@@ -202,8 +201,8 @@ class WorkingPoints:
         return wps[wp]
 
     def jet_pileup_id(self, events, year, wp):
-        if year.startswith("201"):
-            # Run2
+        nano_version = get_nano_version(year)
+        if nano_version == "9":
             wps = {
                 "2016preVFP": {
                     "loose": events.Jet.puId == 1,
@@ -238,8 +237,22 @@ class WorkingPoints:
                 events.Jet.pt >= 50,
             )
         else:
-            # Run3
             return np.ones_like(events.Jet.pt, dtype=bool)
 
-    def jet_particlenet_c(self, events, wp, year):
-        return get_pnet_ctag_mask(jets=events.Jet, wp=wp, year=year)
+    def jet_deepjet_c(self, events, wp, year):
+        return get_ctag_mask(jets=events.Jet, wp=wp, year=year, tagger="deepjet")
+
+    def jet_pnet_c(self, events, wp, year):
+        return get_ctag_mask(jets=events.Jet, wp=wp, year=year, tagger="pnet")
+
+    def jet_upart_c(self, events, wp, year):
+        return get_ctag_mask(jets=events.Jet, wp=wp, year=year, tagger="upart")
+
+    def jet_ctagging(self, events, wp, year):
+        nano_version = get_nano_version(year)
+        if nano_version == "9":
+            return self.jet_deepjet_c(events, wp, year)
+        elif nano_version == "12":
+            return self.jet_pnet_c(events, wp, year)
+        elif nano_version == "15":
+            return self.jet_upart_c(events, wp, year)
