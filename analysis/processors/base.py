@@ -84,8 +84,9 @@ class BaseProcessor(processor.ProcessorABC):
         hlt_paths = event_selection["hlt_paths"]
         histograms = deepcopy(self.histograms)
 
-        if "jet_vetomaps" in self.workflow_config.corrections_config["objects"]:
-            events = apply_jetvetomaps(events, year)
+        if self.workflow_config.corrections_config["objects"]:
+            if "jet_vetomaps" in self.workflow_config.corrections_config["objects"]:
+                events = apply_jetvetomaps(events, year)
 
         # check if dataset is MC or Data
         is_mc = hasattr(events, "genWeight")
@@ -109,7 +110,6 @@ class BaseProcessor(processor.ProcessorABC):
             dataset=dataset,
             workflow_config=self.workflow_config,
         )
-
         # --------------------------------------------------------------
         # Object selection
         # --------------------------------------------------------------
@@ -155,26 +155,6 @@ class BaseProcessor(processor.ProcessorABC):
                     dataset=dataset,
                     workflow_config=self.workflow_config,
                 )
-                # save cutflow to metadata
-                output["metadata"][category] = {"cutflow": {"initial": sumw}}
-                selections = []
-                for cut_name in category_cuts:
-                    selections.append(cut_name)
-                    current_selection = selection_manager.all(*selections)
-                    pruned_ev_cutflow = events[current_selection]
-                    for obj in objects:
-                        pruned_ev_cutflow[f"selected_{obj}"] = objects[obj][
-                            current_selection
-                        ]
-                    weights_container_cutflow = weight_manager(
-                        pruned_ev=pruned_ev_cutflow,
-                        year=year,
-                        dataset=dataset,
-                        workflow_config=self.workflow_config,
-                    )
-                    output["metadata"][category]["cutflow"][cut_name] = ak.sum(
-                        weights_container_cutflow.weight()
-                    )
                 # save number of events after selection to metadata
                 weighted_final_nevents = ak.sum(weights_container.weight())
                 output["metadata"][category].update(
