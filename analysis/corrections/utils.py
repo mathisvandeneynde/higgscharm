@@ -6,7 +6,7 @@ from pathlib import Path
 correction_files = {
     "pileup": {
         "2016preVFP": "/cvmfs/cms-griddata.cern.ch/cat/metadata/LUM/Run2-2016preVFP-UL-NanoAODv9/2021-09-10/puWeights.json.gz",
-        "2026postVFP": "/cvmfs/cms-griddata.cern.ch/cat/metadata/LUM/Run2-2016postVFP-UL-NanoAODv9/2021-09-10/puWeights.json.gz",
+        "2016postVFP": "/cvmfs/cms-griddata.cern.ch/cat/metadata/LUM/Run2-2016postVFP-UL-NanoAODv9/2021-09-10/puWeights.json.gz",
         "2017": "/cvmfs/cms-griddata.cern.ch/cat/metadata/LUM/Run2-2017-UL-NanoAODv9/2021-09-10/puWeights.json.gz",
         "2018": "/cvmfs/cms-griddata.cern.ch/cat/metadata/LUM/Run2-2018-UL-NanoAODv9/2021-09-10/puWeights.json.gz",
         "2022preEE": "/cvmfs/cms-griddata.cern.ch/cat/metadata/LUM/Run3-22CDSep23-Summer22-NanoAODv12/2024-01-31/puWeights.json.gz",
@@ -17,7 +17,7 @@ correction_files = {
     },
     "muon": {
         "2016preVFP": "/cvmfs/cms-griddata.cern.ch/cat/metadata/MUO/Run2-2016preVFP-UL-NanoAODv9/2024-07-02/muon_Z.json.gz",
-        "2026postVFP": "/cvmfs/cms-griddata.cern.ch/cat/metadata/MUO/Run2-2016postVFP-UL-NanoAODv9/2024-07-02/muon_Z.json.gz",
+        "2016postVFP": "/cvmfs/cms-griddata.cern.ch/cat/metadata/MUO/Run2-2016postVFP-UL-NanoAODv9/2024-07-02/muon_Z.json.gz",
         "2017": "/cvmfs/cms-griddata.cern.ch/cat/metadata/MUO/Run2-2017-UL-NanoAODv9/2024-07-02/muon_Z.json.gz",
         "2018": "/cvmfs/cms-griddata.cern.ch/cat/metadata/MUO/Run2-2018-UL-NanoAODv9/2024-07-02/muon_Z.json.gz",
         "2022preEE": "/cvmfs/cms-griddata.cern.ch/cat/metadata/MUO/Run3-22CDSep23-Summer22-NanoAODv12/2025-08-14/muon_Z.json.gz",
@@ -28,7 +28,7 @@ correction_files = {
     },
     "muon_hlt": {
         "2016preVFP": f"{Path.cwd()}/analysis/data/muon_hlt/2016preVFP_Muon_HLT_Eff.json",
-        "2026postVFP": f"{Path.cwd()}/analysis/data/muon_hlt/2016postVFP_Muon_HLT_Eff.json",
+        "2016postVFP": f"{Path.cwd()}/analysis/data/muon_hlt/2016postVFP_Muon_HLT_Eff.json",
         "2017": f"{Path.cwd()}/analysis/data/muon_hlt/2017_Muon_HLT_Eff.json",
         "2018": f"{Path.cwd()}/analysis/data/muon_hlt/2018_Muon_HLT_Eff.json",
         "2022preEE": f"{Path.cwd()}/analysis/data/muon_hlt/2022preEE_Muon_HLT_Eff.json",
@@ -39,9 +39,9 @@ correction_files = {
     },
     "muon_ss": {
         "2016preVFP": f"{Path.cwd()}/analysis/data/rochester/RoccoR2016preVFPUL.txt",
-        "2026postVFP": f"{Path.cwd()}/analysis/data/rochester/RoccoR2016postVFPUL.txt",
+        "2016postVFP": f"{Path.cwd()}/analysis/data/rochester/RoccoR2016postVFPUL.txt",
         "2017": f"{Path.cwd()}/analysis/data/rochester/RoccoR2017UL.txt",
-        "2018": f"{Path.cwd()}/analysis/data/rochester/RoccoR2018UL.json",
+        "2018": f"{Path.cwd()}/analysis/data/rochester/RoccoR2018UL.txt",
         "2022preEE": "/cvmfs/cms-griddata.cern.ch/cat/metadata/MUO/Run3-22CDSep23-Summer22-NanoAODv12/2025-08-14/muon_scalesmearing.json.gz",
         "2022postEE": "/cvmfs/cms-griddata.cern.ch/cat/metadata/MUO/Run3-22EFGSep23-Summer22EE-NanoAODv12/2025-08-14/muon_scalesmearing.json.gz",
         "2023preBPix": "/cvmfs/cms-griddata.cern.ch/cat/metadata/MUO/Run3-23CSep23-Summer23-NanoAODv12/2025-08-14/muon_scalesmearing.json.gz",
@@ -101,7 +101,7 @@ correction_files = {
     },
     "jetvetomaps": {
         "2016preVFP": "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/Run2-2016preVFP-UL-NanoAODv9/2025-04-11/jetvetomaps.json.gz",
-        "2026postVFP": "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/Run2-2016postVFP-UL-NanoAODv9/2025-04-11/jetvetomaps.json.gz",
+        "2016postVFP": "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/Run2-2016postVFP-UL-NanoAODv9/2025-04-11/jetvetomaps.json.gz",
         "2017": "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/Run2-2017-UL-NanoAODv9/2025-04-11/jetvetomaps.json.gz",
         "2018": "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/Run2-2018-UL-NanoAODv9/2025-04-11/jetvetomaps.json.gz",
         "2022preEE": "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/Run3-22CDSep23-Summer22-NanoAODv12/2025-09-23/jetvetomaps.json.gz",
