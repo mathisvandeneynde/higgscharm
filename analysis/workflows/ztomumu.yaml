@@ -1,6 +1,7 @@
 datasets:
   data:
     - muon
+    - double_muon
   mc:
     - dy_nlo
     - tt
@@ -67,7 +68,7 @@ event_selection:
       - electron_veto
 corrections:
   objects:
-    - jec
+    #- jec
     - jet_vetomaps
     - muon_ss
     - electon_ss

@@ -1,7 +1,9 @@
 datasets:
   data:
     - muon
+    - double_muon
     - electron
+    - double_electron
     - muon_electron
   mc:
     - dy_nlo

@@ -1,6 +1,7 @@
 datasets:
   data:
     - electron
+    - double_electron
   mc:
     - dy_nlo
     - tt
