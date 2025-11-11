@@ -122,7 +122,6 @@ def get_rndm(eta, nL, cset, nested=False):
     alpha_f = cset.get("cb_params").evaluate(abs(eta_f), nL_f, 3)
 
     # get random number following the CB
-    # print(nmuons)
     rndm_f = [random() for i in nmuons for j in range(int(i))]
 
     cb_f = CrystallBall(mean_f, sigma_f, alpha_f, n_f)
@@ -513,6 +512,7 @@ def apply_muon_ss_corrections_run2(events, year):
     corrected_pt = out.pt_raw * ak.flatten(corrections)
     out_dict["pt"] = corrected_pt
 
+    """
     # Compute Rochester-shifted pt values
     up = ak.flatten(muons)
     pt_up = up.pt_raw * ak.flatten(corrections) + ak.flatten(errors)
@@ -530,7 +530,7 @@ def apply_muon_ss_corrections_run2(events, year):
     out_parms = out._layout.parameters
     out = ak.zip(out_dict, depth_limit=1, parameters=out_parms, behavior=out.behavior)
     events["Muon"] = ak.unflatten(out, counts)
-
+    """
     # Propagate to MET
     update_met(events=events, other_obj="Muon", met_obj="MET")
 

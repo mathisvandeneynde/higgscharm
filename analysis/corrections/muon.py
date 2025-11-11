@@ -148,9 +148,10 @@ class MuonWeights:
             "tight": "NUM_TightID_DEN_TrackerMuons",
         }
         # get muons that pass the id wp, and within SF binning
-        muon_pt_mask = self.flat_muons.pt > 15.0
-        if self.nano_version == "15":
-            muon_pt_mask = self.flat_muons.pt > 10.0
+        pt_lower_limit = 10 if self.nano_version == "15" else 15
+        muon_pt_mask = (self.flat_muons.pt > pt_lower_limit) & (
+            self.flat_muons.pt < 500.0
+        )
         muon_eta_mask = np.abs(self.flat_muons.eta) < 2.399
         in_muon_mask = muon_pt_mask & muon_eta_mask
         in_muons = self.flat_muons.mask[in_muon_mask]
@@ -159,12 +160,9 @@ class MuonWeights:
         muon_pt = ak.fill_none(in_muons.pt, 15.0)
         muon_eta = np.abs(ak.fill_none(in_muons.eta, 0.0))
 
+        sfs = self.cset[id_corrections[id_wp]].evaluate(muon_eta, muon_pt, variation)
         weights = unflat_sf(
-            self.cset[id_corrections[id_wp]].evaluate(
-                muon_eta,
-                muon_pt,
-                variation,
-            ),
+            sfs,
             in_muon_mask,
             self.muons_counts,
         )
@@ -230,11 +228,11 @@ class MuonWeights:
             raise ValueError(
                 f"There are no muon ISO weights for id wp '{id_wp}' and iso wp '{iso_wp}' combination"
             )
-
         # get 'in-limits' muons
-        muon_pt_mask = self.flat_muons.pt > 15.0
-        if self.nano_version == "15":
-            muon_pt_mask = self.flat_muons.pt > 10.0
+        pt_lower_limit = 10 if self.nano_version == "15" else 15
+        muon_pt_mask = (self.flat_muons.pt > pt_lower_limit) & (
+            self.flat_muons.pt < 500.0
+        )
         muon_eta_mask = np.abs(self.flat_muons.eta) < 2.399
         in_muon_mask = muon_pt_mask & muon_eta_mask
         in_muons = self.flat_muons.mask[in_muon_mask]
@@ -262,18 +260,10 @@ class MuonWeights:
             raise ValueError(
                 f"There are no muon HLT weights for id wp '{self.id_wp}' and iso wp '{self.iso_wp}' combination"
             )
-
-        muon_pt_mask = self.flat_muons.pt > (
-            26.0 if self.nano_version == "12" else 29.0
-        )
-
+        muon_pt_mask = self.flat_muons.pt > 26.0 if self.nano_version == "12" else 29.0
         kind = "single" if ak.all(ak.num(self.muons) == 1) else "double"
         if kind == "double":
-            upper_limit = 199.99
-            if self.year == "2022preEE":
-                upper_limit = 499.99
-            muon_pt_mask = muon_pt_mask & (self.flat_muons.pt < upper_limit)
-
+            muon_pt_mask = muon_pt_mask & (self.flat_muons.pt < 199.99)
         muon_eta_mask = np.abs(self.flat_muons.eta) < 2.399
 
         # get muons passing ID and Iso wps, trigger, and within SF binning
