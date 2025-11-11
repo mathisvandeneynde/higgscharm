@@ -256,24 +256,6 @@ class MuonWeights:
 
     def get_hlt_weights(self, id_wp, iso_wp, variation):
         """Compute muon HLT weights"""
-        if not ((id_wp == "tight") & (iso_wp == "tight")):
-            raise ValueError(
-                f"There are no muon HLT weights for id wp '{self.id_wp}' and iso wp '{self.iso_wp}' combination"
-            )
-        muon_pt_mask = self.flat_muons.pt > 26.0 if self.nano_version == "12" else 29.0
-        kind = "single" if ak.all(ak.num(self.muons) == 1) else "double"
-        if kind == "double":
-            muon_pt_mask = muon_pt_mask & (self.flat_muons.pt < 199.99)
-        muon_eta_mask = np.abs(self.flat_muons.eta) < 2.399
-
-        # get muons passing ID and Iso wps, trigger, and within SF binning
-        in_muons_mask = muon_pt_mask & muon_eta_mask
-        in_muons = self.flat_muons.mask[in_muons_mask]
-
-        # get muons pT and abseta (replace None values with some 'in-limit' value)
-        muon_pt = ak.fill_none(in_muons.pt, 30.0)
-        muon_eta = ak.fill_none(in_muons.eta, 0)
-        muon_abseta = ak.fill_none(np.abs(in_muons.eta), 0)
 
         hlt_path_id_map = {
             "2016preVFP": "NUM_IsoMu24_or_IsoTkMu24_DEN_CutBasedIdTight_and_PFIsoTight",
@@ -287,15 +269,37 @@ class MuonWeights:
             "2024": "NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight",
         }
 
+        if not ((id_wp == "tight") & (iso_wp == "tight")):
+            raise ValueError(
+                f"There are no muon HLT weights for id wp '{self.id_wp}' and iso wp '{self.iso_wp}' combination"
+            )
+
+        # get muons within SF binning
+        pt_upper_limit = 29.0 if self.year == "2027" else 26.0
+        muon_pt_mask = (self.flat_muons.pt > pt_upper_limit) & (
+            self.flat_muons.pt < 199.99
+        )
+        muon_eta_mask = np.abs(self.flat_muons.eta) < 2.399
+
+        in_muons_mask = muon_pt_mask & muon_eta_mask
+        in_muons = self.flat_muons.mask[in_muons_mask]
+
+        # get muons pT and abseta (replace None values with some 'in-limit' value)
+        muon_pt = ak.fill_none(in_muons.pt, 30.0)
+        muon_eta = ak.fill_none(in_muons.eta, 0)
+        muon_abseta = ak.fill_none(np.abs(in_muons.eta), 0)
+
+        # for single muon events, compute SF from POG SF
+        # for double muon events, compute SF from data/mc muon hlt efficiencies
+        kind = "single" if ak.all(ak.num(self.muons) == 1) else "double"
+
         if kind == "single":
-            # for single muon events, compute SF from POG SF
             sf = self.cset[hlt_path_id_map[self.year]].evaluate(
                 muon_abseta, muon_pt, variation
             )
             nominal_sf = unflat_sf(sf, in_muons_mask, self.muons_counts)
 
         elif kind == "double":
-            # for double muon events, compute SF from data/mc muon hlt efficiencies
             data_eff = self.cset_eff["Muon-HLT-DataEff"].evaluate(
                 variation,
                 hlt_path_id_map[self.year],
