@@ -275,7 +275,7 @@ class MuonWeights:
             )
 
         # get muons within SF binning
-        pt_upper_limit = 29.0 if self.year == "2027" else 26.0
+        pt_upper_limit = 29.0 if self.year == "2017" else 26.0
         muon_pt_mask = (self.flat_muons.pt > pt_upper_limit) & (
             self.flat_muons.pt < 199.99
         )
