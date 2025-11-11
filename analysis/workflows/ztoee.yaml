@@ -1,7 +1,6 @@
 datasets:
   data:
     - electron
-    - double_electron
   mc:
     - dy_nlo
     - tt
@@ -68,16 +67,14 @@ event_selection:
       - muon_veto
 corrections:
   objects:
-    - jec
-    - jet_vetomaps
     - muon_ss
     - electon_ss
   event_weights:
     genWeight: true
     pileupWeight: true
     partonshowerWeight: true
-    lhepdfWeight: false
-    lhescaleWeight: false
+    lhepdfWeight: true
+    lhescaleWeight: true
     nnlopsWeight: false
     electron:
       - id: wp80iso
