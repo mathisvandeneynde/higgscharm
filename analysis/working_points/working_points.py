@@ -239,20 +239,5 @@ class WorkingPoints:
         else:
             return np.ones_like(events.Jet.pt, dtype=bool)
 
-    def jet_deepjet_c(self, events, wp, year):
-        return get_ctag_mask(jets=events.Jet, wp=wp, year=year, tagger="deepjet")
-
-    def jet_pnet_c(self, events, wp, year):
-        return get_ctag_mask(jets=events.Jet, wp=wp, year=year, tagger="pnet")
-
-    def jet_upart_c(self, events, wp, year):
-        return get_ctag_mask(jets=events.Jet, wp=wp, year=year, tagger="upart")
-
     def jet_ctagging(self, events, wp, year):
-        nano_version = get_nano_version(year)
-        if nano_version == "9":
-            return self.jet_deepjet_c(events, wp, year)
-        elif nano_version == "12":
-            return self.jet_pnet_c(events, wp, year)
-        elif nano_version == "15":
-            return self.jet_upart_c(events, wp, year)
+        return get_ctag_mask(events.Jet, year, wp)
