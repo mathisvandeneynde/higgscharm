@@ -503,16 +503,16 @@ def apply_muon_ss_corrections_run2(events, year):
     events["Muon", "pt_raw"] = events.Muon.pt
     events["MET", "pt_raw"] = events.MET.pt
     events["MET", "phi_raw"] = events.MET.phi
-
+    
+    # Apply nominal correction
     muons, counts, fields = events.Muon, ak.num(events.Muon), ak.fields(events.Muon)
     out = ak.flatten(muons)
-    out_dict = dict({field: out[field] for field in fields})
-
-    # Apply nominal correction
     corrected_pt = out.pt_raw * ak.flatten(corrections)
-    out_dict["pt"] = corrected_pt
-
+    events["Muon", "pt"] = ak.unflatten(corrected_pt, counts)
     """
+    out_dict = dict({field: out[field] for field in fields})
+    out_dict["pt"] = corrected_pt
+    
     # Compute Rochester-shifted pt values
     up = ak.flatten(muons)
     pt_up = up.pt_raw * ak.flatten(corrections) + ak.flatten(errors)
