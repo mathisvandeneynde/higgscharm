@@ -137,14 +137,15 @@ histogram_config:
         - 300
         - 600
         - 1000
-      label: $p_T(j)$ [GeV]
+      label: Jet $p_T$ [GeV]
       expression: objects['jets'].pt
     jet_abseta:
-      type: Regular
-      bins: 5
-      start: 0
-      stop: 2.5
-      label: $\eta(j)$
+      type: Variable
+      edges: 
+        - 0
+        - 1.3
+        - 2.5
+      label: Jet $|\eta|$
       expression: np.abs(objects['jets'].eta)
     jet_flavor:
       type: IntCategory
