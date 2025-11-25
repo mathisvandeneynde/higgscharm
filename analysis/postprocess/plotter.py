@@ -60,11 +60,9 @@ class CoffeaPlotter:
         self.process_era_map = get_process_era_map(year)
 
         # set processes -> color map
-        key_process_map = get_workflow_key_process_map(workflow_config, year)
-        processes = list(key_process_map.values())
         with open(color_map_file, "r") as f:
             color_map = yaml.safe_load(f)
-        self.color_map = {p: c for p, c in color_map.items() if p in processes}
+        self.color_map = {p: c for p, c in color_map.items()}
 
     def get_histogram(
         self,
