@@ -4,6 +4,9 @@ from pathlib import Path
 
 # summary of pog scale factors: https://cms-analysis-corrections.docs.cern.ch/
 correction_files = {
+    "jerc": {
+        "2024": "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/Run3-24CDEReprocessingFGHIPrompt-Summer24-NanoAODv15/2025-07-17/jet_jerc.json.gz",
+    },
     "pileup": {
         "2016preVFP": "/cvmfs/cms-griddata.cern.ch/cat/metadata/LUM/Run2-2016preVFP-UL-NanoAODv9/2021-09-10/puWeights.json.gz",
         "2016postVFP": "/cvmfs/cms-griddata.cern.ch/cat/metadata/LUM/Run2-2016postVFP-UL-NanoAODv9/2021-09-10/puWeights.json.gz",

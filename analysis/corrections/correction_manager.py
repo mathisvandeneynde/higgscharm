@@ -21,19 +21,7 @@ def object_corrector_manager(events, year, dataset, workflow_config):
     if objcorr_config:
         if "jec" in objcorr_config:
             # apply JEC/JER corrections
-            apply_jec = True
-            apply_jer = False
-            apply_junc = False
-            if hasattr(events, "genWeight"):
-                apply_jer = True
-            apply_jerc_corrections(
-                events,
-                year=year,
-                dataset=dataset,
-                apply_jec=apply_jec,
-                apply_jer=apply_jer,
-                apply_junc=apply_junc,
-            )
+            apply_jerc_corrections(events, year, dataset)
         if "muon_ss" in objcorr_config:
             # apply muon scale and smearing corrections
             apply_muon_ss_corrections(

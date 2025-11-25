@@ -1,17 +1,44 @@
-# tools to apply JEC/JER and compute their uncertainties (https://cms-jerc.web.cern.ch/Recommendations/)
-# copied from https://github.com/green-cabbage/copperheadV2/blob/main/corrections/jet.py
+# tools to apply JEC/JER and compute their uncertainties
+# JME recommendations: https://cms-jerc.web.cern.ch/Recommendations/
+# copied from https://github.com/green-cabbage/copperheadV2/blob/main/corrections/jet.py and https://github.com/cms-btv-pog/BTVNanoCommissioning/blob/master/src/BTVNanoCommissioning/utils/correction.py
+import copy
 import yaml
 import contextlib
+import correctionlib
 import numpy as np
 import awkward as ak
 import importlib.resources
 from pathlib import Path
-from analysis.filesets.utils import get_dataset_era
+from analysis.corrections.utils import correction_files
+from analysis.filesets.utils import get_dataset_era, get_nano_version
 from coffea.lookup_tools import extractor
 from coffea.jetmet_tools import JECStack, CorrectedJetsFactory
+from coffea.jetmet_tools.CorrectedMETFactory import corrected_polar_met
 
 
-# Run3 recommendations: # https://cms-jerc.web.cern.ch/JEC/
+def update_met(events, year):
+    # Type-I MET correction, from corrected MET factory
+    # https://github.com/scikit-hep/coffea/blob/master/src/coffea/jetmet_tools/CorrectedMETFactory.py
+    met_field_key = "PuppiMET" if int(get_nano_version(year)) >= 12 else "MET"
+    nocorrmet = events[met_field_key]
+    jets = events.Jet
+
+    met_inputs = [nocorrmet.pt, nocorrmet.phi, jets.pt, jets.phi, jets.pt_raw]
+
+    met = copy.deepcopy(nocorrmet)
+    met["pt"], met["phi"] = (
+        ak.values_astype(corrected_polar_met(*met_inputs).pt, np.float32),
+        ak.values_astype(corrected_polar_met(*met_inputs).phi, np.float32),
+    )
+    met["orig_pt"], met["orig_phi"] = nocorrmet["pt"], nocorrmet["phi"]
+
+    # update MET collection
+    events[met_field_key] = met
+
+
+# ----------------------------------------------------------------------------------------------------
+# COFFEA'S JET/MET TOOLS
+# ----------------------------------------------------------------------------------------------------
 with importlib.resources.open_text(
     f"analysis.corrections", f"jerc_params.yaml"
 ) as file:
@@ -94,25 +121,20 @@ def get_jet_evaluator(year):
     return jet_evaluator
 
 
-def apply_jerc_corrections(
+def apply_jerc_coffea(
     events,
     year,
     dataset,
-    apply_jec,
-    apply_jer,
-    apply_junc,
 ):
+    is_mc = hasattr(events, "genWeight")
+
     # add requiered variables to Jet collection
     jets = events.Jet
-    if apply_jec:
-        # set raw pT and Mass, otherwise original pT and Mass will be used as 'raw' values
-        events["Jet", "pt_raw"] = (
-            (1 - jets.rawFactor) * jets.pt if apply_jec else jets.pt
-        )
-        events["Jet", "mass_raw"] = (
-            (1 - jets.rawFactor) * jets.mass if apply_jec else jets.mass
-        )
-    if apply_jer:
+
+    # set raw pT and Mass, otherwise original pT and Mass will be used as 'raw' values
+    events["Jet", "pt_raw"] = (1 - jets.rawFactor) * jets.pt
+    events["Jet", "mass_raw"] = (1 - jets.rawFactor) * jets.mass
+    if is_mc:
         # set ptGenJet (required for hybrid JER smearing method)
         events["Jet", "pt_gen"] = ak.values_astype(
             ak.fill_none(jets.matched_gen.pt, 0), np.float32
@@ -147,13 +169,12 @@ def apply_jerc_corrections(
         for key in jet_evaluator.keys():
             if src in key:
                 jec_input_options["junc"][key] = jet_evaluator[key]
+
     jec_options = {}
-    if apply_jec:
-        jec_options.update(jec_input_options["jec"])
-    if apply_jer:
+    jec_options.update(jec_input_options["jec"])
+    jec_options.update(jec_input_options["junc"])
+    if is_mc:
         jec_options.update(jec_input_options["jer"])
-    if apply_junc:
-        jec_options.update(jec_input_options["junc"])
 
     # set jerc name map (I don't use JECStack.blank_name_map since it includes 'ptRaw' and 'massRaw' by default)
     jec_name_map = {
@@ -173,20 +194,20 @@ def apply_jerc_corrections(
             "MetUnclustEnUpDeltaY" if hasattr(events, "Rho") else None
         ),
     }
-    if apply_jec:
-        jec_name_map.update(
-            {
-                "ptRaw": "pt_raw",
-                "massRaw": "mass_raw",
-            }
-        )
-    era = get_dataset_era(dataset, year)
-    if era in ["mc", "signal"]:
+    jec_name_map.update(
+        {
+            "ptRaw": "pt_raw",
+            "massRaw": "mass_raw",
+        }
+    )
+
+    if is_mc:
         # create MC factory with jec, jer and junc stack
         stack = JECStack(jec_options)
         jec_factory = CorrectedJetsFactory(jec_name_map, stack)
     else:
         # create a separate factory for the data era
+        era = get_dataset_era(dataset, year)
         jec_inputs_data = {}
         for opt in ["jec", "junc"]:
             jec_inputs_data.update(
@@ -201,3 +222,168 @@ def apply_jerc_corrections(
 
     # update Jet collection
     events["Jet"] = jec_factory.build(events.Jet, events.caches[0])
+    # update MET collection
+    update_met(events, year)
+    # TO DO: SYSTEMATICS
+
+
+# ----------------------------------------------------------------------------------------------------
+# CORRECTIONLIB
+# ----------------------------------------------------------------------------------------------------
+
+
+# from https://gitlab.cern.ch/cms-nanoAOD/jsonpog-integration/-/blob/master/examples/jercExample.py
+def get_corr_inputs(input_dict, corr_obj, jersyst="nom"):
+    """
+    Helper function for getting values of input variables
+    given a dictionary and a correction object.
+    """
+    input_values = []
+    for inputs in corr_obj.inputs:
+        if "systematic" in inputs.name:
+            input_values.append(jersyst)
+        else:
+            input_values.append(
+                np.array(
+                    input_dict[
+                        inputs.name.replace("Jet", "")
+                        .replace("Pt", "pt")
+                        .replace("Phi", "phi")
+                        .replace("Eta", "eta")
+                        .replace("Mass", "mass")
+                        .replace("Rho", "rho")
+                        .replace("A", "area")
+                    ]
+                )
+            )
+    return input_values
+
+
+def apply_jerc_correctionlib(events, year, dataset):
+    jec_params = {
+        "2024": {
+            # For the time being, use the Summer23BPix JERs for 2024 data (November 2025)
+            "MC": "Summer24Prompt24_V1 Summer23BPixPrompt23_RunD_JRV1",
+            "Data": "Summer24Prompt24_V1",
+        }
+    }
+
+    cset_jersmear_paths = [
+        "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/JER-Smearing/latest/jer_smear.json.gz",
+        "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/jer_smear.json.gz",
+    ]
+    for _jersmear_path in cset_jersmear_paths:
+        if Path(_jersmear_path).exists:
+            cset_jersmear = correctionlib.CorrectionSet.from_file(_jersmear_path)
+            break
+    else:
+        warnings.warn(
+            "JER smearing JSON not found in CVMFS. JER smearing corrections will be disabled.",
+            RuntimeWarning,
+            stacklevel=2,
+        )
+        cset_jersmear = {"JERSmear": None}
+    sf_jersmear = cset_jersmear["JERSmear"]
+
+    cset = correctionlib.CorrectionSet.from_file(correction_files["jerc"][year])
+
+    for d in jec_params[year].keys():
+        if (
+            np.all(
+                np.char.find(
+                    np.array(list(cset.keys())),
+                    jec_params[year][d],
+                )
+            )
+            == -1
+        ):
+            raise (f"{d} has no JEC map : {jec_params[year][d]} available")
+
+    is_mc = hasattr(events, "genWeight")
+    jecname = ""
+    # https://cms-jerc.web.cern.ch/JECUncertaintySources/, currently no recommendation of reduced/full split sources
+    syst_list = [
+        i.split("_")[3]
+        for i in cset.keys()
+        if "MC" in i
+        and "L1" not in i
+        and "L2" not in i
+        and "L3" not in i
+        and i.split("_")[3] != "MC"
+    ]
+    if is_mc:
+        jecname = jec_params[year]["MC"].split(" ")[0] + "_MC"
+        jrname = jec_params[year]["MC"].split(" ")[1] + "_MC"
+    else:
+        jecname = jec_params[year]["Data"] + "_DATA"
+
+    # store the original jet info
+    nocorrjet = events.Jet
+    nocorrjet["pt_raw"] = (1 - nocorrjet["rawFactor"]) * nocorrjet["pt"]
+    nocorrjet["mass_raw"] = (1 - nocorrjet["rawFactor"]) * nocorrjet["mass"]
+    nocorrjet["rho"] = (
+        ak.ones_like(nocorrjet.pt) * events.Rho.fixedGridRhoFastjetAll
+        if hasattr(events, "Rho")
+        else ak.broadcast_arrays(events.fixedGridRhoFastjetAll, nocorrjet.pt)[0]
+    )
+    nocorrjet["EventID"] = ak.broadcast_arrays(events.event, nocorrjet.pt)[0]
+    nocorrjet["run"] = ak.broadcast_arrays(events.run, nocorrjet.pt)[0]
+    if is_mc:
+        genjetidx = ak.where(nocorrjet.genJetIdx == -1, 0, nocorrjet.genJetIdx)
+        nocorrjet["Genpt"] = ak.where(
+            nocorrjet.genJetIdx == -1, -1, events.GenJet[genjetidx].pt
+        )
+    jets = copy.deepcopy(nocorrjet)
+    jets["orig_pt"] = ak.values_astype(nocorrjet["pt"], np.float32)
+
+    # flatten jets
+    j, nj = ak.flatten(nocorrjet), ak.num(nocorrjet)
+
+    # JEC
+    jec_corr = cset.compound[f"{jecname}_L1L2L3Res_AK4PFPuppi"]
+    jec_input = get_corr_inputs(j, jec_corr)
+    jec_flat_corr_factor = jec_corr.evaluate(*jec_input)
+
+    ## JER
+    if is_mc:
+        jer_sf = cset[f"{jrname}_ScaleFactor_AK4PFPuppi"]
+        jer_ptres = cset[f"{jrname}_PtResolution_AK4PFPuppi"]
+        # for MC, correct the jet pT with JEC first
+        j["pt"] = j["pt_raw"] * jec_flat_corr_factor
+        j["mass"] = j["mass_raw"] * jec_flat_corr_factor
+        jer_sf_input = get_corr_inputs(j, jer_sf)
+        jer_ptres_input = get_corr_inputs(j, jer_ptres)
+        j["JER"] = jer_ptres.evaluate(*jer_ptres_input)
+        j["JERSF"] = jer_sf.evaluate(*jer_sf_input)
+        if sf_jersmear is None:
+            warnings.warn(
+                "JER smearing coefficients unavailable. "
+                "Proceeding without applying JER smearing.",
+                RuntimeWarning,
+                stacklevel=2,
+            )
+            corr_factor = jec_flat_corr_factor
+        else:
+            jer_smear_input = get_corr_inputs(j, sf_jersmear)
+            corr_factor = jec_flat_corr_factor * sf_jersmear.evaluate(*jer_smear_input)
+    else:
+        # in data only the JEC is applied
+        corr_factor = jec_flat_corr_factor
+
+    corr_factor = ak.unflatten(corr_factor, nj)
+
+    jets["pt"] = ak.values_astype(nocorrjet["pt_raw"] * corr_factor, np.float32)
+    jets["mass"] = ak.values_astype(nocorrjet["mass_raw"] * corr_factor, np.float32)
+
+    # update Jet collection
+    events["Jet"] = jets
+    # update MET collection
+    update_met(events, year)
+    # TO DO: SYSTEMATICS
+
+
+def apply_jerc_corrections(events, year, dataset):
+    if year == "2024":
+        apply_jerc_correctionlib(events, year, dataset)
+    else:
+        apply_jerc_coffea(events, year, dataset)
