@@ -25,6 +25,8 @@ class CTagCorrector:
             worging point {loose, medium, tight}
         year:
             dataset year {2022preEE, 2022postEE, 2023preBPix, 2023PostBPix, 2024}
+        category:
+            selection category name
         variation:
             if 'nominal' (default) add 'nominal', 'up' and 'down' variations to weights container
     """
@@ -35,6 +37,7 @@ class CTagCorrector:
         weights: Type[Weights],
         worging_point: str,
         year: str,
+        category: str = "base",
         variation: str = "nominal",
     ) -> None:
         self._year = year
@@ -50,18 +53,21 @@ class CTagCorrector:
             tagger = "pnet"
         elif self._nano_version == "15":
             tagger = "upart"
-        self._tagger = tagger
 
         # check available ctag SFs
         self._wp_map = {"tight": "T", "medium": "M", "loose": "L"}
+        if self._wp not in self._wp_map:
+            raise ValueError(
+                f"There are no available c-tag SFs for the working point. Please specify {list(self._wp_map.keys())}"
+            )
 
-        # load c-tagging efficiency look-up table
+        # check available c-tag efficiencies (ctag_eff_<wp>_<category>_<year>.coffea)
         ctag_eff_file = (
             Path.cwd()
             / "analysis"
             / "data"
             / "ctag_efficiencies"
-            / f"ctag_eff_{tagger}_{self._wp}_{self._year}.coffea"
+            / f"ctag_eff_{self._wp}_{category}_{self._year}.coffea"
         )
         if not ctag_eff_file.exists():
             raise ValueError(
@@ -69,7 +75,7 @@ class CTagCorrector:
             )
         with importlib.resources.path(
             "analysis.data.ctag_efficiencies",
-            f"ctag_eff_{tagger}_{self._wp}_{self._year}.coffea",
+            f"ctag_eff_{self._wp}_{category}_{self._year}.coffea",
         ) as filename:
             self._efflookup = util.load(str(filename))
 
@@ -95,11 +101,9 @@ class CTagCorrector:
             "light": self._light_jets,
         }
         self._jet_pass_ctag = {
-            "c": get_ctag_mask(self._jet_map["c"], self._year, self._wp, self._tagger),
-            "b": get_ctag_mask(self._jet_map["b"], self._year, self._wp, self._tagger),
-            "light": get_ctag_mask(
-                self._jet_map["light"], self._year, self._wp, self._tagger
-            ),
+            "c": get_ctag_mask(self._jet_map["c"], self._year, self._wp),
+            "b": get_ctag_mask(self._jet_map["b"], self._year, self._wp),
+            "light": get_ctag_mask(self._jet_map["light"], self._year, self._wp),
         }
         self.var_naming_map = {
             "c": "CMS_ctag_c",
