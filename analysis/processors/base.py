@@ -57,6 +57,7 @@ class BaseProcessor(processor.ProcessorABC):
                 selections.append(cut_name)
                 current_selection = selection_manager.all(*selections)
                 if ak.sum(current_selection) != 0:
+                    """
                     pruned_ev_cutflow = events[current_selection]
                     for obj in objects:
                         pruned_ev_cutflow[f"selected_{obj}"] = objects[obj][
@@ -72,6 +73,13 @@ class BaseProcessor(processor.ProcessorABC):
                     output["metadata"][category]["cutflow"][cut_name] = ak.sum(
                         weights_container_cutflow.weight()
                     )
+                    """
+                    sumw_cutflow = (
+                        ak.sum(events.genWeight[current_selection])
+                        if hasattr(events, "genWeight")
+                        else len(events[current_selection])
+                    )
+                    output["metadata"][category]["cutflow"][cut_name] = sumw_cutflow
                 else:
                     output["metadata"][category]["cutflow"][cut_name] = 0
 
