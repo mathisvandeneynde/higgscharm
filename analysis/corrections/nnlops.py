@@ -15,9 +15,8 @@ def add_nnlops_weight(events, weights_container, generator="powheg"):
     Reweighting is applied always if correction is specified in runner JSON.
     Warning is thrown if ggh or glugluh is not in the name.
     """
-    data_path = f"{Path.cwd()}.analysis.data"
     with importlib.resources.open_text(
-        "analysis.data.nnlops", "NNLOPS_reweight.json"
+        "analysis.data.nnlo_ps", "NNLOPS_reweight.json"
     ) as file:
         nnlops_reweight = json.load(file)
 
