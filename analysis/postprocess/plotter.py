@@ -313,6 +313,10 @@ class CoffeaPlotter:
             zzto4l_text_map = {"zzto4l": zzto4l_text}
             text_map = {**text_map, **zzto4l_text_map}
 
+        if self.workflow == "hplusc":
+            hplusc_test = {"hplusc": "H(ZZ)+c-jet events"}
+            text_map = text_map = {**text_map, **hplusc_test}
+
         ax.add_artist(
             AnchoredText(
                 text_map.get(self.workflow, f"{self.workflow} events") + "\n",
@@ -369,7 +373,7 @@ class CoffeaPlotter:
         # get nominal MC histograms
         mc_colors, mc_labels = [], []
         if self.group_by == "process":
-            if (self.workflow == "zzto4l") and ("zz_mass" in variable):
+            if (self.workflow in ["zzto4l", "hplusc"]) and ("zz_mass" in variable):
                 mc_labels = ["ggToZZ", "qqToZZ", "H(125)"]
                 nominal_mc_hists = [
                     histogram_info["mc"]["nominal"][p] for p in mc_labels
@@ -432,7 +436,7 @@ class CoffeaPlotter:
         mc_hist_args.update(self.style["mc_hist_kwargs"])
         if mc_colors:
             mc_hist_args.update({"color": mc_colors})
-        if (self.workflow == "zzto4l") and ("zz_mass" in variable):
+        if (self.workflow in ["zzto4l", "hplusc"]) and ("zz_mass" in variable):
             mc_hist_args["sort"] = None
         hep.histplot(**mc_hist_args)
         if not blind:

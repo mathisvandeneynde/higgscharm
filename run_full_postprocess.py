@@ -19,12 +19,15 @@ if __name__ == "__main__":
     years = [
         "2016preVFP",
         "2016postVFP",
+        "2016",
         "2017",
         "2018",
         "2022preEE",
         "2022postEE",
+        "2022",
         "2023preBPix",
         "2023postBPix",
+        "2023",
         "2024",
     ]
     parser.add_argument(
