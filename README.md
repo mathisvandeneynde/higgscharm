@@ -49,10 +49,25 @@ DYJetsToLL:
 - **`query`**: DAS path used to fetch the files for this dataset.
 - **`xsec`**: Cross section in picobarns (pb). Should be `null` for data. Required for MC and signal samples in order to compute event weights.
 
+The input filesets are generated automatically from these configuration files. This process ensures that the list of ROOT files used in each campaign reflects the datasets currently available in CMS Rucio/DAS. The central script is [`fetch.py`](https://github.com/ua-cms/higgscharm/blob/main/fetch.py), which orchestrates the creation of the filesets
+```
+usage: fetch.py [-h] [--year {2022preEE,2022postEE,2023preBPix,2023postBPix}] [--image IMAGE] [--samples [SAMPLES ...]]
+
+options:
+  -h, --help            show this help message and exit
+  --year {2022preEE,2022postEE,2023preBPix,2023postBPix}
+  --image IMAGE         Specifies the container image used to run the dataset discovery tools
+  --samples [SAMPLES ...]
+                        (Optional) List of samples to use. If omitted, all available samples will be used
+```
+We use [Coffea's dataset discovery tools](https://coffea-hep.readthedocs.io/en/latest/dataset_tools.html) to build the input filesets. The container (default is [/cvmfs/unpacked.cern.ch/registry.hub.docker.com/coffeateam/coffea-dask:latest-py3.10](https://hub.docker.com/layers/coffeateam/coffea-dask/latest-py3.10/images/sha256-110d080a5ec9155f56cabf8303a2e4e87768111abea99d9898b67d0aff370c1f)) provides a reproducible environment with all required dependencies. The script executes [`analysis/filesets/make_filesets.py`](https://github.com/ua-cms/higgscharm/blob/main/analysis/filesets/make_filesets.py) inside the container (using `Singularity`), which reads the corresponding dataset configuration file to extract the DAS queries and builds a dictionary of dataset definitions. It then calls `coffea.dataset_tools.DataDiscoveryCLI` to query Rucio/DAS, collecting the available file replicas across the allowed sites (listed [here](https://github.com/ua-cms/higgscharm/blob/main/analysis/filesets/sites.yaml)). The files are reformatted into a dictionary mapping dataset names to lists of ROOT files and saved to `analysis/filesets/fileset_<year>_NANO_lxplus.json`
 
 ### Workflows
 
 Workflows define the configuration of an analysis: object and event selections, triggers, correctionsm variabbles and histograms. They are stored as YAML files in the `analysis/workflows` directory. 
+
+
+
 
 Each workflow also specifies which data, mc or signal samples to run over for a given workflow through the `datasets` field:
 ```yaml
@@ -163,4 +178,3 @@ This script:
 * Runs all steps of `run_postprocess.py` depending on the workflow type.
 * Adds special configurations (e.g. `--group_by` for the $Z\rightarrow \ell\ell$ workflows and `--pass_axis` for the `zplusl_X` workflows).
 * Automatically produces plots and merged results for multi-campaign years (e.g. 2022, 2023).
-
