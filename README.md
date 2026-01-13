@@ -17,11 +17,9 @@ Please make a dedicated branch with your commits and make a PR to the main.
   - For filesets generation (used in make_filesets.py):
     - /cvmfs/unpacked.cern.ch/registry.hub.docker.com/coffeateam/coffea-dask-almalinux9:2025.10.1-py3.10
     - python version: 3.10
-    - coffea version: 2025.10.1 (with latest DataDiscoveryCLI)
   - For running analysis:
     - /cvmfs/unpacked.cern.ch/registry.hub.docker.com/coffeateam/coffea-dask:latest-py3.9
     - python version: 3.9
-    - coffea version: 2025.7.3
 
 ### Input filesets
  
