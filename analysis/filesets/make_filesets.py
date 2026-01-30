@@ -6,7 +6,6 @@ from pathlib import Path
 from analysis.filesets.utils import get_nano_version
 from coffea.dataset_tools.dataset_query import DataDiscoveryCLI
 
-
 if __name__ == "__main__":
     years = [
         "2016preVFP",
@@ -85,8 +84,7 @@ if __name__ == "__main__":
             new_dataset[dataset_key.split("_")[0]] += root_files
         else:
             new_dataset[dataset_key] = root_files
-    # save new fileset and drop 'dataset_discovery' fileset
-    os.remove(f"dataset_discovery_{args.year}.json")
+
     fileset_file = filesets_dir / f"fileset_{args.year}_nanov{nano_version}_lxplus.json"
     with open(fileset_file, "w") as json_file:
         json.dump(new_dataset, json_file, indent=4, sort_keys=True)
