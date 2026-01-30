@@ -39,6 +39,6 @@ def apply_jetvetomaps(events, year: str, mapname: str = "jetvetomap"):
     jets_phi = ak.fill_none(in_jets.phi, 0.0)
 
     vetomaps = cset[vetomap_names[year]].evaluate(mapname, jets_eta, jets_phi)
-    vetomaps = ak.any(ak.unflatten(vetomaps, n) == 0, axis=1)
-    vetoed_events = events[vetomaps]
+    vetomaps_mask = ak.any(ak.unflatten(vetomaps, n) > 0, axis=1)
+    vetoed_events = events[~vetomaps_mask]
     return vetoed_events
