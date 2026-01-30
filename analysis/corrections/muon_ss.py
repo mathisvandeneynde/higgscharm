@@ -432,9 +432,10 @@ def apply_muon_ss_corrections_run3(
             cset,
             nested=True,
         )
-
     # update muon pT
-    events["Muon", "pt"] = ptcorr
+    events["Muon", "pt"] = ak.where(
+        events.Muon.pt_raw <= 200, ptcorr, events.Muon.pt_raw
+    )
     # Propagate to MET
     update_met(events=events, other_obj="Muon", met_obj="PuppiMET")
 
@@ -503,34 +504,14 @@ def apply_muon_ss_corrections_run2(events, year):
     events["Muon", "pt_raw"] = events.Muon.pt
     events["MET", "pt_raw"] = events.MET.pt
     events["MET", "phi_raw"] = events.MET.phi
-    
+
     # Apply nominal correction
     muons, counts, fields = events.Muon, ak.num(events.Muon), ak.fields(events.Muon)
     out = ak.flatten(muons)
     corrected_pt = out.pt_raw * ak.flatten(corrections)
-    events["Muon", "pt"] = ak.unflatten(corrected_pt, counts)
-    """
-    out_dict = dict({field: out[field] for field in fields})
-    out_dict["pt"] = corrected_pt
-    
-    # Compute Rochester-shifted pt values
-    up = ak.flatten(muons)
-    pt_up = up.pt_raw * ak.flatten(corrections) + ak.flatten(errors)
-    up = ak.with_field(up, pt_up, where="pt")
+    pt_nom = ak.where(out.pt_raw <= 200, corrected_pt, out.pt_raw)
+    events["Muon", "pt"] = ak.unflatten(pt_nom, counts)
 
-    down = ak.flatten(muons)
-    pt_down = down.pt_raw * ak.flatten(corrections) - ak.flatten(errors)
-    down = ak.with_field(down, pt_down, where="pt")
-
-    # Combine up/down shifts into RochesterSystematic structure
-    out_dict["rochester"] = ak.zip(
-        {"up": up, "down": down}, depth_limit=1, with_name="RochesterSystematic"
-    )
-    # Attach systematic field
-    out_parms = out._layout.parameters
-    out = ak.zip(out_dict, depth_limit=1, parameters=out_parms, behavior=out.behavior)
-    events["Muon"] = ak.unflatten(out, counts)
-    """
     # Propagate to MET
     update_met(events=events, other_obj="Muon", met_obj="MET")
 
