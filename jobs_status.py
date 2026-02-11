@@ -74,6 +74,11 @@ def parse_args():
         action="store_true",
         help="Delete all job outputs, logs, and filesets for this workflow/year and rerun",
     )
+    parser.add_argument(
+        "--single_fetch",
+        action="store_true",
+        help="Run fetch.py only once by merging all failing sites and datasets into a single group",
+    )
     return parser.parse_args()
 
 
@@ -181,13 +186,14 @@ def print_job_status(jobnum, jobnum_done):
     print(f"Total jobs expected : {n_expected}")
     print(f"Total jobs finished : {n_done}")
     print(f"Total jobs missing  : {n_missing}")
-    print("------------------------------------------------------------\n")
 
     datasets_with_missing = [d for d in jobnum_missing if jobnum_missing[d]]
     if n_missing:
+        print("------------------------------------------------------------")
         print(
             f"Datasets with missing jobs ({len(datasets_with_missing)}/{len(jobnum)}):"
         )
+        print("------------------------------------------------------------")
         print(
             yaml.dump(
                 datasets_with_missing,
@@ -225,21 +231,13 @@ def analyze_xrootd_errors_by_dataset(error_files):
     """
     dataset_sites = {}
 
-    print("------------------------------------------------------------")
-    print("ANALYZING XROOTD ERRORS (PER DATASET)")
-    print("------------------------------------------------------------")
-
     for dataset, err_files in error_files.items():
         xrootd_errs = extract_xrootd_errors(err_files)
 
         # Translate xrootd endpoints to site names where possible
         sites = {xroot_to_site[err] for err in xrootd_errs if err in xroot_to_site}
-
         if sites:
             dataset_sites[dataset] = sites
-            print(f"[{dataset}] Detected failing xrootd sites: {sorted(sites)}")
-        else:
-            print(f"[{dataset}] No identifiable xrootd site failures")
 
         # Warn explicitly if some endpoints could not be mapped
         for err in xrootd_errs:
@@ -248,19 +246,8 @@ def analyze_xrootd_errors_by_dataset(error_files):
                     f"[{dataset}] Could not map xrootd endpoint '{err}' to a site name"
                 )
 
-    if dataset_sites:
-        print("\nSummary of datasets with xrootd site failures:")
-        print(
-            yaml.dump(
-                {k: sorted(v) for k, v in dataset_sites.items()},
-                default_flow_style=False,
-                sort_keys=False,
-                indent=2,
-            )
-        )
-    else:
-        print("No xrootd site failures detected in recent error logs.\n")
-
+    if not dataset_sites:
+        print(f"No xrootd site failures detected in recent error logs.\n")
     return dataset_sites
 
 
@@ -363,8 +350,6 @@ def update_input_filesets_for_group(
 
     # Regenerate partitions.json for each dataset in the group
     for dataset in datasets:
-        print(f"[{dataset}] Updating partitions.json")
-
         if dataset not in all_filesets:
             print(f"[{dataset}] Not found in fileset JSON — skipping")
             continue
@@ -423,8 +408,6 @@ def resubmit_jobs(job_dir, jobnum_missing, datasets_with_missing_jobs, workflow,
     to_resubmit = []
     for dataset in datasets_with_missing_jobs:
         missing_jobs = sorted(jobnum_missing[dataset])
-        print(f"[{dataset}] Preparing resubmission for {len(missing_jobs)} jobs")
-
         missing_file = job_dir / dataset / "missing.txt"
         with open(missing_file, "w") as f:
             print(*missing_jobs, sep="\n", file=f)
@@ -433,11 +416,9 @@ def resubmit_jobs(job_dir, jobnum_missing, datasets_with_missing_jobs, workflow,
         condor_backup = condor_file.with_name(condor_file.stem + "_all.sub")
         if not condor_backup.exists():
             subprocess.run(["cp", str(condor_file), str(condor_backup)], check=True)
-            print(f"[{dataset}] Backed up original submit file → {condor_backup}")
 
         submit_text = condor_file.read_text().replace("jobnum.txt", "missing.txt")
         condor_file.write_text(submit_text)
-        print(f"[{dataset}] Updated submit file to use missing.txt")
         to_resubmit.append(str(condor_file))
 
     for submit_file in to_resubmit:
@@ -494,11 +475,6 @@ def main():
 
     # Directory setup
     output_dir = Path(make_output_directory(args))
-    print("------------------------------------------------------------")
-    print("INSPECTING JOB OUTPUTS")
-    print("------------------------------------------------------------")
-    print(f"Reading outputs from: {output_dir}\n")
-
     base_dir = Path.cwd()
     condor_dir = base_dir / "condor"
     job_dir = condor_dir / args.workflow / args.year
@@ -513,7 +489,6 @@ def main():
     jobnum_missing, datasets_with_missing_jobs = print_job_status(jobnum, jobnum_done)
 
     if not datasets_with_missing_jobs:
-        print("All jobs completed successfully — nothing to do.")
         return
 
     # Analyze xrootd errors per dataset
@@ -532,13 +507,12 @@ def main():
     else:
         # Group datasets by identical failing-site sets
         groups = group_datasets_by_sites(dataset_sites)
-
-        print("------------------------------------------------------------")
-        print("DATASET GROUPS BY FAILING SITES")
-        print("------------------------------------------------------------")
-        for sites, datasets in groups.items():
-            print(f"Sites {sorted(sites)} → {datasets}")
-        print("")
+        if args.single_fetch:
+            all_sites = set().union(*dataset_sites.values())
+            all_datasets = sorted(dataset_sites.keys())
+            groups = {frozenset(all_sites): all_datasets}
+        else:
+            groups = group_datasets_by_sites(dataset_sites)
 
         # Optional fileset regeneration
         if input("Regenerate input filesets for these groups? (y/n): ").lower() in [
