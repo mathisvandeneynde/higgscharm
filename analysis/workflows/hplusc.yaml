@@ -1,7 +1,9 @@
 datasets:
   data:
     - muon
+    - double_muon
     - electron
+    - double_electron
     - muon_electron
   mc:
     - higgs
@@ -79,16 +81,16 @@ object_selection:
     cuts:
       - events.Jet.pt > 20
       - np.abs(events.Jet.eta) < 2.5
-      - working_points.jet_id(events, 'tightlepveto')
+      - working_points.jet_id(events, year, 'tightlepveto')
       - delta_r_higher(events.Jet, objects['leptons'], 0.4)
   cjets:
     field: events.Jet
     cuts:
       - events.Jet.pt > 20
       - np.abs(events.Jet.eta) < 2.5
-      - working_points.jet_id(events, 'tightlepveto')
+      - working_points.jet_id(events, year, 'tightlepveto')
       - delta_r_higher(events.Jet, objects['leptons'], 0.4)
-      - working_points.jet_particlenet_c(events, 'medium', year)
+      - working_points.jet_ctagging(events, 'medium', year)
   zzcandidate_cjet_dphi_inclusive:
     field: select_dphi_inclusive
   zzcandidate_cjet_dphi_4e:
@@ -212,20 +214,20 @@ histogram_config:
       stop: 3.14159
       label: Jets $\phi$
       expression: objects['jets'].phi
-    leadingjet_pnet_cvsl:
+    leadingjet_cvsl:
       type: Regular
       bins: 50
       start: 0
       stop: 1
-      label: Leading Jet btagPNetCvL
-      expression: ak.pad_none(objects['jets'], target=2)[:, 0].btagPNetCvL
-    leadingjet_pnet_cvsb:
+      label: Leading Jet CvsL
+      expression: ak.pad_none(objects['jets'], target=2)[:, 0].btagUParTAK4CvL if hasattr(objects['jets'], 'btagUParTAK4CvL') else ak.pad_none(objects['jets'], target=2)[:, 0].btagPNetCvL if hasattr(objects['jets'], 'btagPNetCvL') else ak.pad_none(objects['jets'], target=2)[:, 0].btagDeepFlavCvL
+    leadingjet_cvsb:
       type: Regular
       bins: 50
       start: 0
       stop: 1
-      label: Leading Jet btagPNetCvB
-      expression: ak.pad_none(objects['jets'], target=2)[:, 0].btagPNetCvB
+      label: Leading Jet CvsB
+      expression: ak.pad_none(objects['jets'], target=2)[:, 0].btagUParTAK4CvB if hasattr(objects['jets'], 'btagUParTAK4CvB') else ak.pad_none(objects['jets'], target=2)[:, 0].btagPNetCvB if hasattr(objects['jets'], 'btagPNetCvB') else ak.pad_none(objects['jets'], target=2)[:, 0].btagDeepFlavCvB
     leadingjet_flavour:
       type: IntCategory
       categories:
@@ -234,20 +236,20 @@ histogram_config:
         - 5
       label: Leading Jet HadronFlavour
       expression: ak.pad_none(objects['jets'], target=2)[:, 0].hadronFlavour
-    subleadingjet_pnet_cvsl:
+    subleadingjet_cvsl:
       type: Regular
       bins: 50
       start: 0
       stop: 1
-      label: Subleading Jet btagPNetCvL
-      expression: ak.pad_none(objects['jets'], target=2)[:, 1].btagPNetCvL
-    subleadingjet_pnet_cvsb:
+      label: Leading Jet CvsL
+      expression: ak.pad_none(objects['jets'], target=2)[:, 1].btagUParTAK4CvL if hasattr(objects['jets'], 'btagUParTAK4CvL') else ak.pad_none(objects['jets'], target=2)[:, 1].btagPNetCvL if hasattr(objects['jets'], 'btagPNetCvL') else ak.pad_none(objects['jets'], target=2)[:, 1].btagDeepFlavCvL
+    subleadingjet_cvsb:
       type: Regular
       bins: 50
       start: 0
       stop: 1
-      label: Subleading Jet btagPNetCvB
-      expression: ak.pad_none(objects['jets'], target=2)[:, 1].btagPNetCvB
+      label: Leading Jet CvsB
+      expression: ak.pad_none(objects['jets'], target=2)[:, 1].btagUParTAK4CvB if hasattr(objects['jets'], 'btagUParTAK4CvB') else ak.pad_none(objects['jets'], target=2)[:, 1].btagPNetCvB if hasattr(objects['jets'], 'btagPNetCvB') else ak.pad_none(objects['jets'], target=2)[:, 1].btagDeepFlavCvB
     subleadingjet_flavour:
       type: IntCategory
       categories:
@@ -332,12 +334,12 @@ histogram_config:
       - jet_phi
     leading_jet:
       - leadingjet_flavour
-      - leadingjet_pnet_cvsl
-      - leadingjet_pnet_cvsb
+      - leadingjet_cvsl
+      - leadingjet_cvsb
     subleading_jet:
       - subleadingjet_flavour
-      - subleadingjet_pnet_cvsl
-      - subleadingjet_pnet_cvsb
+      - subleadingjet_cvsl
+      - subleadingjet_cvsb
     cjet:
       - cjets_pt
       - cjets_eta

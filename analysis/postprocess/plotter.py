@@ -60,11 +60,9 @@ class CoffeaPlotter:
         self.process_era_map = get_process_era_map(year)
 
         # set processes -> color map
-        key_process_map = get_workflow_key_process_map(workflow_config, year)
-        processes = list(key_process_map.values())
         with open(color_map_file, "r") as f:
             color_map = yaml.safe_load(f)
-        self.color_map = {p: c for p, c in color_map.items() if p in processes}
+        self.color_map = {p: c for p, c in color_map.items()}
 
     def get_histogram(
         self,
@@ -315,6 +313,10 @@ class CoffeaPlotter:
             zzto4l_text_map = {"zzto4l": zzto4l_text}
             text_map = {**text_map, **zzto4l_text_map}
 
+        if self.workflow == "hplusc":
+            hplusc_test = {"hplusc": "H(ZZ)+c-jet events"}
+            text_map = text_map = {**text_map, **hplusc_test}
+
         ax.add_artist(
             AnchoredText(
                 text_map.get(self.workflow, f"{self.workflow} events") + "\n",
@@ -371,7 +373,7 @@ class CoffeaPlotter:
         # get nominal MC histograms
         mc_colors, mc_labels = [], []
         if self.group_by == "process":
-            if (self.workflow == "zzto4l") and ("zz_mass" in variable):
+            if (self.workflow in ["zzto4l", "hplusc"]) and ("zz_mass" in variable):
                 mc_labels = ["ggToZZ", "qqToZZ", "H(125)"]
                 nominal_mc_hists = [
                     histogram_info["mc"]["nominal"][p] for p in mc_labels
@@ -434,7 +436,7 @@ class CoffeaPlotter:
         mc_hist_args.update(self.style["mc_hist_kwargs"])
         if mc_colors:
             mc_hist_args.update({"color": mc_colors})
-        if (self.workflow == "zzto4l") and ("zz_mass" in variable):
+        if (self.workflow in ["zzto4l", "hplusc"]) and ("zz_mass" in variable):
             mc_hist_args["sort"] = None
         hep.histplot(**mc_hist_args)
         if not blind:
@@ -505,8 +507,10 @@ class CoffeaPlotter:
                     if i % 5 != 0:  # Show only every 5th tick
                         label.set_visible(False)
         # add CMS info
+        lumi = self.luminosities[self.year] * 1e-3
+        energy = "13" if self.year.startswith("201") else "13.6"
         hep.cms.lumitext(
-            f"{self.luminosities[self.year] * 1e-3:.1f} fb$^{{-1}}$ ({self.year}, 13.6 TeV)",
+            f"{lumi:.1f} fb$^{{-1}}$ ({self.year}, {energy} TeV)",
             ax=ax,
         )
         hep.cms.text("Preliminary", ax=ax)

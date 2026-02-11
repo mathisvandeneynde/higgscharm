@@ -3,6 +3,7 @@ import numpy as np
 import awkward as ak
 from pathlib import Path
 from analysis.corrections.met import update_met
+from analysis.corrections.utils import correction_files
 
 
 def filter_boundaries(pt_corr, pt, nested=True):
@@ -50,38 +51,33 @@ def apply_electron_ss_corrections(
     year: str,
     variation: str = "nominal",
 ):
-    json_path = (
-        Path.cwd() / "analysis" / "data" / f"{year}_electronSS_EtDependent.json.gz"
-    )
-    cset = correctionlib.CorrectionSet.from_file(str(json_path))
-    year_map = {
-        "2022preEE": "2022preEE",
-        "2022postEE": "2022postEE",
-        "2023preBPix": "2023preBPIX",
-        "2023postBPix": "2023postBPIX",
-    }
-    scale_evaluator = cset.compound[f"EGMScale_Compound_Ele_{year_map[year]}"]
-    smear_evaluator = cset[f"EGMSmearAndSyst_ElePTsplit_{year_map[year]}"]
+    """
+    Apply electron scale and smearing corrections for Run3
+
+    from docs https://egammapog.docs.cern.ch/Run3/SaS/
+
+    The purpose of scale and smearing (more formal: energy scale and resolution corrections) is to correct and calibrate electron and photon energies in data and MC. This step is performed after the MC-based semi-parametric EGamma energy regression, which is applied to both MC and data (aiming to correct for inherent imperfections that are not in principle related to data/MC differences like crystal-by-crystal differences, intermodule gaps, ...). The remaining differences between the electron and photon energy scales and the resolution in the data and simulation need to be corrected for. To address this, a multistep procedure is implemented to calibrate the residual energy scale in data. Additionally, an extra smearing is applied to the electron or photon energy in simulation to ensure that the energy resolution matches that observed in data
+    """
+    cset = correctionlib.CorrectionSet.from_file(correction_files["electron_ss"][year])
 
     events["Electron", "pt_raw"] = ak.ones_like(events.Electron.pt) * events.Electron.pt
     electrons = ak.flatten(events.Electron)
     counts = ak.num(events.Electron)
-    gain = electrons.seedGain
+    seedgain = electrons.seedGain
     run = np.repeat(events.run, counts)
-    eta = electrons.eta + electrons.deltaEtaSC
-    abseta = np.abs(eta)
+    sceta = electrons.eta + electrons.deltaEtaSC
     r9 = electrons.r9
     pt = electrons.pt_raw
 
     if variation == "nominal":
         if hasattr(events, "genWeight"):
-            smear = smear_evaluator.evaluate("smear", pt, r9, abseta)
+            smear = cset["SmearAndSyst"].evaluate("smear", pt, r9, sceta)
             rng = np.random.default_rng(seed=42)
             random_numbers = rng.normal(loc=0.0, scale=1.0, size=len(pt))
             correction_factor = 1 + smear * random_numbers
         else:
-            correction_factor = scale_evaluator.evaluate(
-                "scale", run, eta, r9, abseta, pt, gain
+            correction_factor = cset.compound["Scale"].evaluate(
+                "scale", run, sceta, r9, pt, seedgain
             )
 
         ele_pt = ak.unflatten(electrons.pt_raw, counts)
@@ -89,4 +85,10 @@ def apply_electron_ss_corrections(
         corrected_pt = filter_boundaries(ele_pt_corr, ele_pt)
 
         events["Electron", "pt"] = corrected_pt
-        #update_met(events=events, other_obj="Electron", met_obj="PuppiMET")
+        update_met(
+            events=events,
+            other_obj="Electron",
+            met_obj="MET" if year.startswith("201") else "PuppiMET",
+        )
+
+        # TO DO: ADD UNCERTAINTIES https://gitlab.cern.ch/cms-analysis-corrections/EGM/examples/-/blob/latest/egmScaleAndSmearingExample.py

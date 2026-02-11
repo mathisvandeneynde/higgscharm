@@ -3,9 +3,8 @@ import json
 import argparse
 import subprocess
 from pathlib import Path
-from analysis.filesets.utils import divide_list
 from analysis.utils import make_output_directory
-from analysis.filesets.utils import fileset_checker
+from analysis.filesets.utils import divide_list, get_nano_version, fileset_checker
 
 
 def move_proxy() -> str:
@@ -27,8 +26,80 @@ def move_proxy() -> str:
     return x509_path
 
 
-def submit_condor(args):
-    """Build condor files. Optionally submit condor job"""
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-w",
+        "--workflow",
+        dest="workflow",
+        required=True,
+        type=str,
+        choices=[
+            f.stem for f in (Path.cwd() / "analysis" / "workflows").glob("*.yaml")
+        ],
+        help="workflow to run",
+    )
+    parser.add_argument(
+        "-y",
+        "--year",
+        dest="year",
+        type=str,
+        choices=[
+            "2016preVFP",
+            "2016postVFP",
+            "2017",
+            "2018",
+            "2022preEE",
+            "2022postEE",
+            "2023preBPix",
+            "2023postBPix",
+            "2024",
+        ],
+        help="dataset year",
+    )
+    parser.add_argument(
+        "-d",
+        "--dataset",
+        dest="dataset",
+        type=str,
+        help="dataset",
+    )
+    parser.add_argument(
+        "--nfiles",
+        dest="nfiles",
+        type=int,
+        default=15,
+        help="number of root files to include in each dataset partition (default 10)",
+    )
+    parser.add_argument(
+        "--eos",
+        action="store_true",
+        help="Enable saving outputs to /eos",
+    )
+    parser.add_argument(
+        "--submit",
+        action="store_true",
+        help="Enable Condor job submission. If not provided, it just builds condor files",
+    )
+    parser.add_argument(
+        "--output_format",
+        type=str,
+        default="coffea",
+        choices=["coffea", "root", "parquet"],
+        help="format of output histogram",
+    )
+    parser.add_argument(
+        "--image",
+        dest="image",
+        type=str,
+        default="/cvmfs/unpacked.cern.ch/registry.hub.docker.com/coffeateam/coffea-base-almalinux9:0.7.30-py3.10",
+    )
+    parser.add_argument("--jobflavor", dest="jobflavor", type=str, default="longlunch")
+    args = parser.parse_args()
+
+    # check if the fileset for the given year exists, generate it otherwise
+    fileset_checker(samples=[args.dataset], year=args.year)
+
     print(f"Creating {args.workflow}-{args.year}-{args.dataset} condor file")
     jobname = f"{args.workflow}_{args.dataset}"
 
@@ -42,13 +113,15 @@ def submit_condor(args):
     if not log_dir.exists():
         log_dir.mkdir(parents=True, exist_ok=True)
 
-    # check if the fileset for the given year exists, generate it otherwise
-    fileset_checker(samples=[args.dataset], year=args.year)
     # save partitions json and jobnums to job directory
     jobnum_list = []
     partition_dataset = {}
     fileset_path = Path.cwd() / "analysis" / "filesets"
-    with open(f"{fileset_path}/fileset_{args.year}_NANO_lxplus.json", "r") as f:
+
+    nano_version = get_nano_version(args.year)
+    with open(
+        f"{fileset_path}/fileset_{args.year}_nanov{nano_version}_lxplus.json", "r"
+    ) as f:
         root_files = json.load(f)[args.dataset]
     root_files_list = divide_list(root_files, args.nfiles)
     for i in range(len(root_files_list)):
@@ -88,63 +161,9 @@ def submit_condor(args):
                 "INPUTFILES", f"{partition_file},{jobnum_file},{args_file}"
             )
             line = line.replace("JOBNUM_FILE", str(jobnum_file))
+            line = line.replace("JOBFLAVOR", f'"{args.jobflavor}"')
+            line = line.replace("IMAGE", f'"{args.image}"')
             condor_file.write(line)
 
     if args.submit:
         subprocess.run(["condor_submit", local_condor])
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "-w",
-        "--workflow",
-        dest="workflow",
-        required=True,
-        type=str,
-        choices=[
-            f.stem for f in (Path.cwd() / "analysis" / "workflows").glob("*.yaml")
-        ],
-        help="workflow to run",
-    )
-    parser.add_argument(
-        "-y",
-        "--year",
-        dest="year",
-        type=str,
-        choices=["2022preEE", "2022postEE", "2023preBPix", "2023postBPix"],
-        help="dataset year",
-    )
-    parser.add_argument(
-        "-d",
-        "--dataset",
-        dest="dataset",
-        type=str,
-        help="dataset",
-    )
-    parser.add_argument(
-        "--nfiles",
-        dest="nfiles",
-        type=int,
-        default=15,
-        help="number of root files to include in each dataset partition (default 10)",
-    )
-    parser.add_argument(
-        "--eos",
-        action="store_true",
-        help="Enable saving outputs to /eos",
-    )
-    parser.add_argument(
-        "--submit",
-        action="store_true",
-        help="Enable Condor job submission. If not provided, it just builds condor files",
-    )
-    parser.add_argument(
-        "--output_format",
-        type=str,
-        default="coffea",
-        choices=["coffea", "root", "parquet"],
-        help="format of output histogram",
-    )
-    args = parser.parse_args()
-    submit_condor(args)

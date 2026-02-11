@@ -53,14 +53,26 @@ def divide_list(lst: list, nfiles: int = 20) -> list:
     return result
 
 
-def get_dataset_config(year):
+def get_nano_version(year: str):
+    if year.startswith("201"):
+        nano_version = "9"
+    elif year == "2024":
+        nano_version = "15"
+    else:
+        nano_version = "12"
+    return nano_version
+
+
+def get_dataset_config(year: str):
     aux_year_map = {
+        "2016": "2016preVFP",
         "2022": "2022preEE",
         "2023": "2023preBPix",
     }
     aux_year = aux_year_map.get(year, year)
     fileset_path = Path.cwd() / "analysis" / "filesets"
-    fileset_file = f"{fileset_path}/{aux_year}_nanov12.yaml"
+    nano_version = get_nano_version(year)
+    fileset_file = f"{fileset_path}/{aux_year}_nanov{nano_version}.yaml"
     with open(fileset_file, "r") as f:
         dataset_config = yaml.safe_load(f)
     return dataset_config
@@ -74,7 +86,7 @@ def get_dataset_name(dataset):
     return "mc"
 
 
-def get_dataset_era(dataset, year):
+def get_dataset_era(dataset: str, year: str):
     dataset_config = get_dataset_config(year)
     for dataset_key in dataset_config:
         if dataset.startswith(dataset_key):
@@ -132,9 +144,9 @@ def extract_xrootd_errors(error_files: list) -> set:
 
 def fileset_checker(samples: list, year: str):
     """check if the fileset for the given year exists, generate it otherwise"""
-
+    nano_version = get_nano_version(year)
     filesets_path = Path.cwd() / "analysis" / "filesets"
-    fileset_file = filesets_path / f"fileset_{year}_NANO_lxplus.json"
+    fileset_file = filesets_path / f"fileset_{year}_nanov{nano_version}_lxplus.json"
 
     build_input_fileset = False
     if not fileset_file.exists():
@@ -195,7 +207,7 @@ def get_datasets_to_run_over(workflow: str, year: str):
     return datasets_to_run_over
 
 
-def get_workflow_key_process_map(workflow_config, year):
+def get_workflow_key_process_map(workflow_config, year: str):
     datasets = workflow_config.datasets
     dataset_configs = get_dataset_config(year)
     sample_keys = np.concatenate(list(datasets.values())).tolist()
@@ -223,7 +235,7 @@ def get_workflow_key_process_map(workflow_config, year):
     return key_process_map
 
 
-def get_process_era_map(year):
+def get_process_era_map(year: str):
     dataset_configs = get_dataset_config(year)
     process_era_map = {}
     for sample in dataset_configs:
@@ -232,6 +244,7 @@ def get_process_era_map(year):
             process_era_map[sample_process] = dataset_configs[sample]["era"]
 
     return process_era_map
+
 
 def get_process_sample_map(datasets: list[str], year: str) -> dict[str, list[str]]:
     """map processes to their corresponding samples based on dataset config"""

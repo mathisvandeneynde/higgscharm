@@ -16,7 +16,20 @@ if __name__ == "__main__":
         ],
         help="workflow to run",
     )
-    years = ["2022preEE", "2022postEE", "2023preBPix", "2023postBPix", "2022", "2023"]
+    years = [
+        "2016preVFP",
+        "2016postVFP",
+        "2016",
+        "2017",
+        "2018",
+        "2022preEE",
+        "2022postEE",
+        "2022",
+        "2023preBPix",
+        "2023postBPix",
+        "2023",
+        "2024",
+    ]
     parser.add_argument(
         "-y",
         "--year",
@@ -86,13 +99,7 @@ if __name__ == "__main__":
                     ]
                 )
 
-        elif args.workflow in [
-            "zplusl_os",
-            "zplusl_ss",
-            "zplusl_ss_maximal",
-            "zplusl_ss_minimal",
-            "zplusl_ss_intermediate",
-        ]:
+        elif args.workflow.startswith("zplusl_"):
             if not args.nopostprocess:
                 subprocess.run(
                     [

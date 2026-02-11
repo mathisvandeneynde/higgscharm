@@ -52,12 +52,18 @@ def parse_arguments():
         "--year",
         required=True,
         choices=[
-            "2022",
-            "2023",
+            "2016preVFP",
+            "2016postVFP",
+            "2016",
+            "2017",
+            "2018",
             "2022preEE",
             "2022postEE",
+            "2022",
             "2023preBPix",
             "2023postBPix",
+            "2023",
+            "2024",
         ],
         help="Data year",
     )
@@ -127,6 +133,7 @@ def check_output_dir(workflow: str, year: str) -> Path:
 
     # Years that require both pre and post subdirectories
     aux_map = {
+        "2016": ["2016preVFP", "2016postVFP"],
         "2022": ["2022preEE", "2022postEE"],
         "2023": ["2023preBPix", "2023postBPix"],
     }
@@ -160,6 +167,7 @@ def get_sample_name(filename: str, year: str) -> str:
 def load_year_histograms(workflow: str, year: str):
     """load and merge histograms from pre/post years"""
     aux_map = {
+        "2016": ["2016preVFP", "2016postVFP"],
         "2022": ["2022preEE", "2022postEE"],
         "2023": ["2023preBPix", "2023postBPix"],
     }
@@ -206,7 +214,7 @@ if __name__ == "__main__":
     if "data" not in workflow_config.datasets:
         args.blind = True
 
-    if args.postprocess and (args.year not in ["2022", "2023"]):
+    if args.postprocess and (args.year not in ["2016", "2022", "2023"]):
         print_header(f"Running postprocess for {args.year}")
         logging.info(f"Reading outputs from: {output_dir}")
 
@@ -328,7 +336,7 @@ if __name__ == "__main__":
                 with open(category_dir / f"results_{category}.txt", "w") as f:
                     f.write(latex_table)
 
-    if args.year in ["2022", "2023"]:
+    if args.year in ["2016", "2022", "2023"]:
         if args.postprocess:
             print_header(f"Running postprocess for {args.year}")
             # load and accumulate processed histograms
@@ -337,7 +345,8 @@ if __name__ == "__main__":
                 processed_histograms,
                 f"{output_dir}/{args.year}_processed_histograms.coffea",
             )
-            identifier = "EE" if args.year == "2022" else "BPix"
+            identifier_map = {"2016": "VFP", "2022": "EE", "2023": "BPix"}
+            identifier = identifier_map[args.year]
             for category in categories:
                 logging.info(f"category: {category}")
                 category_dir = OUTPUT_DIR / args.workflow / args.year / category

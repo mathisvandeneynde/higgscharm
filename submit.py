@@ -27,7 +27,17 @@ if __name__ == "__main__":
         "--year",
         dest="year",
         type=str,
-        choices=["2022preEE", "2022postEE", "2023preBPix", "2023postBPix"],
+        choices=[
+            "2016preVFP",
+            "2016postVFP",
+            "2017",
+            "2018",
+            "2022preEE",
+            "2022postEE",
+            "2023preBPix",
+            "2023postBPix",
+            "2024"
+        ],
         help="dataset year",
     )
     parser.add_argument(

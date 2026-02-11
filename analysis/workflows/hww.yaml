@@ -35,8 +35,8 @@ object_selection:
     cuts:
       - events.Jet.pt > 20
       - np.abs(events.Jet.eta) < 2.4
-      - working_points.jet_id(events, 'tightlepveto')
-      - working_points.jet_particlenet_c(events, 'medium', year)
+      - working_points.jet_id(events, year, 'tightlepveto')
+      - working_points.jet_ctagging(events, 'medium', year)
       - delta_r_higher(events.Jet, objects['leptons'], 0.4)
   candidate_jet:
     field: select_candidate_cjet

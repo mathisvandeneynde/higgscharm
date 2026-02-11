@@ -6,6 +6,8 @@ from pathlib import Path
 from random import random
 from scipy.special import erfinv, erf
 from analysis.corrections.met import update_met
+from analysis.corrections.utils import correction_files
+from coffea.lookup_tools import txt_converters, rochester_lookup
 
 
 class CrystallBall:
@@ -120,7 +122,6 @@ def get_rndm(eta, nL, cset, nested=False):
     alpha_f = cset.get("cb_params").evaluate(abs(eta_f), nL_f, 3)
 
     # get random number following the CB
-    # print(nmuons)
     rndm_f = [random() for i in nmuons for j in range(int(i))]
 
     cb_f = CrystallBall(mean_f, sigma_f, alpha_f, n_f)
@@ -392,52 +393,131 @@ def pt_scale_var(pt, eta, phi, charge, updn, cset, nested=False):
     return pt_var
 
 
-def apply_muon_ss_corrections(
+def apply_muon_ss_corrections_run3(
     events: ak.Array,
     year: str,
-    variation: str = "nominal",
 ):
     # save original muon pT
     events["Muon", "pt_raw"] = ak.ones_like(events.Muon.pt) * events.Muon.pt
 
     # get correction set
-    json_path = Path.cwd() / "analysis" / "data" / f"{year}_muonSS.json.gz"
-    cset = correctionlib.CorrectionSet.from_file(str(json_path))
+    cset = correctionlib.CorrectionSet.from_file(correction_files["muon_ss"][year])
 
     if hasattr(events, "genWeight"):
         # MC: both scale correction to gen Z peak AND resolution correction to Z width in data
-        if variation == "nominal":
-            ptscalecorr = pt_scale(
-                False,
-                events.Muon.pt,
-                events.Muon.eta,
-                events.Muon.phi,
-                events.Muon.charge,
-                cset,
-                nested=True,
-            )
-            ptcorr = pt_resol(
-                ptscalecorr,
-                events.Muon.eta,
-                events.Muon.nTrackerLayers,
-                cset,
-                nested=True,
-            )
+        ptscalecorr = pt_scale(
+            False,
+            events.Muon.pt,
+            events.Muon.eta,
+            events.Muon.phi,
+            events.Muon.charge,
+            cset,
+            nested=True,
+        )
+        ptcorr = pt_resol(
+            ptscalecorr,
+            events.Muon.eta,
+            events.Muon.nTrackerLayers,
+            cset,
+            nested=True,
+        )
     else:
         # Data: only scale correction to gen Z peak
-        if variation == "nominal":
-            ptcorr = pt_scale(
-                True,
-                events.Muon.pt,
-                events.Muon.eta,
-                events.Muon.phi,
-                events.Muon.charge,
-                cset,
-                nested=True,
-            )
+        ptcorr = pt_scale(
+            True,
+            events.Muon.pt,
+            events.Muon.eta,
+            events.Muon.phi,
+            events.Muon.charge,
+            cset,
+            nested=True,
+        )
+    # update muon pT
+    events["Muon", "pt"] = ak.where(
+        events.Muon.pt_raw <= 200, ptcorr, events.Muon.pt_raw
+    )
+    # Propagate to MET
+    update_met(events=events, other_obj="Muon", met_obj="PuppiMET")
 
-    if variation == "nominal":
-        # update muon pT
-        events["Muon", "pt"] = ptcorr
-        # Propagate to MET
-        update_met(events=events, other_obj="Muon", met_obj="PuppiMET")
+
+def apply_muon_ss_corrections_run2(events, year):
+    """apply rochester corrections for Run2"""
+    # https://twiki.cern.ch/twiki/bin/viewauth/CMS/RochcorMuon
+    rochester_data = txt_converters.convert_rochester_file(
+        correction_files["muon_ss"][year], loaduncs=True
+    )
+    rochester = rochester_lookup.rochester_lookup(rochester_data)
+
+    if hasattr(events, "genWeight"):
+        hasgen = ~np.isnan(ak.fill_none(events.Muon.matched_gen.pt, np.nan))
+        mc_rand = np.random.rand(*ak.to_numpy(ak.flatten(events.Muon.pt)).shape)
+        mc_rand = ak.unflatten(mc_rand, ak.num(events.Muon.pt, axis=1))
+        corrections = np.array(ak.flatten(ak.ones_like(events.Muon.pt)))
+        mc_kspread = rochester.kSpreadMC(
+            events.Muon.charge[hasgen],
+            events.Muon.pt[hasgen],
+            events.Muon.eta[hasgen],
+            events.Muon.phi[hasgen],
+            events.Muon.matched_gen.pt[hasgen],
+        )
+        mc_ksmear = rochester.kSmearMC(
+            events.Muon.charge[~hasgen],
+            events.Muon.pt[~hasgen],
+            events.Muon.eta[~hasgen],
+            events.Muon.phi[~hasgen],
+            events.Muon.nTrackerLayers[~hasgen],
+            mc_rand[~hasgen],
+        )
+        hasgen_flat = np.array(ak.flatten(hasgen))
+        corrections[hasgen_flat] = np.array(ak.flatten(mc_kspread))
+        corrections[~hasgen_flat] = np.array(ak.flatten(mc_ksmear))
+        corrections = ak.unflatten(corrections, ak.num(events.Muon.pt, axis=1))
+
+        errors = np.array(ak.flatten(ak.ones_like(events.Muon.pt)))
+        errspread = rochester.kSpreadMCerror(
+            events.Muon.charge[hasgen],
+            events.Muon.pt[hasgen],
+            events.Muon.eta[hasgen],
+            events.Muon.phi[hasgen],
+            events.Muon.matched_gen.pt[hasgen],
+        )
+        errsmear = rochester.kSmearMCerror(
+            events.Muon.charge[~hasgen],
+            events.Muon.pt[~hasgen],
+            events.Muon.eta[~hasgen],
+            events.Muon.phi[~hasgen],
+            events.Muon.nTrackerLayers[~hasgen],
+            mc_rand[~hasgen],
+        )
+        errors[hasgen_flat] = np.array(ak.flatten(errspread))
+        errors[~hasgen_flat] = np.array(ak.flatten(errsmear))
+        errors = ak.unflatten(errors, ak.num(events.Muon.pt, axis=1))
+    else:
+        corrections = rochester.kScaleDT(
+            events.Muon.charge, events.Muon.pt, events.Muon.eta, events.Muon.phi
+        )
+        errors = rochester.kScaleDTerror(
+            events.Muon.charge, events.Muon.pt, events.Muon.eta, events.Muon.phi
+        )
+
+    # Backup original pt and MET values
+    events["Muon", "pt_raw"] = events.Muon.pt
+    events["MET", "pt_raw"] = events.MET.pt
+    events["MET", "phi_raw"] = events.MET.phi
+
+    # Apply nominal correction
+    muons, counts, fields = events.Muon, ak.num(events.Muon), ak.fields(events.Muon)
+    out = ak.flatten(muons)
+    corrected_pt = out.pt_raw * ak.flatten(corrections)
+    pt_nom = ak.where(out.pt_raw <= 200, corrected_pt, out.pt_raw)
+    events["Muon", "pt"] = ak.unflatten(pt_nom, counts)
+
+    # Propagate to MET
+    update_met(events=events, other_obj="Muon", met_obj="MET")
+
+
+def apply_muon_ss_corrections(events, year):
+    if year.startswith("201"):
+        apply_muon_ss_corrections_run2(events, year)
+    else:
+        apply_muon_ss_corrections_run3(events, year)

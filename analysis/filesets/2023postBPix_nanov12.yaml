@@ -64,13 +64,13 @@ DYJetsToLL:
   process: DY+Jets
   key: dy_lo
   xsec: 6688.0
-DYto2L_2Jets_50:
+DYJetsToLL_50:
   era: mc
   query: DYto2L-2Jets_MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v2-v3/NANOAODSIM
   process: DY+Jets
   key: dy_nlo
   xsec: 6688.0
-DYto2L_2Jets_10to50:
+DYJetsToLL_10to50:
   era: mc
   query: DYto2L-2Jets_MLL-10to50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v2_ext1-v3/NANOAODSIM
   process: DY+Jets

@@ -191,11 +191,11 @@ def save_cutflows(metadata, categories, sample, weight, output_dir):
 
 
 def get_process_dict(output_dir, year, categories):
-    folders = glob.glob(str(output_dir / "*"))
-    process_dict = defaultdict(list)
-
     dataset_config = get_dataset_config(year)
 
+    process_dict = defaultdict(list)
+
+    folders = glob.glob(str(output_dir / "*"))
     for folder in folders:
         folder_path = Path(folder)
         name = folder_path.name

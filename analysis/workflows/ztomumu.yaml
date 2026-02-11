@@ -30,7 +30,8 @@ object_selection:
     cuts:
       - events.Jet.pt > 20
       - np.abs(events.Jet.eta) < 2.5
-      - working_points.jet_id(events, 'tightlepveto')
+      - working_points.jet_id(events, year, 'tightlepveto')
+      - working_points.jet_pileup_id(events, year, 'tight')
       - delta_r_higher(events.Jet, objects['muons'], 0.4)
       - delta_r_higher(events.Jet, objects['electrons'], 0.4)
   dimuons:
@@ -66,7 +67,6 @@ event_selection:
       - electron_veto
 corrections:
   objects:
-    - jec
     - muon_ss
     - electon_ss
   event_weights:
@@ -76,11 +76,8 @@ corrections:
     lhepdfWeight: true
     lhescaleWeight: true
     nnlopsWeight: false
-    electron:
-      - id: false
-      - reco: false
-      - trigger: false
-    muon:
+    electron: false
+    muon: 
       - id: tight
       - iso: tight
       - trigger: true
@@ -226,6 +223,13 @@ histogram_config:
         - 500
       label: $p_T(j)$ [GeV]
       expression: objects['jets'].pt
+    jet_eta:
+      type: Regular
+      bins: 50
+      start: -2.4
+      stop: 2.4
+      label: $\eta(j)$
+      expression: objects['jets'].eta
     jet_phi:
       type: Regular
       bins: 50
@@ -261,48 +265,20 @@ histogram_config:
         - 5
       label: HadronFlavour
       expression: ak.pad_none(objects['jets'], target=2)[:, 0].hadronFlavour
-    leadingjet_cvsl_pnet:
+    leadingjet_cvsl:
       type: Regular
       bins: 50
       start: 0
       stop: 1
-      label: Leading Jet CvsL (PNet)
-      expression: ak.pad_none(objects['jets'], target=2)[:, 0].btagPNetCvL
-    leadingjet_cvsb_pnet:
+      label: Leading Jet CvsL
+      expression: ak.pad_none(objects['jets'], target=2)[:, 0].btagUParTAK4CvL if hasattr(objects['jets'], 'btagUParTAK4CvL') else ak.pad_none(objects['jets'], target=2)[:, 0].btagPNetCvL if hasattr(objects['jets'], 'btagPNetCvL') else ak.pad_none(objects['jets'], target=2)[:, 0].btagDeepFlavCvL
+    leadingjet_cvsb:
       type: Regular
       bins: 50
       start: 0
       stop: 1
-      label: Leading Jet CvsB (PNet)
-      expression: ak.pad_none(objects['jets'], target=2)[:, 0].btagPNetCvB
-    leadingjet_cvsb_deepjet:
-      type: Regular
-      bins: 50
-      start: 0
-      stop: 1
-      label: Leading Jet CvsB (DeepJet)
-      expression: ak.pad_none(objects['jets'], target=2)[:, 0].btagDeepFlavCvB
-    leadingjet_cvsl_deepjet:
-      type: Regular
-      bins: 50
-      start: 0
-      stop: 1
-      label: Leading Jet Cvsl (DeepJet)
-      expression: ak.pad_none(objects['jets'], target=2)[:, 0].btagDeepFlavCvL
-    leadingjet_cvsb_partb:
-      type: Regular
-      bins: 50
-      start: 0
-      stop: 1
-      label: Leading Jet btagRobustParTAK4CvB
-      expression: ak.pad_none(objects['jets'], target=2)[:, 0].btagRobustParTAK4CvB
-    leadingjet_cvsl_partb:
-      type: Regular
-      bins: 50
-      start: 0
-      stop: 1
-      label: Leading Jet btagRobustParTAK4CvL
-      expression: ak.pad_none(objects['jets'], target=2)[:, 0].btagRobustParTAK4CvL
+      label: Leading Jet CvsB
+      expression: ak.pad_none(objects['jets'], target=2)[:, 0].btagUParTAK4CvB if hasattr(objects['jets'], 'btagUParTAK4CvB') else ak.pad_none(objects['jets'], target=2)[:, 0].btagPNetCvB if hasattr(objects['jets'], 'btagPNetCvB') else ak.pad_none(objects['jets'], target=2)[:, 0].btagDeepFlavCvB
     npvs:
       type: Integer
       start: 0
@@ -310,6 +286,8 @@ histogram_config:
       label: vertex multiplicity
       expression: events.PV.npvsGood
   layout:
+    vertex:
+      - npvs
     dimuon_mass:
       - dimuon_mass
     dimuon_pt:
@@ -332,27 +310,21 @@ histogram_config:
       - subleading_muon_pt
     subleading_muon_eta:
       - subleading_muon_eta
-    jet_pt:
+    subleading_muon_phi:
+      - subleading_muon_phi
+    jet_pt: 
       - jet_pt
+    jet_eta:
+      - jet_eta
     jet_phi:
       - jet_phi
-    jet_multiplicity:
-      - jet_multiplicity
     jet_dr: 
       - jet_dr
-    jet_deta: 
+    jet_deta:
       - jet_deta
-    leading_jet_pnet:
+    jet_multiplicity:
+      - jet_multiplicity
+    leading_jet:
       - leadingjet_flavour
-      - leadingjet_cvsb_pnet
-      - leadingjet_cvsl_pnet
-    leading_jet_deepjet:
-      - leadingjet_flavour
-      - leadingjet_cvsb_deepjet
-      - leadingjet_cvsl_deepjet
-    leading_jet_partb:
-      - leadingjet_flavour
-      - leadingjet_cvsb_partb
-      - leadingjet_cvsl_partb
-    vertex:
-      - npvs
+      - leadingjet_cvsb
+      - leadingjet_cvsl

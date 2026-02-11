@@ -1,7 +1,8 @@
 import numpy as np
 from coffea.analysis_tools import Weights
+from analysis.filesets.utils import get_nano_version
 from analysis.corrections.muon import MuonWeights
-from analysis.corrections.pnet_ctag import CTagCorrector
+from analysis.corrections.ctag import CTagCorrector
 from analysis.corrections.pileup import add_pileup_weight
 from analysis.corrections.nnlops import add_nnlops_weight
 from analysis.corrections.lhepdf import add_lhepdf_weight
@@ -17,41 +18,31 @@ from analysis.corrections.electron_ss import apply_electron_ss_corrections
 def object_corrector_manager(events, year, dataset, workflow_config):
     """apply object level corrections"""
     objcorr_config = workflow_config.corrections_config["objects"]
-
-    if "jec" in objcorr_config:
-        # apply JEC/JER corrections
-        apply_jec = True
-        apply_jer = False
-        apply_junc = False
-        if hasattr(events, "genWeight"):
-            apply_jer = True
-        apply_jerc_corrections(
-            events,
-            year=year,
-            dataset=dataset,
-            apply_jec=apply_jec,
-            apply_jer=apply_jer,
-            apply_junc=apply_junc,
-        )
-    if "muon_ss" in objcorr_config:
-        # apply muon scale and smearing corrections
-        apply_muon_ss_corrections(
-            events=events,
-            year=year,
-            variation="nominal",
-        )
-    if "electon_ss" in objcorr_config:
-        apply_electron_ss_corrections(
-            events=events,
-            year=year,
-            variation="nominal",
-        )
-    if "met_phi" in objcorr_config:
-        # apply MET-phi modulation corrections
-        if year.startswith("2022"):
-            apply_met_phi_corrections(
-                events=events, is_mc=hasattr(events, "genWeight"), year=year
+    if objcorr_config:
+        if "jec" in objcorr_config:
+            # apply JEC/JER corrections
+            apply_jerc_corrections(events, year, dataset)
+        if "muon_ss" in objcorr_config:
+            # apply muon scale and smearing corrections
+            apply_muon_ss_corrections(
+                events=events,
+                year=year,
             )
+        if "electon_ss" in objcorr_config:
+            # electron scale and smearing corrections are applied only to run3 datasets
+            # they are already applied in nanov9 datasets
+            if year.startswith("202"):
+                apply_electron_ss_corrections(
+                    events=events,
+                    year=year,
+                    variation="nominal",
+                )
+        if "met_phi" in objcorr_config:
+            # apply MET-phi modulation corrections
+            if year.startswith("2022"):
+                apply_met_phi_corrections(
+                    events=events, is_mc=hasattr(events, "genWeight"), year=year
+                )
 
 
 def weight_manager(pruned_ev, year, dataset, workflow_config, variation="nominal"):
@@ -60,6 +51,8 @@ def weight_manager(pruned_ev, year, dataset, workflow_config, variation="nominal
     weights_config = workflow_config.corrections_config["event_weights"]
     # initialize weights container
     weights_container = Weights(len(pruned_ev), storeIndividual=True)
+    # get nano version
+    nano_version = get_nano_version(year)
     # add weights
     if hasattr(pruned_ev, "genWeight"):
         if weights_config["genWeight"]:
@@ -101,56 +94,74 @@ def weight_manager(pruned_ev, year, dataset, workflow_config, variation="nominal
                         weights_container=weights_container,
                     )
         if "muon" in weights_config:
-            if "selected_muons" in pruned_ev.fields:
-                muon_weights = MuonWeights(
-                    events=pruned_ev,
-                    year=year,
-                    variation=variation,
-                    weights=weights_container,
-                )
-                if "id" in weights_config["muon"]:
-                    if weights_config["muon"]["id"]:
-                        muon_weights.add_id_weights(id_wp=weights_config["muon"]["id"])
-                if "iso" in weights_config["muon"]:
-                    if weights_config["muon"]["iso"]:
-                        muon_weights.add_iso_weights(
-                            id_wp=weights_config["muon"]["id"],
-                            iso_wp=weights_config["muon"]["iso"],
-                        )
-                if "trigger" in weights_config["muon"]:
-                    if weights_config["muon"]["trigger"]:
-                        muon_weights.add_trigger_weights(
-                            dataset=dataset,
-                            id_wp=weights_config["muon"]["id"],
-                            iso_wp=weights_config["muon"]["iso"],
-                            hlt_paths=workflow_config.event_selection["hlt_paths"],
-                        )
+            if weights_config["muon"]:
+                if "selected_muons" in pruned_ev.fields:
+                    muon_weights = MuonWeights(
+                        events=pruned_ev,
+                        year=year,
+                        variation=variation,
+                        weights=weights_container,
+                    )
+                    if "id" in weights_config["muon"]:
+                        if weights_config["muon"]["id"]:
+                            muon_weights.add_id_weights(
+                                id_wp=weights_config["muon"]["id"]
+                            )
+                    if "iso" in weights_config["muon"]:
+                        if weights_config["muon"]["iso"]:
+                            muon_weights.add_iso_weights(
+                                id_wp=weights_config["muon"]["id"],
+                                iso_wp=weights_config["muon"]["iso"],
+                            )
+                    if "trigger" in weights_config["muon"]:
+                        if weights_config["muon"]["trigger"]:
+                            muon_weights.add_trigger_weights(
+                                dataset=dataset,
+                                id_wp=weights_config["muon"]["id"],
+                                iso_wp=weights_config["muon"]["iso"],
+                                hlt_paths=workflow_config.event_selection["hlt_paths"],
+                            )
         if "electron" in weights_config:
-            if "selected_electrons" in pruned_ev.fields:
-                electron_weights = ElectronWeights(
-                    events=pruned_ev,
-                    year=year,
-                    weights=weights_container,
-                    variation=variation,
-                )
-                if "id" in weights_config["electron"]:
-                    if weights_config["electron"]["id"]:
-                        electron_weights.add_id_weights(
-                            id_wp=weights_config["electron"]["id"]
-                        )
-                if "reco" in weights_config["electron"]:
-                    if weights_config["electron"]["reco"]:
-                        electron_weights.add_reco_weights("RecoBelow20")
-                        electron_weights.add_reco_weights("Reco20to75")
-                        electron_weights.add_reco_weights("RecoAbove75")
-                if "trigger" in weights_config["electron"]:
-                    if weights_config["electron"]["trigger"]:
-                        electron_weights.add_hlt_weights(
-                            id_wp=weights_config["electron"]["id"],
-                        )
+            if weights_config["electron"]:
+                if "selected_electrons" in pruned_ev.fields:
+                    electron_weights = ElectronWeights(
+                        events=pruned_ev,
+                        year=year,
+                        variation=variation,
+                        weights=weights_container,
+                    )
+                    if "id" in weights_config["electron"]:
+                        if weights_config["electron"]["id"]:
+                            electron_weights.add_id_weights(
+                                id_wp=weights_config["electron"]["id"]
+                            )
+                    if "reco" in weights_config["electron"]:
+                        if weights_config["electron"]["reco"]:
+                            if nano_version == "9":
+                                electron_weights.add_reco_weights("RecoAbove20")
+                                electron_weights.add_reco_weights("RecoBelow20")
+                            elif nano_version == "12":
+                                electron_weights.add_reco_weights("RecoBelow20")
+                                electron_weights.add_reco_weights("Reco20to75")
+                                electron_weights.add_reco_weights("RecoAbove75")
+                            elif nano_version == "15":
+                                electron_weights.add_reco_weights("Reco20to75")
+                                electron_weights.add_reco_weights("RecoAbove75")
+                    if "trigger" in weights_config["electron"]:
+                        if weights_config["electron"]["trigger"]:
+                            # no available HLT Sfs for 2024 yet
+                            if nano_version != "15":
+                                electron_weights.add_hlt_weights(
+                                    id_wp=weights_config["electron"]["id"],
+                                )
 
         if "ctagging" in weights_config:
             if weights_config["ctagging"]:
+                working_points = ["loose", "medium", "tight"]
+                if weights_config["ctagging"]["wp"] not in working_points:
+                    raise ValueError(
+                        f"There are no available c-tag SFs for the working point. Please specify {working_points}"
+                    )
                 ctag_corrector = CTagCorrector(
                     events=pruned_ev,
                     weights=weights_container,
