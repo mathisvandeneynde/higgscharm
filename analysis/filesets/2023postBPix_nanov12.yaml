@@ -14,6 +14,7 @@ EGamma0Run2023Dv1:
   era: D
   query: EGamma0/Run2023D-22Sep2023_v1-v1/NANOAOD
   process: Data
+  key: electron
   xsec: None
 EGamma0Run2023Dv2:
   era: D
