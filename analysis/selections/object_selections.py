@@ -78,6 +78,41 @@ class ObjectSelector:
             raise ValueError(f"'electrons' object has not been defined!")
         self.objects[obj_name] = select_dileptons(self.objects, "electrons")
 
+    def select_dileptons(self, obj_name):
+        muons = self.objects["muons"]
+        electrons = self.objects["electrons"]
+        leptons = ak.concatenate([electrons, muons], axis=1)
+        leptons = leptons[ak.argsort(leptons.pt, ascending=False, axis=1)]
+        leptons = ak.zip(
+            {
+                "pt": leptons.pt,
+                "eta": leptons.eta,
+                "phi": leptons.phi,
+                "mass": leptons.mass,
+                "charge": leptons.charge,
+                "pdgId": leptons.pdgId
+            },
+            with_name="PtEtaPhiMCandidate",
+            behavior=candidate.behavior,
+        )
+        # create pair combinations with all muons
+        dileptons = ak.combinations(leptons, 2, fields=["l1", "l2"])
+        # add dimuon 4-momentum field
+        dileptons = ak.zip(
+            {
+                "pt": (dileptons.l1 + dileptons.l2).pt,
+                "eta": (dileptons.l1 + dileptons.l2).eta,
+                "phi": (dileptons.l1 + dileptons.l2).phi,
+                "mass": (dileptons.l1 + dileptons.l2).mass,
+                "p4": dileptons.l1 + dileptons.l2,
+                "l1": dileptons.l1,
+                "l2": dileptons.l2
+            },
+            with_name="PtEtaPhiMCandidate",
+            behavior=candidate.behavior,
+        )
+        self.objects[obj_name] = dileptons
+
     # --------------------------------------------------------------------------------
     # ZZTo4L (Z+L, ZLL)
     # --------------------------------------------------------------------------------
