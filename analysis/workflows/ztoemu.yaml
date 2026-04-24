@@ -66,7 +66,7 @@ event_selection:
     muon_electron_pair: ak.any((np.abs(objects['dileptons'].l1.pdgId) == 13) & (np.abs(objects['dileptons'].l2.pdgId) == 11), axis=1)
     one_dilepton: ak.num(objects['dileptons'], axis=1) == 1
     bjets_veto: ak.num(objects['bjets']) == 0
-    transvers_mass: ak.all(np.sqrt(2.0 * objects['dileptons'].pt * objects['met'].pt* (ak.ones_like(objects['met'].pt) - np.cos(objects['dileptons'].delta_phi(objects['met'])))) < 60, axis=1)
+    transverse_mass: ak.all(np.sqrt(2.0 * objects['dileptons'].pt * objects['met'].pt* (ak.ones_like(objects['met'].pt) - np.cos(objects['dileptons'].delta_phi(objects['met'])))) < 60, axis=1)
   categories:
     emu:
       - trigger
@@ -77,7 +77,7 @@ event_selection:
       - electron_muon_pair
       - one_dilepton
       - bjets_veto
-      - transvers_mass
+      - transverse_mass
     mue:
       - trigger
       - lumimask
@@ -87,7 +87,7 @@ event_selection:
       - muon_electron_pair
       - one_dilepton
       - bjets_veto
-      - transvers_mass
+      - transverse_mass
 corrections:
   object:
     - jet
