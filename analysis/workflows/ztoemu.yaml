@@ -6,6 +6,7 @@ datasets:
     - tt
     - singletop
     - diboson
+    - wjets
 object_selection:
   muons:
     field: events.Muon
