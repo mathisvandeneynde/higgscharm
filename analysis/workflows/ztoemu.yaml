@@ -117,8 +117,8 @@ histogram_config:
     dilepton_mass:
       type: Regular
       bins: 50
-      start: 20
-      stop: 60
+      start: 30
+      stop: 120
       label: $m(\ell\ell)$ [GeV]
       expression: objects['dileptons'].p4.mass
     dilepton_pt:
