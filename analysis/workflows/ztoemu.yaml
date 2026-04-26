@@ -49,7 +49,7 @@ object_selection:
     cuts:
       - objects['dileptons'].l1.delta_r(objects['dileptons'].l2) > 0.3
       - objects['dileptons'].l1.charge * objects['dileptons'].l2.charge < 0
-      - (objects['dileptons'].p4.mass > 20.0) & (objects['dileptons'].p4.mass < 60.0)
+      - (objects['dileptons'].p4.mass > 30.0) & (objects['dileptons'].p4.mass < 120.0)
   met:
      field: events.MET
 event_selection:
@@ -181,31 +181,35 @@ histogram_config:
     leading_lepton_pt:
       type: Variable
       edges:
+        - 10
+        - 20
         - 30
+        - 40
+        - 50
         - 60
+        - 70
+        - 80
         - 90
+        - 100
         - 120
-        - 150
-        - 180
-        - 210
-        - 240
-        - 300
-        - 500
+        - 140
       label: $p_T(\ell_1)$ [GeV]
       expression: objects['dileptons'].l1.pt
     subleading_lepton_pt:
       type: Variable
       edges:
+        - 10
+        - 20
         - 30
+        - 40
+        - 50
         - 60
+        - 70
+        - 80
         - 90
+        - 100
         - 120
-        - 150
-        - 180
-        - 210
-        - 240
-        - 300
-        - 500
+        - 140
       label: $p_T(\ell_2)$ [GeV]
       expression: objects['dileptons'].l2.pt
     leading_lepton_eta:
@@ -239,16 +243,18 @@ histogram_config:
     jet_pt:
       type: Variable
       edges:
+        - 10
         - 20
+        - 30
+        - 40
+        - 50
         - 60
+        - 70
+        - 80
         - 90
+        - 100
         - 120
-        - 150
-        - 180
-        - 210
-        - 240
-        - 300
-        - 500
+        - 140
       label: $p_T(j)$ [GeV]
       expression: objects['jets'].pt
     jet_eta:
