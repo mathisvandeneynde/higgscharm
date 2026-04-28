@@ -67,7 +67,8 @@ event_selection:
     muon_electron_pair: ak.any((np.abs(objects['dileptons'].l1.pdgId) == 13) & (np.abs(objects['dileptons'].l2.pdgId) == 11), axis=1)
     one_dilepton: ak.num(objects['dileptons'], axis=1) == 1
     bjets_veto: ak.num(objects['bjets']) == 0
-    transverse_mass: ak.all(np.sqrt(2.0 * objects['dileptons'].pt * objects['met'].pt* (ak.ones_like(objects['met'].pt) - np.cos(objects['dileptons'].delta_phi(objects['met'])))) < 60, axis=1)
+    transverse_mass: ak.all(np.sqrt(2.0 * objects['dileptons'].pt * objects['met'].pt* (ak.ones_like(objects['met'].pt) - np.cos(objects['dileptons'].delta_phi(objects['met']))))< 60, axis=1)
+    dzeta: "compute_dzeta(objects['dileptons'], objects['met']) > -30"
   categories:
     emu:
       - trigger
@@ -79,6 +80,7 @@ event_selection:
       - one_dilepton
       - bjets_veto
       - transverse_mass
+      - dzeta
     mue:
       - trigger
       - lumimask
@@ -89,6 +91,7 @@ event_selection:
       - one_dilepton
       - bjets_veto
       - transverse_mass
+      - dzeta
 corrections:
   object:
     - jet
@@ -320,6 +323,13 @@ histogram_config:
       stop: 60
       label: vertex multiplicity
       expression: events.PV.npvsGood
+    dzeta:
+      type: Regular
+      bins: 60
+      start: -150
+      stop: 100
+      label: $D_\zeta$ [GeV]
+      expression: "compute_dzeta(objects['dileptons'], objects['met'])"
   layout:
     vertex:
       - npvs
@@ -363,3 +373,5 @@ histogram_config:
       - leadingjet_flavour
       - leadingjet_cvsb
       - leadingjet_cvsl
+    dzeta:
+      - dzeta
