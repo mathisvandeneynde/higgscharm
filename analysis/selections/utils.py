@@ -314,3 +314,30 @@ def select_candidate_cjet_dphi(cand, flavor, cjets):
     )
     cjets = ak.firsts(cjets)
     return hcand.delta_phi(cjets)
+
+def compute_dzeta(dileptons, met):
+
+    l1 = ak.firsts(dileptons).l1
+    l2 = ak.firsts(dileptons).l2
+
+    l1_ux = np.cos(l1.phi)
+    l1_uy = np.sin(l1.phi)
+    l2_ux = np.cos(l2.phi)
+    l2_uy = np.sin(l2.phi)
+
+    zeta_x = l1_ux + l2_ux
+    zeta_y = l1_uy + l2_uy
+    zeta_norm = np.sqrt(zeta_x**2 + zeta_y**2)
+    zeta_norm = ak.where(zeta_norm > 0, zeta_norm, ak.ones_like(zeta_norm))
+    zeta_x = zeta_x / zeta_norm
+    zeta_y = zeta_y / zeta_norm
+
+    met_px = met.pt * np.cos(met.phi)
+    met_py = met.pt * np.sin(met.phi)
+    vis_px = l1.pt * np.cos(l1.phi) + l2.pt * np.cos(l2.phi)
+    vis_py = l1.pt * np.sin(l1.phi) + l2.pt * np.sin(l2.phi)
+
+    p_zeta_miss = met_px * zeta_x + met_py * zeta_y
+    p_zeta_vis  = vis_px * zeta_x + vis_py * zeta_y
+
+    return p_zeta_miss - 0.85 * p_zeta_vis
