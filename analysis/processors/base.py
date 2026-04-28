@@ -21,6 +21,7 @@ from analysis.selections import (
     get_metfilters_mask,
     get_trigger_match_mask,
     get_stitching_mask,
+    compute_dzeta,
 )
 
 NanoAODSchema.warn_missing_crossrefs = False
