@@ -1,0 +1,562 @@
+# =============================================================================
+# Z -> tau tau -> e mu : Signal Region + Control Regions
+# Run 3 CMS analysis - validation of background modeling
+# =============================================================================
+#
+# Categories defined in this config:
+#   emu / mue                 : Signal regions  (OS, b-veto, mT < 60, dzeta > -30)
+#   emu_ttbar_cr              : ttbar CR        (OS, >=1 b-jet, mT < 60, dzeta cut)
+#   emu_wjets_cr              : W+jets CR       (OS, b-veto, mT > 70)
+#   emu_singletop_cr          : Single-top CR   (OS, >=1 b-jet, mT > 70)
+#   emu_diboson_cr            : Diboson CR      (OS, b-veto, mT < 60, m(ll) > 100)
+#   emu_dy_cr                 : DY->ll CR       (OS, b-veto, mT < 60, dzeta cut, 85 < m(ll) < 100)
+#   emu_ttbar_highmt_cr       : ttbar shape cross-check (>=1 b-jet, mT > 70)
+#                               --> conceptually overlaps with singletop_cr, kept
+#                                   for shape diagnostics
+#
+# QCD multijet is NOT estimated via a CR here; it will be added later via the
+# ABCD method.
+#
+# Design philosophy: we deliberately build a CR for every MC background, even
+# those expected to give mediocre purity. The goal is to demonstrate, not
+# assume, which backgrounds can be normalized from data and which cannot.
+#
+# All CRs use the same trigger / vertex / pt / dilepton-multiplicity baseline
+# as the SR. Only the discriminating selections are changed per CR.
+# =============================================================================
+
+datasets:
+  data:
+    - muon_electron
+  mc:
+    - dy_nlo
+    - tt
+    - singletop
+    - diboson
+    - wjets
+
+object_selection:
+  muons:
+    field: events.Muon
+    cuts:
+      - events.Muon.pt > 10
+      - np.abs(events.Muon.eta) < 2.4
+      - np.abs(events.Muon.dxy) < 0.5
+      - np.abs(events.Muon.dz) < 1
+      - working_points.muon_iso(events, 'tight')
+      - working_points.muon_id(events, 'tight')
+  electrons:
+    field: events.Electron
+    cuts:
+      - events.Electron.pt > 10
+      - np.abs(events.Electron.eta) < 2.4
+      - np.abs(events.Electron.dxy) < 0.5
+      - np.abs(events.Electron.dz) < 1
+      - working_points.electron_id(events, 'wp80iso')
+      - delta_r_higher(events.Electron, objects['muons'], 0.4)
+  jets:
+    field: events.Jet
+    cuts:
+      - events.Jet.pt > 20
+      - np.abs(events.Jet.eta) < 2.5
+      - working_points.jet_id(events, year, 'tightlepveto')
+      - working_points.jet_pileup_id(events, year, 'tight')
+      - delta_r_higher(events.Jet, objects['muons'], 0.4)
+      - delta_r_higher(events.Jet, objects['electrons'], 0.4)
+  bjets:
+    field: events.Jet
+    cuts:
+      - events.Jet.pt > 20
+      - np.abs(events.Jet.eta) < 2.5
+      - working_points.jet_id(events, year, 'tightlepveto')
+      - working_points.jet_pileup_id(events, year, 'tight')
+      - working_points.jets_btagging(events, "medium", year)
+      - delta_r_higher(events.Jet, objects['muons'], 0.4)
+      - delta_r_higher(events.Jet, objects['electrons'], 0.4)
+  # ----- Opposite-sign dilepton (used by SR + all CRs in this config) -----
+  dileptons:
+    field: select_dileptons
+    cuts:
+      - objects['dileptons'].l1.delta_r(objects['dileptons'].l2) > 0.3
+      - objects['dileptons'].l1.charge * objects['dileptons'].l2.charge < 0
+      - (objects['dileptons'].p4.mass > 30.0) & (objects['dileptons'].p4.mass < 120.0)
+  met:
+    field: events.MET
+
+event_selection:
+  hlt_paths:
+    Muon:
+      - MuEle
+  selections:
+    # ------ baseline (shared by all categories) ------
+    trigger: get_trigger_mask(events, hlt_paths, dataset, year)
+    lumimask: get_lumi_mask(events, year)
+    atleast_one_goodvertex: events.PV.npvsGood > 0
+
+    # ------ OS dilepton selections ------
+    leading_lepton_pt: ak.all(objects['dileptons'].l1.pt > 27, axis=1)
+    subleading_lepton_pt: ak.all(objects['dileptons'].l2.pt > 15, axis=1)
+    electron_muon_pair: ak.any((np.abs(objects['dileptons'].l1.pdgId) == 11) & (np.abs(objects['dileptons'].l2.pdgId) == 13), axis=1)
+    muon_electron_pair: ak.any((np.abs(objects['dileptons'].l1.pdgId) == 13) & (np.abs(objects['dileptons'].l2.pdgId) == 11), axis=1)
+    one_dilepton: ak.num(objects['dileptons'], axis=1) == 1
+
+    # ------ b-jet selections ------
+    bjets_veto: ak.num(objects['bjets']) == 0
+    bjets_tag: ak.num(objects['bjets']) >= 1
+
+    # ------ transverse mass selections ------
+    transverse_mass_low: ak.all(np.sqrt(2.0 * objects['dileptons'].pt * objects['met'].pt * (ak.ones_like(objects['met'].pt) - np.cos(objects['dileptons'].delta_phi(objects['met'])))) < 60, axis=1)
+    transverse_mass_high: ak.all(np.sqrt(2.0 * objects['dileptons'].pt * objects['met'].pt * (ak.ones_like(objects['met'].pt) - np.cos(objects['dileptons'].delta_phi(objects['met'])))) > 70, axis=1)
+
+    # ------ dzeta selection ------
+    dzeta: "compute_dzeta(objects['dileptons'], objects['met']) > -30"
+
+    # ------ dilepton-mass selections (for DY-ll and Diboson CRs) ------
+    # Z-peak window in m(ll): enriches DY -> ee/mumu mis-id
+    mll_zpeak: ak.all((objects['dileptons'].p4.mass > 85.0) & (objects['dileptons'].p4.mass < 100.0), axis=1)
+    # High m(ll): suppresses DY (signal + ll mis-id), enriches diboson (WW)
+    mll_high: ak.all(objects['dileptons'].p4.mass > 100.0, axis=1)
+
+  categories:
+    # =====================================================================
+    # SIGNAL REGIONS
+    # =====================================================================
+    emu:
+      - trigger
+      - lumimask
+      - atleast_one_goodvertex
+      - leading_lepton_pt
+      - subleading_lepton_pt
+      - electron_muon_pair
+      - one_dilepton
+      - bjets_veto
+      - transverse_mass_low
+      - dzeta
+    mue:
+      - trigger
+      - lumimask
+      - atleast_one_goodvertex
+      - leading_lepton_pt
+      - subleading_lepton_pt
+      - muon_electron_pair
+      - one_dilepton
+      - bjets_veto
+      - transverse_mass_low
+      - dzeta
+
+    # =====================================================================
+    # ttbar CONTROL REGION
+    #   Inversion of bjets_veto -> bjets_tag (>=1 medium-tagged b-jet)
+    #   Expected purity: ~85-90% ttbar
+    # =====================================================================
+    emu_ttbar_cr:
+      - trigger
+      - lumimask
+      - atleast_one_goodvertex
+      - leading_lepton_pt
+      - subleading_lepton_pt
+      - electron_muon_pair
+      - one_dilepton
+      - bjets_tag
+      - transverse_mass_low
+      - dzeta
+    mue_ttbar_cr:
+      - trigger
+      - lumimask
+      - atleast_one_goodvertex
+      - leading_lepton_pt
+      - subleading_lepton_pt
+      - muon_electron_pair
+      - one_dilepton
+      - bjets_tag
+      - transverse_mass_low
+      - dzeta
+
+    # =====================================================================
+    # W+jets CONTROL REGION
+    #   mT cut inverted (mT > 70). dzeta cut dropped: it correlates with mT
+    #   and would over-cut the CR.
+    #   Expected purity: moderate. Will be quantified.
+    # =====================================================================
+    emu_wjets_cr:
+      - trigger
+      - lumimask
+      - atleast_one_goodvertex
+      - leading_lepton_pt
+      - subleading_lepton_pt
+      - electron_muon_pair
+      - one_dilepton
+      - bjets_veto
+      - transverse_mass_high
+    mue_wjets_cr:
+      - trigger
+      - lumimask
+      - atleast_one_goodvertex
+      - leading_lepton_pt
+      - subleading_lepton_pt
+      - muon_electron_pair
+      - one_dilepton
+      - bjets_veto
+      - transverse_mass_high
+
+    # =====================================================================
+    # SINGLE-TOP CONTROL REGION
+    #   >=1 b-jet AND mT > 70 GeV. tW and t-channel both produce a real W
+    #   (high mT) plus a b-jet, similar to ttbar but with lower jet
+    #   multiplicity. Purity vs ttbar is expected to be limited; this CR
+    #   serves to demonstrate that single-top cannot be cleanly isolated
+    #   in the e-mu final state.
+    #
+    #   NOTE: this region is identical in selection to emu_ttbar_highmt_cr.
+    #   Kept under both names for clarity of intent in the analysis report.
+    # =====================================================================
+    emu_singletop_cr:
+      - trigger
+      - lumimask
+      - atleast_one_goodvertex
+      - leading_lepton_pt
+      - subleading_lepton_pt
+      - electron_muon_pair
+      - one_dilepton
+      - bjets_tag
+      - transverse_mass_high
+    mue_singletop_cr:
+      - trigger
+      - lumimask
+      - atleast_one_goodvertex
+      - leading_lepton_pt
+      - subleading_lepton_pt
+      - muon_electron_pair
+      - one_dilepton
+      - bjets_tag
+      - transverse_mass_high
+
+    # =====================================================================
+    # DIBOSON CONTROL REGION
+    #   b-veto + mT < 60 + m(ll) > 100 GeV.
+    #   At high m(ll) the DY -> tau tau contribution drops (m_vis falls
+    #   below the Z mass due to neutrino losses) and the DY Z-peak is
+    #   excluded. Diboson (mainly WW) becomes proportionally larger.
+    #   Purity is expected to be modest (mix of WW + DY tail + ttbar
+    #   residual). This is acceptable: the CR is intended to demonstrate
+    #   the limit of how cleanly diboson can be isolated in e-mu.
+    # =====================================================================
+    emu_diboson_cr:
+      - trigger
+      - lumimask
+      - atleast_one_goodvertex
+      - leading_lepton_pt
+      - subleading_lepton_pt
+      - electron_muon_pair
+      - one_dilepton
+      - bjets_veto
+      - transverse_mass_low
+      - mll_high
+    mue_diboson_cr:
+      - trigger
+      - lumimask
+      - atleast_one_goodvertex
+      - leading_lepton_pt
+      - subleading_lepton_pt
+      - muon_electron_pair
+      - one_dilepton
+      - bjets_veto
+      - transverse_mass_low
+      - mll_high
+
+    # =====================================================================
+    # DY -> ll CONTROL REGION
+    #   Z-peak window 85 < m(ll) < 100 GeV, otherwise SR-like.
+    #   In e-mu the DY -> ee/mumu component requires lepton mis-id and is
+    #   tiny. The Z-peak window therefore mainly contains DY -> tau tau
+    #   tails plus diboson, with a small genuine DY -> ll component.
+    #   Goal of this CR: validate DY normalization and shape near the Z
+    #   peak as a cross-check of the inclusive DY MC modeling.
+    # =====================================================================
+    emu_dy_cr:
+      - trigger
+      - lumimask
+      - atleast_one_goodvertex
+      - leading_lepton_pt
+      - subleading_lepton_pt
+      - electron_muon_pair
+      - one_dilepton
+      - bjets_veto
+      - transverse_mass_low
+      - dzeta
+      - mll_zpeak
+    mue_dy_cr:
+      - trigger
+      - lumimask
+      - atleast_one_goodvertex
+      - leading_lepton_pt
+      - subleading_lepton_pt
+      - muon_electron_pair
+      - one_dilepton
+      - bjets_veto
+      - transverse_mass_low
+      - dzeta
+      - mll_zpeak
+
+    # =====================================================================
+    # ttbar shape cross-check region (>=1 b-jet AND high mT)
+    #   Identical selection to emu_singletop_cr; kept for diagnostic
+    #   purposes when looking at ttbar shape in a W-like kinematic regime.
+    # =====================================================================
+    emu_ttbar_highmt_cr:
+      - trigger
+      - lumimask
+      - atleast_one_goodvertex
+      - leading_lepton_pt
+      - subleading_lepton_pt
+      - electron_muon_pair
+      - one_dilepton
+      - bjets_tag
+      - transverse_mass_high
+
+corrections:
+  object:
+    - jet
+    - muon
+    - electron
+  object_shifts: true
+  event_weights:
+    genWeight: true
+    pileupWeight: true
+    partonshowerWeight: true
+    lhepdfWeight: true
+    lhescaleWeight: true
+    nnlopsWeight: false
+    electron:
+      - id: wp80iso
+      - reco: true
+      - trigger: false
+    muon:
+      - id: tight
+      - iso: tight
+      - trigger: false
+
+histogram_config:
+  add_syst_axis: true
+  add_weight: true
+  axes:
+    dilepton_mass:
+      type: Regular
+      bins: 50
+      start: 30
+      stop: 120
+      label: $m(\ell\ell)$ [GeV]
+      expression: objects['dileptons'].p4.mass
+    dilepton_pt:
+      type: Variable
+      edges: [20, 40, 60, 80, 100, 120, 140, 160, 180, 200, 225, 250, 275, 300, 325, 350, 375, 400, 450, 500, 550, 600, 700, 800, 1000]
+      label: $p_T(\ell\ell)$ [GeV]
+      expression: objects['dileptons'].p4.pt
+    dilepton_eta:
+      type: Regular
+      bins: 50
+      start: -10
+      stop: 10
+      label: $\eta(\ell\ell)$
+      expression: objects['dileptons'].p4.eta
+    dilepton_phi:
+      type: Regular
+      bins: 50
+      start: -3.14159
+      stop: 3.14159
+      label: $\phi(\ell\ell)$
+      expression: objects['dileptons'].p4.phi
+    dilepton_dr:
+      type: Regular
+      bins: 50
+      start: 0
+      stop: 5
+      label: $\Delta R(\ell_1, \ell_2)$
+      expression: objects['dileptons'].l1.delta_r(objects['dileptons'].l2)
+    dilepton_deta:
+      type: Regular
+      bins: 50
+      start: 0
+      stop: 5
+      label: $|\Delta \eta(\ell_1, \ell_2)|$
+      expression: np.abs(objects['dileptons'].l1.eta - objects['dileptons'].l2.eta)
+    leading_lepton_pt:
+      type: Variable
+      edges: [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 120, 140]
+      label: $p_T(\ell_1)$ [GeV]
+      expression: objects['dileptons'].l1.pt
+    subleading_lepton_pt:
+      type: Variable
+      edges: [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 120, 140]
+      label: $p_T(\ell_2)$ [GeV]
+      expression: objects['dileptons'].l2.pt
+    leading_lepton_eta:
+      type: Regular
+      bins: 50
+      start: -2.5
+      stop: 2.5
+      label: $\eta(\ell_1)$
+      expression: objects['dileptons'].l1.eta
+    subleading_lepton_eta:
+      type: Regular
+      bins: 50
+      start: -2.5
+      stop: 2.5
+      label: $\eta(\ell_2)$
+      expression: objects['dileptons'].l2.eta
+    leading_lepton_phi:
+      type: Regular
+      bins: 50
+      start: -3.14159
+      stop: 3.14159
+      label: $\phi(\ell_1)$
+      expression: objects['dileptons'].l1.phi
+    subleading_lepton_phi:
+      type: Regular
+      bins: 50
+      start: -3.14159
+      stop: 3.14159
+      label: $\phi(\ell_2)$
+      expression: objects['dileptons'].l2.phi
+    jet_pt:
+      type: Variable
+      edges: [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 120, 140]
+      label: $p_T(j)$ [GeV]
+      expression: objects['jets'].pt
+    jet_eta:
+      type: Regular
+      bins: 50
+      start: -2.4
+      stop: 2.4
+      label: $\eta(j)$
+      expression: objects['jets'].eta
+    jet_phi:
+      type: Regular
+      bins: 50
+      start: -3.14159
+      stop: 3.14159
+      label: $\phi(j)$
+      expression: objects['jets'].phi
+    jet_multiplicity:
+      type: Integer
+      start: 0
+      stop: 14
+      label: $N(j)$
+      expression: ak.num(objects['jets'])
+    bjet_multiplicity:
+      type: Integer
+      start: 0
+      stop: 8
+      label: $N(b)$
+      expression: ak.num(objects['bjets'])
+    jet_dr:
+      type: Regular
+      bins: 50
+      start: 0
+      stop: 5
+      label: $\Delta R(j_1, j_2)$
+      expression: ak.pad_none(objects['jets'], target=2)[:, 0].delta_r(ak.pad_none(objects['jets'], target=2)[:, 1])
+    jet_deta:
+      type: Regular
+      bins: 50
+      start: 0
+      stop: 5
+      label: $|\Delta \eta(j_1, j_2)|$
+      expression: np.abs(ak.pad_none(objects['jets'], target=2)[:, 0].eta - ak.pad_none(objects['jets'], target=2)[:, 1].eta)
+    leadingjet_flavour:
+      type: IntCategory
+      categories: [0, 4, 5]
+      label: HadronFlavour
+      expression: ak.pad_none(objects['jets'], target=2)[:, 0].hadronFlavour
+    leadingjet_cvsl:
+      type: Regular
+      bins: 50
+      start: 0
+      stop: 1
+      label: Leading Jet CvsL
+      expression: ak.pad_none(objects['jets'], target=2)[:, 0].btagUParTAK4CvL if hasattr(objects['jets'], 'btagUParTAK4CvL') else ak.pad_none(objects['jets'], target=2)[:, 0].btagPNetCvL if hasattr(objects['jets'], 'btagPNetCvL') else ak.pad_none(objects['jets'], target=2)[:, 0].btagDeepFlavCvL
+    leadingjet_cvsb:
+      type: Regular
+      bins: 50
+      start: 0
+      stop: 1
+      label: Leading Jet CvsB
+      expression: ak.pad_none(objects['jets'], target=2)[:, 0].btagUParTAK4CvB if hasattr(objects['jets'], 'btagUParTAK4CvB') else ak.pad_none(objects['jets'], target=2)[:, 0].btagPNetCvB if hasattr(objects['jets'], 'btagPNetCvB') else ak.pad_none(objects['jets'], target=2)[:, 0].btagDeepFlavCvB
+    npvs:
+      type: Integer
+      start: 0
+      stop: 60
+      label: vertex multiplicity
+      expression: events.PV.npvsGood
+    dzeta:
+      type: Regular
+      bins: 60
+      start: -150
+      stop: 100
+      label: $D_\zeta$ [GeV]
+      expression: "compute_dzeta(objects['dileptons'], objects['met'])"
+    transverse_mass:
+      type: Regular
+      bins: 50
+      start: 0
+      stop: 200
+      label: $m_T(\ell\ell, \mathrm{MET})$ [GeV]
+      expression: np.sqrt(2.0 * objects['dileptons'].pt * objects['met'].pt * (ak.ones_like(objects['met'].pt) - np.cos(objects['dileptons'].delta_phi(objects['met']))))
+    met_pt:
+      type: Regular
+      bins: 50
+      start: 0
+      stop: 200
+      label: MET [GeV]
+      expression: objects['met'].pt
+
+  layout:
+    vertex:
+      - npvs
+    dilepton_mass:
+      - dilepton_mass
+    dilepton_pt:
+      - dilepton_pt
+    dilepton_eta:
+      - dilepton_eta
+    dilepton_phi:
+      - dilepton_phi
+    dilepton_dr:
+      - dilepton_dr
+    dilepton_deta:
+      - dilepton_deta
+    leading_lepton_pt:
+      - leading_lepton_pt
+    leading_lepton_eta:
+      - leading_lepton_eta
+    leading_lepton_phi:
+      - leading_lepton_phi
+    subleading_lepton_pt:
+      - subleading_lepton_pt
+    subleading_lepton_eta:
+      - subleading_lepton_eta
+    subleading_lepton_phi:
+      - subleading_lepton_phi
+    jet_pt:
+      - jet_pt
+    jet_eta:
+      - jet_eta
+    jet_phi:
+      - jet_phi
+    jet_dr:
+      - jet_dr
+    jet_deta:
+      - jet_deta
+    jet_multiplicity:
+      - jet_multiplicity
+      - bjet_multiplicity
+    leading_jet:
+      - leadingjet_flavour
+      - leadingjet_cvsb
+      - leadingjet_cvsl
+    dzeta:
+      - dzeta
+    transverse_mass:
+      - transverse_mass
+    met:
+      - met_pt
