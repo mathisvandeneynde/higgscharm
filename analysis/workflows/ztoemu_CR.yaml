@@ -313,6 +313,16 @@ event_selection:
       - one_dilepton
       - bjets_tag
       - transverse_mass_high
+    mue_ttbar_highmt_cr:
+      - trigger
+      - lumimask
+      - atleast_one_goodvertex
+      - leading_lepton_pt
+      - subleading_lepton_pt
+      - muon_electron_pair
+      - one_dilepton
+      - bjets_tag
+      - transverse_mass_high
 
 corrections:
   object:
