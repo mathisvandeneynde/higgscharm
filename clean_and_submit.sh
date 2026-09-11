@@ -38,5 +38,5 @@ fi
 
 echo "=== Stap 4: verse submissie ==="
 cd "$BASEDIR"
-python3 submit_condor.py --workflow "$WORKFLOW" --year "$YEAR" --eos --m 8000
+python3 runner.py --workflow "$WORKFLOW" --year "$YEAR" --eos --m 8000
 # pas eventuele andere vaste vlaggen hier aan naar je gebruikelijke commando
