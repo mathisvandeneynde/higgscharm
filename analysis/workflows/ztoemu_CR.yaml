@@ -86,12 +86,13 @@ object_selection:
 event_selection:
   hlt_paths:
     Muon:
-      - MuEle
+      - MuEle_emu
   selections:
     # ------ baseline (shared by all categories) ------
     trigger: get_trigger_mask(events, hlt_paths, dataset, year)
     lumimask: get_lumi_mask(events, year)
     atleast_one_goodvertex: events.PV.npvsGood > 0
+    met_filters: get_metfilters_mask(events, year)
 
     # ------ OS dilepton selections ------
     leading_lepton_pt: ak.all(objects['dileptons'].l1.pt > 27, axis=1)
@@ -125,6 +126,7 @@ event_selection:
       - trigger
       - lumimask
       - atleast_one_goodvertex
+      - met_filters
       - leading_lepton_pt
       - subleading_lepton_pt
       - electron_muon_pair
@@ -136,6 +138,7 @@ event_selection:
       - trigger
       - lumimask
       - atleast_one_goodvertex
+      - met_filters
       - leading_lepton_pt
       - subleading_lepton_pt
       - muon_electron_pair
@@ -153,6 +156,7 @@ event_selection:
       - trigger
       - lumimask
       - atleast_one_goodvertex
+      - met_filters
       - leading_lepton_pt
       - subleading_lepton_pt
       - electron_muon_pair
@@ -164,6 +168,7 @@ event_selection:
       - trigger
       - lumimask
       - atleast_one_goodvertex
+      - met_filters
       - leading_lepton_pt
       - subleading_lepton_pt
       - muon_electron_pair
@@ -182,6 +187,7 @@ event_selection:
       - trigger
       - lumimask
       - atleast_one_goodvertex
+      - met_filters
       - leading_lepton_pt
       - subleading_lepton_pt
       - electron_muon_pair
@@ -192,6 +198,7 @@ event_selection:
       - trigger
       - lumimask
       - atleast_one_goodvertex
+      - met_filters
       - leading_lepton_pt
       - subleading_lepton_pt
       - muon_electron_pair
@@ -214,6 +221,7 @@ event_selection:
       - trigger
       - lumimask
       - atleast_one_goodvertex
+      - met_filters
       - leading_lepton_pt
       - subleading_lepton_pt
       - electron_muon_pair
@@ -224,6 +232,7 @@ event_selection:
       - trigger
       - lumimask
       - atleast_one_goodvertex
+      - met_filters
       - leading_lepton_pt
       - subleading_lepton_pt
       - muon_electron_pair
@@ -245,6 +254,7 @@ event_selection:
       - trigger
       - lumimask
       - atleast_one_goodvertex
+      - met_filters
       - leading_lepton_pt
       - subleading_lepton_pt
       - electron_muon_pair
@@ -256,6 +266,7 @@ event_selection:
       - trigger
       - lumimask
       - atleast_one_goodvertex
+      - met_filters
       - leading_lepton_pt
       - subleading_lepton_pt
       - muon_electron_pair
@@ -277,6 +288,7 @@ event_selection:
       - trigger
       - lumimask
       - atleast_one_goodvertex
+      - met_filters
       - leading_lepton_pt
       - subleading_lepton_pt
       - electron_muon_pair
@@ -289,6 +301,7 @@ event_selection:
       - trigger
       - lumimask
       - atleast_one_goodvertex
+      - met_filters
       - leading_lepton_pt
       - subleading_lepton_pt
       - muon_electron_pair
@@ -307,6 +320,7 @@ event_selection:
       - trigger
       - lumimask
       - atleast_one_goodvertex
+      - met_filters
       - leading_lepton_pt
       - subleading_lepton_pt
       - electron_muon_pair
@@ -317,6 +331,7 @@ event_selection:
       - trigger
       - lumimask
       - atleast_one_goodvertex
+      - met_filters
       - leading_lepton_pt
       - subleading_lepton_pt
       - muon_electron_pair
@@ -327,6 +342,7 @@ event_selection:
 corrections:
   object:
     - jet
+    - jetveto
     - muon
     - electron
   object_shifts: true
