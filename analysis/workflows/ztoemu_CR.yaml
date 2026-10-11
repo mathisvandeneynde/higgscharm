@@ -30,7 +30,6 @@ object_selection:
       - np.abs(events.Electron.dxy) < 0.045
       - np.abs(events.Electron.dz) < 0.2
       - working_points.electron_id(events, 'wp80iso')
-      - delta_r_higher(events.Electron, objects['muons'], 0.4)
   jets:
     field: events.Jet
     cuts:
@@ -50,7 +49,6 @@ object_selection:
       - working_points.jets_btagging(events, "medium", year)
       - delta_r_higher(events.Jet, objects['muons'], 0.4)
       - delta_r_higher(events.Jet, objects['electrons'], 0.4)
-  # ----- Opposite-sign dilepton (used by SR + all CRs in this config) -----
   dileptons:
     field: select_dileptons
     cuts:
