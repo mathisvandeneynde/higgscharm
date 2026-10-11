@@ -2,33 +2,10 @@
 # Z -> tau tau -> e mu : Signal Region + Control Regions
 # Run 3 CMS analysis - validation of background modeling
 # =============================================================================
-#
-# Categories defined in this config:
-#   emu / mue                 : Signal regions  (OS, b-veto, mT < 60, dzeta > -30)
-#   emu_ttbar_cr              : ttbar CR        (OS, >=1 b-jet, mT < 60, dzeta cut)
-#   emu_wjets_cr              : W+jets CR       (OS, b-veto, mT > 70)
-#   emu_singletop_cr          : Single-top CR   (OS, >=1 b-jet, mT > 70)
-#   emu_diboson_cr            : Diboson CR      (OS, b-veto, mT < 60, m(ll) > 100)
-#   emu_dy_cr                 : DY->ll CR       (OS, b-veto, mT < 60, dzeta cut, 85 < m(ll) < 100)
-#   emu_ttbar_highmt_cr       : ttbar shape cross-check (>=1 b-jet, mT > 70)
-#                               --> conceptually overlaps with singletop_cr, kept
-#                                   for shape diagnostics
-#
-# QCD multijet is NOT estimated via a CR here; it will be added later via the
-# ABCD method.
-#
-# Design philosophy: we deliberately build a CR for every MC background, even
-# those expected to give mediocre purity. The goal is to demonstrate, not
-# assume, which backgrounds can be normalized from data and which cannot.
-#
-# All CRs use the same trigger / vertex / pt / dilepton-multiplicity baseline
-# as the SR. Only the discriminating selections are changed per CR.
-# =============================================================================
-
 datasets:
-  data:
-    - muon_electron
-  mc:
+    data:
+      - muon_electron
+    mc:
     - dy_nlo
     - tt
     - singletop
@@ -41,8 +18,8 @@ object_selection:
     cuts:
       - events.Muon.pt > 10
       - np.abs(events.Muon.eta) < 2.4
-      - np.abs(events.Muon.dxy) < 0.5
-      - np.abs(events.Muon.dz) < 1
+      - np.abs(events.Muon.dxy) < 0.045
+      - np.abs(events.Muon.dz) < 0.2
       - working_points.muon_iso(events, 'tight')
       - working_points.muon_id(events, 'tight')
   electrons:
@@ -50,8 +27,8 @@ object_selection:
     cuts:
       - events.Electron.pt > 10
       - np.abs(events.Electron.eta) < 2.4
-      - np.abs(events.Electron.dxy) < 0.5
-      - np.abs(events.Electron.dz) < 1
+      - np.abs(events.Electron.dxy) < 0.045
+      - np.abs(events.Electron.dz) < 0.2
       - working_points.electron_id(events, 'wp80iso')
       - delta_r_higher(events.Electron, objects['muons'], 0.4)
   jets:
@@ -79,7 +56,6 @@ object_selection:
     cuts:
       - objects['dileptons'].l1.delta_r(objects['dileptons'].l2) > 0.3
       - objects['dileptons'].l1.charge * objects['dileptons'].l2.charge < 0
-      - (objects['dileptons'].p4.mass > 30.0) & (objects['dileptons'].p4.mass < 120.0)
   met:
     field: events.MET
 
@@ -92,14 +68,23 @@ event_selection:
     trigger: get_trigger_mask(events, hlt_paths, dataset, year)
     lumimask: get_lumi_mask(events, year)
     atleast_one_goodvertex: events.PV.npvsGood > 0
-    met_filters: get_metfilters_mask(events, year)
-
-    # ------ OS dilepton selections ------
-    leading_lepton_pt: ak.all(objects['dileptons'].l1.pt > 27, axis=1)
-    subleading_lepton_pt: ak.all(objects['dileptons'].l2.pt > 15, axis=1)
-    electron_muon_pair: ak.any((np.abs(objects['dileptons'].l1.pdgId) == 11) & (np.abs(objects['dileptons'].l2.pdgId) == 13), axis=1)
-    muon_electron_pair: ak.any((np.abs(objects['dileptons'].l1.pdgId) == 13) & (np.abs(objects['dileptons'].l2.pdgId) == 11), axis=1)
     one_dilepton: ak.num(objects['dileptons'], axis=1) == 1
+    met_filters: get_metfilters_mask(events, year)
+    emu_pair: ak.any(((np.abs(objects['dileptons'].l1.pdgId) == 11) & (np.abs(objects['dileptons'].l2.pdgId) == 13)) | ((np.abs(objects  ['dileptons'].l1.pdgId) == 13) & (np.abs(objects['dileptons'].l2.pdgId) == 11)), axis=1)
+    trigger_leg_pt: >-
+      ak.any(
+        (
+          (events.HLT.Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ | events.HLT.Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ)
+          & (ak.where(np.abs(objects['dileptons'].l1.pdgId) == 11, objects['dileptons'].l1.pt, objects['dileptons'].l2.pt) > 24)
+          & (ak.where(np.abs(objects['dileptons'].l1.pdgId) == 13, objects['dileptons'].l1.pt, objects['dileptons'].l2.pt) > 15)
+        )
+        | (
+          (events.HLT.Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL | events.HLT.Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_DZ)
+          & (ak.where(np.abs(objects['dileptons'].l1.pdgId) == 13, objects['dileptons'].l1.pt, objects['dileptons'].l2.pt) > 24)
+          & (ak.where(np.abs(objects['dileptons'].l1.pdgId) == 11, objects['dileptons'].l1.pt, objects['dileptons'].l2.pt) > 15)
+        ),
+        axis=1)
+
 
     # ------ b-jet selections ------
     bjets_veto: ak.num(objects['bjets']) == 0
@@ -110,7 +95,7 @@ event_selection:
     transverse_mass_high: ak.all(np.sqrt(2.0 * objects['dileptons'].pt * objects['met'].pt * (ak.ones_like(objects['met'].pt) - np.cos(objects['dileptons'].delta_phi(objects['met'])))) > 70, axis=1)
 
     # ------ dzeta selection ------
-    dzeta: "compute_dzeta(objects['dileptons'], objects['met']) > -30"
+    dzeta: compute_dzeta(objects['dileptons'], objects['met']) > -30
 
     # ------ dilepton-mass selections (for DY-ll and Diboson CRs) ------
     # Z-peak window in m(ll): enriches DY -> ee/mumu mis-id
@@ -127,85 +112,42 @@ event_selection:
       - lumimask
       - atleast_one_goodvertex
       - met_filters
-      - leading_lepton_pt
-      - subleading_lepton_pt
-      - electron_muon_pair
+      - emu_pair
+      - trigger_leg_pt
       - one_dilepton
       - bjets_veto
       - transverse_mass_low
       - dzeta
-    mue:
-      - trigger
-      - lumimask
-      - atleast_one_goodvertex
-      - met_filters
-      - leading_lepton_pt
-      - subleading_lepton_pt
-      - muon_electron_pair
-      - one_dilepton
-      - bjets_veto
-      - transverse_mass_low
-      - dzeta
-
     # =====================================================================
     # ttbar CONTROL REGION
     #   Inversion of bjets_veto -> bjets_tag (>=1 medium-tagged b-jet)
-    #   Expected purity: ~85-90% ttbar
     # =====================================================================
     emu_ttbar_cr:
       - trigger
       - lumimask
       - atleast_one_goodvertex
       - met_filters
-      - leading_lepton_pt
-      - subleading_lepton_pt
-      - electron_muon_pair
+      - emu_pair
+      - trigger_leg_pt
       - one_dilepton
       - bjets_tag
       - transverse_mass_low
       - dzeta
-    mue_ttbar_cr:
-      - trigger
-      - lumimask
-      - atleast_one_goodvertex
-      - met_filters
-      - leading_lepton_pt
-      - subleading_lepton_pt
-      - muon_electron_pair
-      - one_dilepton
-      - bjets_tag
-      - transverse_mass_low
-      - dzeta
-
     # =====================================================================
     # W+jets CONTROL REGION
     #   mT cut inverted (mT > 70). dzeta cut dropped: it correlates with mT
     #   and would over-cut the CR.
-    #   Expected purity: moderate. Will be quantified.
     # =====================================================================
     emu_wjets_cr:
       - trigger
       - lumimask
       - atleast_one_goodvertex
       - met_filters
-      - leading_lepton_pt
-      - subleading_lepton_pt
-      - electron_muon_pair
+      - emu_pair
+      - trigger_leg_pt
       - one_dilepton
       - bjets_veto
       - transverse_mass_high
-    mue_wjets_cr:
-      - trigger
-      - lumimask
-      - atleast_one_goodvertex
-      - met_filters
-      - leading_lepton_pt
-      - subleading_lepton_pt
-      - muon_electron_pair
-      - one_dilepton
-      - bjets_veto
-      - transverse_mass_high
-
     # =====================================================================
     # SINGLE-TOP CONTROL REGION
     #   >=1 b-jet AND mT > 70 GeV. tW and t-channel both produce a real W
@@ -222,24 +164,11 @@ event_selection:
       - lumimask
       - atleast_one_goodvertex
       - met_filters
-      - leading_lepton_pt
-      - subleading_lepton_pt
-      - electron_muon_pair
+      - emu_pair
+      - trigger_leg_pt
       - one_dilepton
       - bjets_tag
       - transverse_mass_high
-    mue_singletop_cr:
-      - trigger
-      - lumimask
-      - atleast_one_goodvertex
-      - met_filters
-      - leading_lepton_pt
-      - subleading_lepton_pt
-      - muon_electron_pair
-      - one_dilepton
-      - bjets_tag
-      - transverse_mass_high
-
     # =====================================================================
     # DIBOSON CONTROL REGION
     #   b-veto + mT < 60 + m(ll) > 100 GeV.
@@ -255,26 +184,12 @@ event_selection:
       - lumimask
       - atleast_one_goodvertex
       - met_filters
-      - leading_lepton_pt
-      - subleading_lepton_pt
-      - electron_muon_pair
+      - emu_pair
+      - trigger_leg_pt
       - one_dilepton
       - bjets_veto
       - transverse_mass_low
       - mll_high
-    mue_diboson_cr:
-      - trigger
-      - lumimask
-      - atleast_one_goodvertex
-      - met_filters
-      - leading_lepton_pt
-      - subleading_lepton_pt
-      - muon_electron_pair
-      - one_dilepton
-      - bjets_veto
-      - transverse_mass_low
-      - mll_high
-
     # =====================================================================
     # DY -> ll CONTROL REGION
     #   Z-peak window 85 < m(ll) < 100 GeV, otherwise SR-like.
@@ -289,55 +204,13 @@ event_selection:
       - lumimask
       - atleast_one_goodvertex
       - met_filters
-      - leading_lepton_pt
-      - subleading_lepton_pt
-      - electron_muon_pair
+      - emu_pair
+      - trigger_leg_pt
       - one_dilepton
       - bjets_veto
       - transverse_mass_low
       - dzeta
       - mll_zpeak
-    mue_dy_cr:
-      - trigger
-      - lumimask
-      - atleast_one_goodvertex
-      - met_filters
-      - leading_lepton_pt
-      - subleading_lepton_pt
-      - muon_electron_pair
-      - one_dilepton
-      - bjets_veto
-      - transverse_mass_low
-      - dzeta
-      - mll_zpeak
-
-    # =====================================================================
-    # ttbar shape cross-check region (>=1 b-jet AND high mT)
-    #   Identical selection to emu_singletop_cr; kept for diagnostic
-    #   purposes when looking at ttbar shape in a W-like kinematic regime.
-    # =====================================================================
-    emu_ttbar_highmt_cr:
-      - trigger
-      - lumimask
-      - atleast_one_goodvertex
-      - met_filters
-      - leading_lepton_pt
-      - subleading_lepton_pt
-      - electron_muon_pair
-      - one_dilepton
-      - bjets_tag
-      - transverse_mass_high
-    mue_ttbar_highmt_cr:
-      - trigger
-      - lumimask
-      - atleast_one_goodvertex
-      - met_filters
-      - leading_lepton_pt
-      - subleading_lepton_pt
-      - muon_electron_pair
-      - one_dilepton
-      - bjets_tag
-      - transverse_mass_high
 
 corrections:
   object:
