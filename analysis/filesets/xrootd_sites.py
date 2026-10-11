@@ -33,6 +33,7 @@ xroot_to_site =  {
     "root://cmsxrootd.hep.wisc.edu:1094": "T2_US_Wisconsin",
     "root://cceos.ihep.ac.cn:1094": "T2_CN_Beijing",
     "root://redirector.t2.ucsd.edu:1095": "T2_US_UCSD",
+    "root://redir.t2.ucsd.edu:1095": "T2_US_UCSD",
     "root://grid143.kfki.hu:1094": "T2_HU_Budapest",
     "root://xrootd.hep.kbfi.ee:1094": "T2_EE_Estonia",
     "root://cms-se0.kipt.kharkov.ua": "T2_UA_KIPT",
