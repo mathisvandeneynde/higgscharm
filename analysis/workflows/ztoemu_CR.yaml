@@ -108,7 +108,7 @@ event_selection:
       - trigger
       - lumimask
       - atleast_one_goodvertex
-      - met_filters
+      #- met_filters
       - emu_pair
       - trigger_leg_pt
       - one_dilepton
@@ -123,7 +123,7 @@ event_selection:
       - trigger
       - lumimask
       - atleast_one_goodvertex
-      - met_filters
+      #- met_filters
       - emu_pair
       - trigger_leg_pt
       - one_dilepton
@@ -139,7 +139,7 @@ event_selection:
       - trigger
       - lumimask
       - atleast_one_goodvertex
-      - met_filters
+      #- met_filters
       - emu_pair
       - trigger_leg_pt
       - one_dilepton
@@ -160,7 +160,7 @@ event_selection:
       - trigger
       - lumimask
       - atleast_one_goodvertex
-      - met_filters
+      #- met_filters
       - emu_pair
       - trigger_leg_pt
       - one_dilepton
@@ -180,7 +180,7 @@ event_selection:
       - trigger
       - lumimask
       - atleast_one_goodvertex
-      - met_filters
+      #- met_filters
       - emu_pair
       - trigger_leg_pt
       - one_dilepton
@@ -200,7 +200,7 @@ event_selection:
       - trigger
       - lumimask
       - atleast_one_goodvertex
-      - met_filters
+      #- met_filters
       - emu_pair
       - trigger_leg_pt
       - one_dilepton
@@ -212,7 +212,7 @@ event_selection:
 corrections:
   object:
     - jet
-    - jetveto
+    #- jetveto
     - muon
     - electron
   object_shifts: true
@@ -239,8 +239,8 @@ histogram_config:
     dilepton_mass:
       type: Regular
       bins: 50
-      start: 30
-      stop: 120
+      start: 0
+      stop: 250
       label: $m(\ell\ell)$ [GeV]
       expression: objects['dileptons'].p4.mass
     dilepton_pt:
