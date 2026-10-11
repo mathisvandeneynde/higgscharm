@@ -83,7 +83,6 @@ event_selection:
         ),
         axis=1)
 
-
     # ------ b-jet selections ------
     bjets_veto: ak.num(objects['bjets']) == 0
     bjets_tag: ak.num(objects['bjets']) >= 1
