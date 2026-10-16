@@ -467,11 +467,15 @@ class CoffeaPlotter:
         if add_ratio:
             self.plot_ratio(rax)
 
-        # set limits
+         # set limits
         hist_edges = np.array([[i, j] for i, j in zip(self.edges[:-1], self.edges[1:])])
-        xlimits = np.min(hist_edges[self.nominal_values > 0]), np.max(
-            hist_edges[self.nominal_values > 0]
-        )
+        try:
+            xlimits = np.min(hist_edges[self.nominal_values > 0]), np.max(
+                hist_edges[self.nominal_values > 0]
+            )
+        except ValueError:
+            # leeg histogram (bv. OS-variabele in emu_ss): volledig bereik gebruiken
+            xlimits = (self.edges[0], self.edges[-1])
         ax.set_xlim(xlimits)
         if add_ratio:
             rax.set_xlim(xlimits)
