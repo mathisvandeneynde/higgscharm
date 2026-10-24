@@ -54,10 +54,15 @@ if __name__ == "__main__":
         else:
             print(f"No available query for: {sample}")
 
-    # create a dataset_definition dict for each yeare
-    dataset_definition = {}
+    # create a dataset_definition dict for each year.
+    # Several keys may share one DAS query:
+    # query rucio once per unique query, then copy the file list to every key.
+    query_to_keys = {}
     for dataset_key, query in das_queries.items():
-        dataset_definition[f"/{query}"] = {"short_name": dataset_key}
+        query_to_keys.setdefault(query, []).append(dataset_key)
+    dataset_definition = {}
+    for query, keys in query_to_keys.items():
+        dataset_definition[f"/{query}"] = {"short_name": keys[0]}
     # the dataset definition is passed to a DataDiscoveryCLI
     ddc = DataDiscoveryCLI()
     # set the allow sites to look for replicas
@@ -84,6 +89,11 @@ if __name__ == "__main__":
             new_dataset[dataset_key.split("_")[0]] += root_files
         else:
             new_dataset[dataset_key] = root_files
+    
+    # give every key that shares a query the same file list
+    for query, keys in query_to_keys.items():
+        for other_key in keys[1:]:
+            new_dataset[other_key] = list(new_dataset[keys[0]])
 
     fileset_file = filesets_dir / f"fileset_{args.year}_nanov{nano_version}_lxplus.json"
     with open(fileset_file, "w") as json_file:
