@@ -61,3 +61,19 @@ def get_stitching_mask(events, dataset, dataset_key, ht_value):
     if dataset.startswith(dataset_key):
         stitching_mask = events.LHE.HT < ht_value
     return stitching_mask
+
+def gen_split_mask(events, objects, dataset):
+    """Split DY into ZTT and ZLL using the generator origin of the selected e and mu.
+
+    ZTT: both the selected electron and muon come from a tau decay (genPartFlav == 15).
+    ZLL: the complement, so ZTT + ZLL is exactly the full DY sample.
+    Returns True everywhere for data and for all samples without _ZTT/_ZLL in their name.
+    """
+    is_ztt_key = "_ZTT" in dataset
+    is_zll_key = "_ZLL" in dataset
+    if not (is_ztt_key or is_zll_key):
+        return np.ones(len(events), dtype=bool)
+    e_flav = ak.firsts(objects["electrons"].genPartFlav)
+    mu_flav = ak.firsts(objects["muons"].genPartFlav)
+    ztt = ak.to_numpy(ak.fill_none((e_flav == 15) & (mu_flav == 15), False))
+    return ztt if is_ztt_key else ~ztt

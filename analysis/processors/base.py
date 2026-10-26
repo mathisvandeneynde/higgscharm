@@ -21,6 +21,7 @@ from analysis.selections import (
     get_metfilters_mask,
     get_trigger_match_mask,
     get_stitching_mask,
+    gen_split_mask,
     compute_dzeta,
 )
 
