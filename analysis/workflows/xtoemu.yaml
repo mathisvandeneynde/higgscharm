@@ -1,0 +1,777 @@
+# =============================================================================
+# X-> tau tau -> e mu : Signal Region + Control Regions
+# Run 3 CMS analysis 
+# =============================================================================
+datasets:
+    data:
+    - muon_electron
+    mc:
+    - dy_nlo_split
+    - tt
+    - singletop
+    - diboson
+    - htt_ggH
+    - htt_VBF
+    - htt_WH
+    - htt_ZH
+    - htt_bbH
+    - hww
+    - tth
+
+object_selection:
+  muons:
+    field: events.Muon
+    cuts:
+      - events.Muon.pt > 10
+      - np.abs(events.Muon.eta) < 2.4
+      - np.abs(events.Muon.dxy) < 0.045
+      - np.abs(events.Muon.dz) < 0.2
+      - working_points.muon_iso(events, 'tight')
+      - working_points.muon_id(events, 'tight')
+  electrons:
+    field: events.Electron
+    cuts:
+      - events.Electron.pt > 10
+      - np.abs(events.Electron.eta) < 2.4
+      - np.abs(events.Electron.dxy) < 0.045
+      - np.abs(events.Electron.dz) < 0.2
+      - working_points.electron_id(events, 'wp80iso')
+  muons_antiiso:
+    field: events.Muon
+    cuts:
+      - events.Muon.pt > 10
+      - np.abs(events.Muon.eta) < 2.4
+      - np.abs(events.Muon.dxy) < 0.045
+      - np.abs(events.Muon.dz) < 0.2
+      - working_points.muon_id(events, 'tight')
+      - events.Muon.pfRelIso04_all > 0.2
+      - events.Muon.pfRelIso04_all < 0.5
+  # losse leptonen, enkel voor de veto op extra leptonen
+  electrons_loose:
+    field: events.Electron
+    cuts:
+      - events.Electron.pt > 10
+      - np.abs(events.Electron.eta) < 2.4
+      - np.abs(events.Electron.dxy) < 0.045
+      - np.abs(events.Electron.dz) < 0.2
+      - events.Electron.mvaNoIso_WP90
+      - events.Electron.pfRelIso03_all < 0.3
+  muons_loose:
+    field: events.Muon
+    cuts:
+      - events.Muon.pt > 10
+      - np.abs(events.Muon.eta) < 2.4
+      - np.abs(events.Muon.dxy) < 0.045
+      - np.abs(events.Muon.dz) < 0.2
+      - working_points.muon_id(events, 'medium')
+      - working_points.muon_iso(events, 'loose')
+  jets:
+    field: events.Jet
+    cuts:
+      - events.Jet.pt > 30
+      - np.abs(events.Jet.eta) < 4.7
+      - working_points.jet_id(events, year, 'tightlepveto')
+      - working_points.jet_pileup_id(events, year, 'tight')
+      - delta_r_higher(events.Jet, objects['muons'], 0.4)
+      - delta_r_higher(events.Jet, objects['electrons'], 0.4)
+  bjets:
+    field: events.Jet
+    cuts:
+      - events.Jet.pt > 30
+      - np.abs(events.Jet.eta) < 2.5
+      - working_points.jet_id(events, year, 'tightlepveto')
+      - working_points.jet_pileup_id(events, year, 'tight')
+      - working_points.jets_btagging(events, "medium", year)
+      - delta_r_higher(events.Jet, objects['muons'], 0.4)
+      - delta_r_higher(events.Jet, objects['electrons'], 0.4)
+  # DR-jets: identiek aan jets/bjets, plus cleaning tegen het niet-geisoleerde muon
+  jets_dr:
+    field: events.Jet
+    cuts:
+      - events.Jet.pt > 30
+      - np.abs(events.Jet.eta) < 4.7
+      - working_points.jet_id(events, year, 'tightlepveto')
+      - working_points.jet_pileup_id(events, year, 'tight')
+      - delta_r_higher(events.Jet, objects['muons'], 0.4)
+      - delta_r_higher(events.Jet, objects['electrons'], 0.4)
+      - delta_r_higher(events.Jet, objects['muons_antiiso'], 0.4)
+  bjets_dr:
+    field: events.Jet
+    cuts:
+      - events.Jet.pt > 30
+      - np.abs(events.Jet.eta) < 2.5
+      - working_points.jet_id(events, year, 'tightlepveto')
+      - working_points.jet_pileup_id(events, year, 'tight')
+      - working_points.jets_btagging(events, "medium", year)
+      - delta_r_higher(events.Jet, objects['muons'], 0.4)
+      - delta_r_higher(events.Jet, objects['electrons'], 0.4)
+      - delta_r_higher(events.Jet, objects['muons_antiiso'], 0.4)
+  dileptons:
+    field: select_dileptons
+    cuts:
+      - objects['dileptons'].l1.delta_r(objects['dileptons'].l2) > 0.3
+      - objects['dileptons'].l1.charge * objects['dileptons'].l2.charge < 0
+  dileptons_ss:
+    field: select_dileptons
+    cuts:
+      - objects['dileptons_ss'].l1.delta_r(objects['dileptons_ss'].l2) > 0.3
+      - objects['dileptons_ss'].l1.charge * objects['dileptons_ss'].l2.charge > 0
+  dileptons_ai:
+    field: select_dileptons_antiiso
+    cuts:
+      - objects['dileptons_ai'].l1.delta_r(objects['dileptons_ai'].l2) > 0.3
+      - objects['dileptons_ai'].l1.charge * objects['dileptons_ai'].l2.charge < 0
+  dileptons_ai_ss:
+    field: select_dileptons_antiiso
+    cuts:
+      - objects['dileptons_ai_ss'].l1.delta_r(objects['dileptons_ai_ss'].l2) > 0.3
+      - objects['dileptons_ai_ss'].l1.charge * objects['dileptons_ai_ss'].l2.charge > 0
+  met:
+    field: events.MET
+
+event_selection:
+  hlt_paths:
+    Muon:
+      - MuEle_emu
+  selections:
+    # ------ baseline (shared by all categories) ------
+    trigger: get_trigger_mask(events, hlt_paths, dataset, year)
+    lumimask: get_lumi_mask(events, year)
+    atleast_one_goodvertex: events.PV.npvsGood > 0
+    one_dilepton: ak.num(objects['dileptons'], axis=1) == 1
+    one_dilepton_ss: ak.num(objects['dileptons_ss'], axis=1) == 1
+    met_filters: get_metfilters_mask(events, year)
+    emu_pair: ak.any(((np.abs(objects['dileptons'].l1.pdgId) == 11) & (np.abs(objects['dileptons'].l2.pdgId) == 13)) | ((np.abs(objects  ['dileptons'].l1.pdgId) == 13) & (np.abs(objects['dileptons'].l2.pdgId) == 11)), axis=1)
+    emu_pair_ss: ak.any(((np.abs(objects['dileptons_ss'].l1.pdgId) == 11) & (np.abs(objects['dileptons_ss'].l2.pdgId) == 13)) | ((np.abs(objects  ['dileptons_ss'].l1.pdgId) == 13) & (np.abs(objects['dileptons_ss'].l2.pdgId) == 11)), axis=1)
+    trigger_leg_pt: >-
+      ak.any(
+        (
+          (events.HLT.Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ | events.HLT.Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ)
+          & (ak.where(np.abs(objects['dileptons'].l1.pdgId) == 11, objects['dileptons'].l1.pt, objects['dileptons'].l2.pt) > 25)
+          & (ak.where(np.abs(objects['dileptons'].l1.pdgId) == 13, objects['dileptons'].l1.pt, objects['dileptons'].l2.pt) > 16)
+        )
+        | (
+          (events.HLT.Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL | events.HLT.Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_DZ)
+          & (ak.where(np.abs(objects['dileptons'].l1.pdgId) == 13, objects['dileptons'].l1.pt, objects['dileptons'].l2.pt) > 25)
+          & (ak.where(np.abs(objects['dileptons'].l1.pdgId) == 11, objects['dileptons'].l1.pt, objects['dileptons'].l2.pt) > 16)
+        ),
+        axis=1)
+    trigger_leg_pt_ss: >-
+      ak.any(
+        (
+          (events.HLT.Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ | events.HLT.Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ)
+          & (ak.where(np.abs(objects['dileptons_ss'].l1.pdgId) == 11, objects['dileptons_ss'].l1.pt, objects['dileptons_ss'].l2.pt) > 25)
+          & (ak.where(np.abs(objects['dileptons_ss'].l1.pdgId) == 13, objects['dileptons_ss'].l1.pt, objects['dileptons_ss'].l2.pt) > 16)
+        )
+        | (
+          (events.HLT.Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL | events.HLT.Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_DZ)
+          & (ak.where(np.abs(objects['dileptons_ss'].l1.pdgId) == 13, objects['dileptons_ss'].l1.pt, objects['dileptons_ss'].l2.pt) > 25)
+          & (ak.where(np.abs(objects['dileptons_ss'].l1.pdgId) == 11, objects['dileptons_ss'].l1.pt, objects['dileptons_ss'].l2.pt) > 16)
+        ),
+        axis=1)
+
+    # ------ veto op extra leptonen (losse criteria) ------
+    # elk paarlepton telt hooguit één keer mee; een extra los lepton maakt een telling 2
+    extra_lepton_veto: (ak.num(objects['electrons_loose'], axis=1) <= 1) & (ak.num(objects['muons_loose'], axis=1) <= 1)
+
+    # ------ DY-splitsing in ZTT/ZLL via generator-matching ------
+    # enkel actief voor samples met _ZTT of _ZLL in de naam
+    gen_split: gen_split_mask(events, objects, dataset)
+
+    # ------ b-jet selections ------
+    bjets_veto: ak.num(objects['bjets']) == 0
+    bjets_tag: ak.num(objects['bjets']) >= 1
+
+    # ------ transverse mass selections ------
+    transverse_mass_low: ak.all(np.sqrt(2.0 * objects['dileptons'].pt * objects['met'].pt * (ak.ones_like(objects['met'].pt) - np.cos(objects['dileptons'].delta_phi(objects['met'])))) < 60, axis=1)
+    transverse_mass_low_ss: ak.all(np.sqrt(2.0 * objects['dileptons_ss'].pt * objects['met'].pt * (ak.ones_like(objects['met'].pt) - np.cos(objects['dileptons_ss'].delta_phi(objects['met'])))) < 60, axis=1)
+    transverse_mass_high: ak.all(np.sqrt(2.0 * objects['dileptons'].pt * objects['met'].pt * (ak.ones_like(objects['met'].pt) - np.cos(objects['dileptons'].delta_phi(objects['met'])))) > 70, axis=1)
+
+    # ------ dzeta selection ------
+    dzeta: compute_dzeta(objects['dileptons'], objects['met']) > -30
+    dzeta_ss: compute_dzeta(objects['dileptons_ss'], objects['met']) > -30
+
+    # ------ dilepton-mass selections (for DY-ll and Diboson CRs) ------
+    # Z-peak window in m(ll): enriches DY -> ee/mumu mis-id
+    mll_zpeak: ak.all((objects['dileptons'].p4.mass > 85.0) & (objects['dileptons'].p4.mass < 100.0), axis=1)
+    # High m(ll): suppresses DY (signal + ll mis-id), enriches diboson (WW)
+    mll_high: ak.all(objects['dileptons'].p4.mass > 100.0, axis=1)
+
+    # ------ no os pair ------
+    no_os_pair: ak.num(objects['dileptons'], axis=1) == 0
+
+    # ------ fake-lepton estimate: determination region (anti-isolated muon) ------
+    no_nominal_pair: (ak.num(objects['dileptons'], axis=1) == 0) & (ak.num(objects['dileptons_ss'], axis=1) == 0)
+    bjets_veto_dr: ak.num(objects['bjets_dr']) == 0
+    pair_ai_os: >-
+      (ak.num(objects['dileptons_ai'], axis=1) == 1)
+      & ak.any(((np.abs(objects['dileptons_ai'].l1.pdgId) == 11) & (np.abs(objects['dileptons_ai'].l2.pdgId) == 13)) | ((np.abs(objects['dileptons_ai'].l1.pdgId) == 13) & (np.abs(objects['dileptons_ai'].l2.pdgId) == 11)), axis=1)
+      & ak.any(
+        (
+          (events.HLT.Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ | events.HLT.Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ)
+          & (ak.where(np.abs(objects['dileptons_ai'].l1.pdgId) == 11, objects['dileptons_ai'].l1.pt, objects['dileptons_ai'].l2.pt) > 25)
+          & (ak.where(np.abs(objects['dileptons_ai'].l1.pdgId) == 13, objects['dileptons_ai'].l1.pt, objects['dileptons_ai'].l2.pt) > 16)
+        )
+        | (
+          (events.HLT.Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL | events.HLT.Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_DZ)
+          & (ak.where(np.abs(objects['dileptons_ai'].l1.pdgId) == 13, objects['dileptons_ai'].l1.pt, objects['dileptons_ai'].l2.pt) > 25)
+          & (ak.where(np.abs(objects['dileptons_ai'].l1.pdgId) == 11, objects['dileptons_ai'].l1.pt, objects['dileptons_ai'].l2.pt) > 16)
+        ),
+        axis=1)
+    pair_ai_ss: >-
+      (ak.num(objects['dileptons_ai_ss'], axis=1) == 1)
+      & ak.any(((np.abs(objects['dileptons_ai_ss'].l1.pdgId) == 11) & (np.abs(objects['dileptons_ai_ss'].l2.pdgId) == 13)) | ((np.abs(objects['dileptons_ai_ss'].l1.pdgId) == 13) & (np.abs(objects['dileptons_ai_ss'].l2.pdgId) == 11)), axis=1)
+      & ak.any(
+        (
+          (events.HLT.Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ | events.HLT.Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ)
+          & (ak.where(np.abs(objects['dileptons_ai_ss'].l1.pdgId) == 11, objects['dileptons_ai_ss'].l1.pt, objects['dileptons_ai_ss'].l2.pt) > 25)
+          & (ak.where(np.abs(objects['dileptons_ai_ss'].l1.pdgId) == 13, objects['dileptons_ai_ss'].l1.pt, objects['dileptons_ai_ss'].l2.pt) > 16)
+        )
+        | (
+          (events.HLT.Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL | events.HLT.Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_DZ)
+          & (ak.where(np.abs(objects['dileptons_ai_ss'].l1.pdgId) == 13, objects['dileptons_ai_ss'].l1.pt, objects['dileptons_ai_ss'].l2.pt) > 25)
+          & (ak.where(np.abs(objects['dileptons_ai_ss'].l1.pdgId) == 11, objects['dileptons_ai_ss'].l1.pt, objects['dileptons_ai_ss'].l2.pt) > 16)
+        ),
+        axis=1)
+    mt_ai_os: ak.all(np.sqrt(2.0 * objects['dileptons_ai'].pt * objects['met'].pt * (ak.ones_like(objects['met'].pt) - np.cos(objects['dileptons_ai'].delta_phi(objects['met'])))) < 60, axis=1)
+    mt_ai_ss: ak.all(np.sqrt(2.0 * objects['dileptons_ai_ss'].pt * objects['met'].pt * (ak.ones_like(objects['met'].pt) - np.cos(objects['dileptons_ai_ss'].delta_phi(objects['met'])))) < 60, axis=1)
+    dzeta_ai_os: compute_dzeta(objects['dileptons_ai'], objects['met']) > -30
+    dzeta_ai_ss: compute_dzeta(objects['dileptons_ai_ss'], objects['met']) > -30
+
+  categories:
+    # =====================================================================
+    # SIGNAL REGIONS
+    # =====================================================================
+    emu:
+      - trigger
+      - lumimask
+      - atleast_one_goodvertex
+      #- met_filters
+      - extra_lepton_veto
+      - emu_pair
+      - trigger_leg_pt
+      - one_dilepton
+      - bjets_veto
+      - transverse_mass_low
+      - dzeta
+      - gen_split
+    # =====================================================================
+    # SR without dzeta
+    # =====================================================================
+    emu_nodzeta:
+      - trigger
+      - lumimask
+      - atleast_one_goodvertex
+      #- met_filters
+      - extra_lepton_veto
+      - emu_pair
+      - trigger_leg_pt
+      - one_dilepton
+      - bjets_veto
+      - transverse_mass_low
+      - gen_split
+    # =====================================================================
+    # SR without b-jet veto
+    # =====================================================================
+    emu_nobveto:
+      - trigger
+      - lumimask
+      - atleast_one_goodvertex
+      #- met_filters
+      - extra_lepton_veto
+      - emu_pair
+      - trigger_leg_pt
+      - one_dilepton
+      - transverse_mass_low
+      - dzeta
+      - gen_split
+    # =====================================================================
+    # SR with same-sign leptons
+    # =====================================================================
+    emu_ss:
+      - trigger
+      - lumimask
+      - atleast_one_goodvertex
+      #- met_filters
+      - extra_lepton_veto
+      - no_os_pair
+      - emu_pair_ss
+      - trigger_leg_pt_ss
+      - one_dilepton_ss
+      - bjets_veto
+      - transverse_mass_low_ss
+      - dzeta_ss
+      - gen_split_ss
+    # =====================================================================
+    # ttbar CONTROL REGION
+    #   Inversion of bjets_veto -> bjets_tag (>=1 medium-tagged b-jet)
+    # =====================================================================
+    emu_ttbar_cr:
+      - trigger
+      - lumimask
+      - atleast_one_goodvertex
+      #- met_filters
+      - extra_lepton_veto
+      - emu_pair
+      - trigger_leg_pt
+      - one_dilepton
+      - bjets_tag
+      - transverse_mass_low
+      - dzeta
+      - gen_split
+    # =====================================================================
+    # W+jets CONTROL REGION
+    #   mT cut inverted (mT > 70). dzeta cut dropped: it correlates with mT
+    #   and would over-cut the CR.
+    # =====================================================================
+    emu_wjets_cr:
+      - trigger
+      - lumimask
+      - atleast_one_goodvertex
+      #- met_filters
+      - extra_lepton_veto
+      - emu_pair
+      - trigger_leg_pt
+      - one_dilepton
+      - bjets_veto
+      - transverse_mass_high
+    # =====================================================================
+    # SINGLE-TOP CONTROL REGION
+    #   >=1 b-jet AND mT > 70 GeV. tW and t-channel both produce a real W
+    #   (high mT) plus a b-jet, similar to ttbar but with lower jet
+    #   multiplicity. Purity vs ttbar is expected to be limited; this CR
+    #   serves to demonstrate that single-top cannot be cleanly isolated
+    #   in the e-mu final state.
+    # =====================================================================
+    emu_singletop_cr:
+      - trigger
+      - lumimask
+      - atleast_one_goodvertex
+      #- met_filters
+      - extra_lepton_veto
+      - emu_pair
+      - trigger_leg_pt
+      - one_dilepton
+      - bjets_tag
+      - transverse_mass_high
+      - gen_split
+    # =====================================================================
+    # DIBOSON CONTROL REGION
+    #   b-veto + mT < 60 + m(ll) > 100 GeV.
+    #   At high m(ll) the DY -> tau tau contribution drops (m_vis falls
+    #   below the Z mass due to neutrino losses) and the DY Z-peak is
+    #   excluded. Diboson (mainly WW) becomes proportionally larger.
+    #   Purity is expected to be modest (mix of WW + DY tail + ttbar
+    #   residual). This is acceptable: the CR is intended to demonstrate
+    #   the limit of how cleanly diboson can be isolated in e-mu.
+    # =====================================================================
+    emu_diboson_cr:
+      - trigger
+      - lumimask
+      - atleast_one_goodvertex
+      #- met_filters
+      - extra_lepton_veto
+      - emu_pair
+      - trigger_leg_pt
+      - one_dilepton
+      - bjets_veto
+      - transverse_mass_low
+      - mll_high
+      - gen_split
+    # =====================================================================
+    # DY -> ll CONTROL REGION
+    #   Z-peak window 85 < m(ll) < 100 GeV, otherwise SR-like.
+    #   In e-mu the DY -> ee/mumu component requires lepton mis-id and is
+    #   tiny. The Z-peak window therefore mainly contains DY -> tau tau
+    #   tails plus diboson, with a small genuine DY -> ll component.
+    #   Goal of this CR: validate DY normalization and shape near the Z
+    #   peak as a cross-check of the inclusive DY MC modeling.
+    # =====================================================================
+    emu_dy_cr:
+      - trigger
+      - lumimask
+      - atleast_one_goodvertex
+      #- met_filters
+      - extra_lepton_veto
+      - emu_pair
+      - trigger_leg_pt
+      - one_dilepton
+      - bjets_veto
+      - transverse_mass_low
+      - dzeta
+      - mll_zpeak
+      - gen_split
+    # =====================================================================
+    # FAKE-LEPTON DETERMINATION REGIONS (anti-isolated muon, 0.2 < I < 0.5)
+    # =====================================================================
+    emu_dr_os:
+      - trigger
+      - lumimask
+      - atleast_one_goodvertex
+      #- met_filters
+      - extra_lepton_veto
+      - no_nominal_pair
+      - pair_ai_os
+      - bjets_veto_dr
+      - mt_ai_os
+      - dzeta_ai_os
+      - gen_split
+    emu_dr_ss:
+      - trigger
+      - lumimask
+      - atleast_one_goodvertex
+      #- met_filters
+      - extra_lepton_veto
+      - no_nominal_pair
+      - pair_ai_ss
+      - bjets_veto_dr
+      - mt_ai_ss
+      - dzeta_ai_ss
+      - gen_split
+
+corrections:
+  object:
+    - jet
+    #- jetveto
+    - muon
+    - electron
+  object_shifts: true
+  event_weights:
+    genWeight: true
+    pileupWeight: true
+    partonshowerWeight: true
+    lhepdfWeight: true
+    lhescaleWeight: true
+    nnlopsWeight: false
+    electron:
+      - id: wp80iso
+      - reco: true
+      - trigger: false
+    muon:
+      - id: tight
+      - iso: tight
+      - trigger: false
+
+histogram_config:
+  add_syst_axis: true
+  add_weight: true
+  axes:
+    dilepton_mass:
+      type: Regular
+      bins: 50
+      start: 0
+      stop: 250
+      label: $m(\ell\ell)$ [GeV]
+      expression: "objects[{'emu_ss': 'dileptons_ss', 'emu_dr_os': 'dileptons_ai', 'emu_dr_ss': 'dileptons_ai_ss'}.get(category, 'dileptons')].p4.mass"
+    dilepton_mass_peak:
+      type: Regular
+      bins: 50
+      start: 30
+      stop: 120
+      label: $m(\ell\ell)$ [GeV]
+      expression: "objects[{'emu_ss': 'dileptons_ss', 'emu_dr_os': 'dileptons_ai', 'emu_dr_ss': 'dileptons_ai_ss'}.get(category, 'dileptons')].p4.mass"
+    dilepton_pt:
+      type: Variable
+      edges: [20, 40, 60, 80, 100, 120, 140, 160, 180, 200, 225, 250, 275, 300, 325, 350, 375, 400, 450, 500, 550, 600, 700, 800, 1000]
+      label: $p_T(\ell\ell)$ [GeV]
+      expression: objects['dileptons'].p4.pt
+    dilepton_eta:
+      type: Regular
+      bins: 50
+      start: -10
+      stop: 10
+      label: $\eta(\ell\ell)$
+      expression: objects['dileptons'].p4.eta
+    dilepton_phi:
+      type: Regular
+      bins: 50
+      start: -3.14159
+      stop: 3.14159
+      label: $\phi(\ell\ell)$
+      expression: objects['dileptons'].p4.phi
+    dilepton_dr:
+      type: Regular
+      bins: 50
+      start: 0
+      stop: 5
+      label: $\Delta R(\ell_1, \ell_2)$
+      expression: objects['dileptons'].l1.delta_r(objects['dileptons'].l2)
+    dilepton_deta:
+      type: Regular
+      bins: 50
+      start: 0
+      stop: 5
+      label: $|\Delta \eta(\ell_1, \ell_2)|$
+      expression: np.abs(objects['dileptons'].l1.eta - objects['dileptons'].l2.eta)
+    leading_lepton_pt:
+      type: Variable
+      edges: [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 120, 140]
+      label: $p_T(\ell_1)$ [GeV]
+      expression: objects['dileptons'].l1.pt
+    subleading_lepton_pt:
+      type: Variable
+      edges: [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 120, 140]
+      label: $p_T(\ell_2)$ [GeV]
+      expression: objects['dileptons'].l2.pt
+    leading_lepton_eta:
+      type: Regular
+      bins: 50
+      start: -2.5
+      stop: 2.5
+      label: $\eta(\ell_1)$
+      expression: objects['dileptons'].l1.eta
+    subleading_lepton_eta:
+      type: Regular
+      bins: 50
+      start: -2.5
+      stop: 2.5
+      label: $\eta(\ell_2)$
+      expression: objects['dileptons'].l2.eta
+    leading_lepton_phi:
+      type: Regular
+      bins: 50
+      start: -3.14159
+      stop: 3.14159
+      label: $\phi(\ell_1)$
+      expression: objects['dileptons'].l1.phi
+    subleading_lepton_phi:
+      type: Regular
+      bins: 50
+      start: -3.14159
+      stop: 3.14159
+      label: $\phi(\ell_2)$
+      expression: objects['dileptons'].l2.phi
+    jet_pt:
+      type: Variable
+      edges: [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 120, 140]
+      label: $p_T(j)$ [GeV]
+      expression: objects['jets'].pt
+    jet_eta:
+      type: Regular
+      bins: 50
+      start: -4.7
+      stop: 4.7
+      label: $\eta(j)$
+      expression: objects['jets'].eta
+    jet_phi:
+      type: Regular
+      bins: 50
+      start: -3.14159
+      stop: 3.14159
+      label: $\phi(j)$
+      expression: objects['jets'].phi
+    jet_multiplicity:
+      type: Integer
+      start: 0
+      stop: 14
+      label: $N(j)$
+      expression: ak.num(objects['jets'])
+    bjet_multiplicity:
+      type: Integer
+      start: 0
+      stop: 8
+      label: $N(b)$
+      expression: ak.num(objects['bjets'])
+    jet_dr:
+      type: Regular
+      bins: 50
+      start: 0
+      stop: 5
+      label: $\Delta R(j_1, j_2)$
+      expression: ak.pad_none(objects['jets'], target=2)[:, 0].delta_r(ak.pad_none(objects['jets'], target=2)[:, 1])
+    jet_deta:
+      type: Regular
+      bins: 50
+      start: 0
+      stop: 5
+      label: $|\Delta \eta(j_1, j_2)|$
+      expression: np.abs(ak.pad_none(objects['jets'], target=2)[:, 0].eta - ak.pad_none(objects['jets'], target=2)[:, 1].eta)
+    leadingjet_flavour:
+      type: IntCategory
+      categories: [0, 4, 5]
+      label: HadronFlavour
+      expression: ak.pad_none(objects['jets'], target=2)[:, 0].hadronFlavour
+    leadingjet_cvsl:
+      type: Regular
+      bins: 50
+      start: 0
+      stop: 1
+      label: Leading Jet CvsL
+      expression: ak.pad_none(objects['jets'], target=2)[:, 0].btagUParTAK4CvL if hasattr(objects['jets'], 'btagUParTAK4CvL') else ak.pad_none(objects['jets'], target=2)[:, 0].btagPNetCvL if hasattr(objects['jets'], 'btagPNetCvL') else ak.pad_none(objects['jets'], target=2)[:, 0].btagDeepFlavCvL
+    leadingjet_cvsb:
+      type: Regular
+      bins: 50
+      start: 0
+      stop: 1
+      label: Leading Jet CvsB
+      expression: ak.pad_none(objects['jets'], target=2)[:, 0].btagUParTAK4CvB if hasattr(objects['jets'], 'btagUParTAK4CvB') else ak.pad_none(objects['jets'], target=2)[:, 0].btagPNetCvB if hasattr(objects['jets'], 'btagPNetCvB') else ak.pad_none(objects['jets'], target=2)[:, 0].btagDeepFlavCvB
+    npvs:
+      type: Integer
+      start: 0
+      stop: 60
+      label: vertex multiplicity
+      expression: events.PV.npvsGood
+    dzeta:
+      type: Regular
+      bins: 60
+      start: -150
+      stop: 100
+      label: $D_\zeta$ [GeV]
+      expression: "compute_dzeta(objects[{'emu_ss': 'dileptons_ss', 'emu_dr_os': 'dileptons_ai', 'emu_dr_ss': 'dileptons_ai_ss'}.get(category, 'dileptons')], objects['met'])"
+    transverse_mass:
+      type: Regular
+      bins: 50
+      start: 0
+      stop: 200
+      label: $m_T(\ell\ell, \mathrm{MET})$ [GeV]
+      expression: "np.sqrt(2.0 * objects[{'emu_ss': 'dileptons_ss', 'emu_dr_os': 'dileptons_ai', 'emu_dr_ss': 'dileptons_ai_ss'}.get(category, 'dileptons')].pt * objects['met'].pt * (ak.ones_like(objects['met'].pt) - np.cos(objects[{'emu_ss': 'dileptons_ss', 'emu_dr_os': 'dileptons_ai', 'emu_dr_ss': 'dileptons_ai_ss'}.get(category, 'dileptons')].delta_phi(objects['met']))))"
+    met_pt:
+      type: Regular
+      bins: 50
+      start: 0
+      stop: 200
+      label: MET [GeV]
+      expression: objects['met'].pt
+    electron_pt:
+      type: Variable
+      edges: [15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 32, 34, 36, 38, 40, 45, 50, 60, 80, 100, 150]
+      label: "$p_T(e)$ [GeV]"
+      expression: "ak.where(abs(objects[{'emu_ss': 'dileptons_ss', 'emu_dr_os': 'dileptons_ai', 'emu_dr_ss': 'dileptons_ai_ss'}.get(category, 'dileptons')].l1.pdgId) == 11, objects[{'emu_ss': 'dileptons_ss', 'emu_dr_os': 'dileptons_ai', 'emu_dr_ss': 'dileptons_ai_ss'}.get(category, 'dileptons')].l1.pt, objects[{'emu_ss': 'dileptons_ss', 'emu_dr_os': 'dileptons_ai', 'emu_dr_ss': 'dileptons_ai_ss'}.get(category, 'dileptons')].l2.pt)"
+    muon_pt:
+      type: Variable
+      edges: [15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 32, 34, 36, 38, 40, 45, 50, 60, 80, 100, 150]
+      label: "$p_T(\\mu)$ [GeV]"
+      expression: "ak.where(abs(objects[{'emu_ss': 'dileptons_ss', 'emu_dr_os': 'dileptons_ai', 'emu_dr_ss': 'dileptons_ai_ss'}.get(category, 'dileptons')].l1.pdgId) == 13, objects[{'emu_ss': 'dileptons_ss', 'emu_dr_os': 'dileptons_ai', 'emu_dr_ss': 'dileptons_ai_ss'}.get(category, 'dileptons')].l1.pt, objects[{'emu_ss': 'dileptons_ss', 'emu_dr_os': 'dileptons_ai', 'emu_dr_ss': 'dileptons_ai_ss'}.get(category, 'dileptons')].l2.pt)"
+    electron_eta:
+      type: Regular
+      bins: 50
+      start: -2.5
+      stop: 2.5
+      label: "$\\eta(e)$"
+      expression: "ak.where(abs(objects[{'emu_ss': 'dileptons_ss', 'emu_dr_os': 'dileptons_ai', 'emu_dr_ss': 'dileptons_ai_ss'}.get(category, 'dileptons')].l1.pdgId) == 11, objects[{'emu_ss': 'dileptons_ss', 'emu_dr_os': 'dileptons_ai', 'emu_dr_ss': 'dileptons_ai_ss'}.get(category, 'dileptons')].l1.eta, objects[{'emu_ss': 'dileptons_ss', 'emu_dr_os': 'dileptons_ai', 'emu_dr_ss': 'dileptons_ai_ss'}.get(category, 'dileptons')].l2.eta)"
+    muon_eta:
+      type: Regular
+      bins: 50
+      start: -2.5
+      stop: 2.5
+      label: "$\\eta(\\mu)$"
+      expression: "ak.where(abs(objects[{'emu_ss': 'dileptons_ss', 'emu_dr_os': 'dileptons_ai', 'emu_dr_ss': 'dileptons_ai_ss'}.get(category, 'dileptons')].l1.pdgId) == 13, objects[{'emu_ss': 'dileptons_ss', 'emu_dr_os': 'dileptons_ai', 'emu_dr_ss': 'dileptons_ai_ss'}.get(category, 'dileptons')].l1.eta, objects[{'emu_ss': 'dileptons_ss', 'emu_dr_os': 'dileptons_ai', 'emu_dr_ss': 'dileptons_ai_ss'}.get(category, 'dileptons')].l2.eta)"
+    electron_phi:
+      type: Regular
+      bins: 50
+      start: -3.14159
+      stop: 3.14159
+      label: "$\\phi(e)$"
+      expression: "ak.where(abs(objects[{'emu_ss': 'dileptons_ss', 'emu_dr_os': 'dileptons_ai', 'emu_dr_ss': 'dileptons_ai_ss'}.get(category, 'dileptons')].l1.pdgId) == 11, objects[{'emu_ss': 'dileptons_ss', 'emu_dr_os': 'dileptons_ai', 'emu_dr_ss': 'dileptons_ai_ss'}.get(category, 'dileptons')].l1.phi, objects[{'emu_ss': 'dileptons_ss', 'emu_dr_os': 'dileptons_ai', 'emu_dr_ss': 'dileptons_ai_ss'}.get(category, 'dileptons')].l2.phi)"
+    muon_phi:
+      type: Regular
+      bins: 50
+      start: -3.14159
+      stop: 3.14159
+      label: "$\\phi(\\mu)$"
+      expression: "ak.where(abs(objects[{'emu_ss': 'dileptons_ss', 'emu_dr_os': 'dileptons_ai', 'emu_dr_ss': 'dileptons_ai_ss'}.get(category, 'dileptons')].l1.pdgId) == 13, objects[{'emu_ss': 'dileptons_ss', 'emu_dr_os': 'dileptons_ai', 'emu_dr_ss': 'dileptons_ai_ss'}.get(category, 'dileptons')].l1.phi, objects[{'emu_ss': 'dileptons_ss', 'emu_dr_os': 'dileptons_ai', 'emu_dr_ss': 'dileptons_ai_ss'}.get(category, 'dileptons')].l2.phi)"
+    electron_eta_2d:
+      type: Regular
+      bins: 25
+      start: -2.5
+      stop: 2.5
+      label: "$\\eta(e)$"
+      expression: "ak.where(abs(objects[{'emu_ss': 'dileptons_ss', 'emu_dr_os': 'dileptons_ai', 'emu_dr_ss': 'dileptons_ai_ss'}.get(category, 'dileptons')].l1.pdgId) == 11, objects[{'emu_ss': 'dileptons_ss', 'emu_dr_os': 'dileptons_ai', 'emu_dr_ss': 'dileptons_ai_ss'}.get(category, 'dileptons')].l1.eta, objects[{'emu_ss': 'dileptons_ss', 'emu_dr_os': 'dileptons_ai', 'emu_dr_ss': 'dileptons_ai_ss'}.get(category, 'dileptons')].l2.eta)"
+    electron_phi_2d:
+      type: Regular
+      bins: 32
+      start: -3.14159
+      stop: 3.14159
+      label: "$\\phi(e)$"
+      expression: "ak.where(abs(objects[{'emu_ss': 'dileptons_ss', 'emu_dr_os': 'dileptons_ai', 'emu_dr_ss': 'dileptons_ai_ss'}.get(category, 'dileptons')].l1.pdgId) == 11, objects[{'emu_ss': 'dileptons_ss', 'emu_dr_os': 'dileptons_ai', 'emu_dr_ss': 'dileptons_ai_ss'}.get(category, 'dileptons')].l1.phi, objects[{'emu_ss': 'dileptons_ss', 'emu_dr_os': 'dileptons_ai', 'emu_dr_ss': 'dileptons_ai_ss'}.get(category, 'dileptons')].l2.phi)"
+    fake_dr:
+      type: Variable
+      edges: [0.3, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 6.0]
+      label: $\Delta R(e,\mu)$
+      expression: "objects[{'emu_ss': 'dileptons_ss', 'emu_dr_os': 'dileptons_ai', 'emu_dr_ss': 'dileptons_ai_ss'}.get(category, 'dileptons')].l1.delta_r(objects[{'emu_ss': 'dileptons_ss', 'emu_dr_os': 'dileptons_ai', 'emu_dr_ss': 'dileptons_ai_ss'}.get(category, 'dileptons')].l2)"
+    fake_njet:
+      type: Integer
+      start: 0
+      stop: 3
+      label: $N_\mathrm{jet}$ (2 = $\geq$2)
+      expression: "ak.broadcast_arrays(np.minimum(ak.num(objects['jets_dr' if category.startswith('emu_dr') else 'jets']), 2), objects[{'emu_ss': 'dileptons_ss', 'emu_dr_os': 'dileptons_ai', 'emu_dr_ss': 'dileptons_ai_ss'}.get(category, 'dileptons')].pt)[0]"
+
+  layout:
+    vertex:
+      - npvs
+    dilepton_mass:
+      - dilepton_mass
+    dilepton_mass_peak:
+      - dilepton_mass_peak
+    dilepton_pt:
+      - dilepton_pt
+    dilepton_eta:
+      - dilepton_eta
+    dilepton_phi:
+      - dilepton_phi
+    dilepton_dr:
+      - dilepton_dr
+    dilepton_deta:
+      - dilepton_deta
+    leading_lepton_pt:
+      - leading_lepton_pt
+    leading_lepton_eta:
+      - leading_lepton_eta
+    leading_lepton_phi:
+      - leading_lepton_phi
+    subleading_lepton_pt:
+      - subleading_lepton_pt
+    subleading_lepton_eta:
+      - subleading_lepton_eta
+    subleading_lepton_phi:
+      - subleading_lepton_phi
+    jet_pt:
+      - jet_pt
+    jet_eta:
+      - jet_eta
+    jet_phi:
+      - jet_phi
+    jet_dr:
+      - jet_dr
+    jet_deta:
+      - jet_deta
+    jet_multiplicity:
+      - jet_multiplicity
+      - bjet_multiplicity
+    leading_jet:
+      - leadingjet_flavour
+      - leadingjet_cvsb
+      - leadingjet_cvsl
+    dzeta:
+      - dzeta
+    transverse_mass:
+      - transverse_mass
+    met:
+      - met_pt
+    electron_pt:
+      - electron_pt
+    muon_pt:
+      - muon_pt
+    electron_eta:
+      - electron_eta
+    muon_eta:
+      - muon_eta
+    electron_phi:
+      - electron_phi
+    muon_phi:
+      - muon_phi
+    electron_etaphi:
+      - electron_eta_2d
+      - electron_phi_2d
+    fake_mvis:
+      - dilepton_mass
+      - fake_dr
+      - fake_njet
+    fake_ept:
+      - electron_pt
+      - fake_dr
+      - fake_njet
+    fake_mupt:
+      - muon_pt
+      - fake_dr
+      - fake_njet
