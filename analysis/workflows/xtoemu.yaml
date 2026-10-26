@@ -301,7 +301,7 @@ event_selection:
       - bjets_veto
       - transverse_mass_low_ss
       - dzeta_ss
-      - gen_split_ss
+      - gen_split
     # =====================================================================
     # ttbar CONTROL REGION
     #   Inversion of bjets_veto -> bjets_tag (>=1 medium-tagged b-jet)
