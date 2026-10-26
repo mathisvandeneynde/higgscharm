@@ -320,22 +320,6 @@ event_selection:
       - dzeta
       - gen_split
     # =====================================================================
-    # W+jets CONTROL REGION
-    #   mT cut inverted (mT > 70). dzeta cut dropped: it correlates with mT
-    #   and would over-cut the CR.
-    # =====================================================================
-    emu_wjets_cr:
-      - trigger
-      - lumimask
-      - atleast_one_goodvertex
-      #- met_filters
-      - extra_lepton_veto
-      - emu_pair
-      - trigger_leg_pt
-      - one_dilepton
-      - bjets_veto
-      - transverse_mass_high
-    # =====================================================================
     # SINGLE-TOP CONTROL REGION
     #   >=1 b-jet AND mT > 70 GeV. tW and t-channel both produce a real W
     #   (high mT) plus a b-jet, similar to ttbar but with lower jet
