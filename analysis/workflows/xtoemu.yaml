@@ -425,7 +425,7 @@ corrections:
     pileupWeight: true
     partonshowerWeight: true
     lhepdfWeight: true
-    lhescaleWeight: true
+    lhescaleWeight: false
     nnlopsWeight: false
     electron:
       - id: wp80iso
