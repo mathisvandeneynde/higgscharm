@@ -124,7 +124,7 @@ class BaseProcessor(processor.ProcessorABC):
             lumi_mask = eval(event_selection["selections"]["lumimask"])
             dump_lumi(events[lumi_mask], output)
 
-        selection_manager = PackedSelection()
+        selection_manager = PackedSelection(dtype="uint64")
         for selection, mask in event_selection["selections"].items():
             selection_manager.add(selection, eval(mask))
 
