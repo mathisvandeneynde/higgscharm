@@ -77,3 +77,25 @@ def gen_split_mask(events, objects, dataset):
     mu_flav = ak.firsts(objects["muons"].genPartFlav)
     ztt = ak.to_numpy(ak.fill_none((e_flav == 15) & (mu_flav == 15), False))
     return ztt if is_ztt_key else ~ztt
+
+def no_extra_loose_lepton(objects, pair_key, dr_match=0.01):
+    """Veto on extra loose leptons, relative to the selected pair.
+
+    Counts the loose leptons (electrons_loose, muons_loose) that are NOT one of the two
+    leptons of the selected pair in `pair_key`, and returns True if there are none.
+    A loose lepton belongs to the pair if it has the same flavour and lies within
+    dr_match of the pair lepton. Because both come from the same corrected collection,
+    a selected lepton lies at dR = 0 from itself.
+
+    The criterion is the same in every region, independent of the isolation of the
+    selected leptons (SR/AR: isolated, DR and bias regions: non-isolated).
+    Events without a pair return True; the pair requirement removes them anyway.
+    """
+    pair = ak.firsts(objects[pair_key])
+    n_extra = 0
+    for key, pdg in (("electrons_loose", 11), ("muons_loose", 13)):
+        loose = objects[key]
+        is_l1 = (loose.delta_r(pair.l1) < dr_match) & (np.abs(pair.l1.pdgId) == pdg)
+        is_l2 = (loose.delta_r(pair.l2) < dr_match) & (np.abs(pair.l2.pdgId) == pdg)
+        n_extra = n_extra + ak.sum(~(is_l1 | is_l2), axis=1)
+    return ak.to_numpy(ak.fill_none(n_extra == 0, True))

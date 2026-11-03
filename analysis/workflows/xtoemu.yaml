@@ -170,8 +170,12 @@ event_selection:
         axis=1)
 
     # ------ veto on extra leptons ------
-    # each dilepton pair counts at most once; an extra loose lepton makes a count of 2
-    extra_lepton_veto: (ak.num(objects['electrons_loose'], axis=1) <= 1) & (ak.num(objects['muons_loose'], axis=1) <= 1)
+    # no loose lepton besides the two leptons of the selected pair:
+    # the same criterion in every region, independent of the isolation of the selected leptons
+    extra_lepton_veto: no_extra_loose_lepton(objects, 'dileptons')
+    extra_lepton_veto_ss: no_extra_loose_lepton(objects, 'dileptons_ss')
+    extra_lepton_veto_ai_os: no_extra_loose_lepton(objects, 'dileptons_ai')
+    extra_lepton_veto_ai_ss: no_extra_loose_lepton(objects, 'dileptons_ai_ss')
 
     # ------ DY-splitsing in ZTT/ZLL via generator-matching ------
     # only for samples with ZLL or ZTT in the name 
@@ -291,7 +295,7 @@ event_selection:
       - lumimask
       - atleast_one_goodvertex
       #- met_filters
-      - extra_lepton_veto
+      - extra_lepton_veto_ss
       - no_os_pair
       - emu_pair_ss
       - trigger_leg_pt_ss
@@ -348,7 +352,7 @@ event_selection:
       - lumimask
       - atleast_one_goodvertex
       #- met_filters
-      - extra_lepton_veto
+      - extra_lepton_veto_ai_os
       - no_nominal_pair
       - pair_ai_os
       - bjets_veto_dr
@@ -360,7 +364,7 @@ event_selection:
       - lumimask
       - atleast_one_goodvertex
       #- met_filters
-      - extra_lepton_veto
+      - extra_lepton_veto_ai_ss
       - no_nominal_pair
       - pair_ai_ss
       - bjets_veto_dr
