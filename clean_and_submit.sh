@@ -1,42 +1,58 @@
 #!/bin/bash
-# clean_and_submit.sh — schone-lei routine voor een nieuwe run
-# Gebruik: ./clean_and_submit.sh <workflow> <year>
-# Voorbeeld: ./clean_and_submit.sh ztoemu_CR 2022preEE
+# clean_and_submit.sh — clean-slate routine for a new run
+# Usage:   ./clean_and_submit.sh <workflow> <year> [<year> ...]
+# Example: ./clean_and_submit.sh xtoemu 2022preEE 2022postEE
+#
+# Resources (override via environment variables):
+#   MEMORY=16000 JOBFLAVOR=tomorrow ./clean_and_submit.sh xtoemu 2022preEE
+#   JOBFLAVOR: espresso (20 min), microcentury (1 h), longlunch (2 h), workday (8 h),
+#              tomorrow (1 day), testmatch (3 days), nextweek (1 week)
 
-set -e  # stop meteen als er iets faalt, i.p.v. door te gaan met een halve cleanup
+set -e  # stop immediately if something fails, instead of continuing with a half cleanup
 
 WORKFLOW=$1
-YEAR=$2
+shift || true
+YEARS=("$@")
+MEMORY=${MEMORY:-12000}          # MB per job
+JOBFLAVOR=${JOBFLAVOR:-workday}  # maximum wall time of a job
 BASEDIR="/afs/cern.ch/user/m/mvandene/higgscharm"
-EOSDIR="/eos/user/m/mvandene/higgscharm/outputs/${WORKFLOW}/${YEAR}"
 TIMESTAMP=$(date +%Y%m%d_%H%M)
 
-if [ -z "$WORKFLOW" ] || [ -z "$YEAR" ]; then
-  echo "Gebruik: $0 <workflow> <year>"
+if [ -z "$WORKFLOW" ] || [ ${#YEARS[@]} -eq 0 ]; then
+  echo "Usage: $0 <workflow> <year> [<year> ...]"
   exit 1
 fi
 
-echo "=== Stap 1: wachtrij leegmaken ==="
-condor_rm mvandene 2>/dev/null || true
-sleep 2
-condor_q mvandene
+echo "Workflow: $WORKFLOW | years: ${YEARS[*]} | memory: ${MEMORY} MB | jobflavor: ${JOBFLAVOR}"
 
-echo "=== Stap 2: output-map hernoemen ==="
-if [ -d "$EOSDIR" ]; then
-  mv "$EOSDIR" "${EOSDIR}_OLD_${TIMESTAMP}"
-  echo "Hernoemd naar ${EOSDIR}_OLD_${TIMESTAMP}"
-else
-  echo "Geen bestaande output-map gevonden, niets om te hernoemen."
-fi
+for YEAR in "${YEARS[@]}"; do
+  EOSDIR="/eos/user/m/mvandene/higgscharm/outputs/${WORKFLOW}/${YEAR}"
+  LOGDIR="${BASEDIR}/condor/logs/${WORKFLOW}/${YEAR}"
 
-echo "=== Stap 3: oude condor-logs opruimen ==="
-LOGDIR="${BASEDIR}/condor/logs/${WORKFLOW}/${YEAR}"
-if [ -d "$LOGDIR" ]; then
-  rm -rf "${LOGDIR:?}"/*
-  echo "Logs opgeruimd in $LOGDIR"
-fi
+  echo "=== [$YEAR] Step 1: remove only the jobs of ${WORKFLOW}/${YEAR} from the queue ==="
+  # selects jobs via their log path (condor/logs/<workflow>/<year>/...), so other runs stay untouched
+  condor_rm -constraint "regexp(\"/condor/logs/${WORKFLOW}/${YEAR}/\", UserLog)" 2>/dev/null || true
+  sleep 2
 
-echo "=== Stap 4: verse submissie ==="
-cd "$BASEDIR"
-python3 runner.py --workflow "$WORKFLOW" --year "$YEAR" --eos --m 8000 --submit
-# pas eventuele andere vaste vlaggen hier aan naar je gebruikelijke commando
+  echo "=== [$YEAR] Step 2: rename the output directory ==="
+  if [ -d "$EOSDIR" ]; then
+    mv "$EOSDIR" "${EOSDIR}_OLD_${TIMESTAMP}"
+    echo "Renamed to ${EOSDIR}_OLD_${TIMESTAMP}"
+  else
+    echo "No existing output directory found, nothing to rename."
+  fi
+
+  echo "=== [$YEAR] Step 3: clean up old condor logs ==="
+  if [ -d "$LOGDIR" ]; then
+    rm -rf "${LOGDIR:?}"/*
+    echo "Logs cleaned in $LOGDIR"
+  fi
+
+  echo "=== [$YEAR] Step 4: fresh submission ==="
+  cd "$BASEDIR"
+  python3 runner.py --workflow "$WORKFLOW" --year "$YEAR" --eos \
+    --memory "$MEMORY" --jobflavor "$JOBFLAVOR" --submit
+done
+
+echo "=== Queue ==="
+condor_q mvandene -batch | tail -n 20

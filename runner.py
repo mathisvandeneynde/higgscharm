@@ -69,6 +69,14 @@ if __name__ == "__main__":
         default="2000",
         help="Requested memory (in MB) for the condor job",
     )
+    parser.add_argument(
+        "--jobflavor",
+        dest="jobflavor",
+        type=str,
+        default="longlunch",
+        choices=["espresso", "microcentury", "longlunch", "workday", "tomorrow", "testmatch", "nextweek"],
+        help="Condor job flavour, i.e. maximum wall time (default longlunch = 2 h)",
+    )
     args = parser.parse_args()
 
     # get datasets to run over for selected workflow and year
@@ -92,7 +100,9 @@ if __name__ == "__main__":
             "--output_format",
             args.output_format,
             "--memory",
-            args.memory
+            args.memory,
+            "--jobflavor",
+            args.jobflavor,
         ]
         if args.submit:
             cmd_args.append("--submit")
