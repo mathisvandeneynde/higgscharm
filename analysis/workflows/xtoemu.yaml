@@ -17,7 +17,6 @@ datasets:
     - htt_bbH
     - hww
     - tth
-
 object_selection:
   muons:
     field: events.Muon
@@ -46,7 +45,6 @@ object_selection:
       - working_points.muon_id(events, 'tight')
       - events.Muon.pfRelIso04_all > 0.2
       - events.Muon.pfRelIso04_all < 0.5
-  # losse leptonen, enkel voor de veto op extra leptonen
   electrons_loose:
     field: events.Electron
     cuts:
@@ -84,7 +82,7 @@ object_selection:
       - working_points.jets_btagging(events, "medium", year)
       - delta_r_higher(events.Jet, objects['muons'], 0.4)
       - delta_r_higher(events.Jet, objects['electrons'], 0.4)
-  # DR-jets: identiek aan jets/bjets, plus cleaning tegen het niet-geisoleerde muon
+  # DR-jets: identical to jets/b-jets but with the anti-isolated muon requirement added to the delta-R cuts
   jets_dr:
     field: events.Jet
     cuts:
@@ -170,12 +168,12 @@ event_selection:
         ),
         axis=1)
 
-    # ------ veto op extra leptonen (losse criteria) ------
-    # elk paarlepton telt hooguit één keer mee; een extra los lepton maakt een telling 2
+    # ------ veto on extra leptons ------
+    # each dilepton pair counts at most once; an extra loose lepton makes a count of 2
     extra_lepton_veto: (ak.num(objects['electrons_loose'], axis=1) <= 1) & (ak.num(objects['muons_loose'], axis=1) <= 1)
 
     # ------ DY-splitsing in ZTT/ZLL via generator-matching ------
-    # enkel actief voor samples met _ZTT of _ZLL in de naam
+    # only for samples with ZLL or ZTT in the name 
     gen_split: gen_split_mask(events, objects, dataset)
 
     # ------ b-jet selections ------
@@ -183,17 +181,16 @@ event_selection:
     bjets_tag: ak.num(objects['bjets']) >= 1
 
     # ------ transverse mass selections ------
+    # for OS and SS
     transverse_mass_low: ak.all(np.sqrt(2.0 * objects['dileptons'].pt * objects['met'].pt * (ak.ones_like(objects['met'].pt) - np.cos(objects['dileptons'].delta_phi(objects['met'])))) < 60, axis=1)
     transverse_mass_low_ss: ak.all(np.sqrt(2.0 * objects['dileptons_ss'].pt * objects['met'].pt * (ak.ones_like(objects['met'].pt) - np.cos(objects['dileptons_ss'].delta_phi(objects['met'])))) < 60, axis=1)
-    transverse_mass_high: ak.all(np.sqrt(2.0 * objects['dileptons'].pt * objects['met'].pt * (ak.ones_like(objects['met'].pt) - np.cos(objects['dileptons'].delta_phi(objects['met'])))) > 70, axis=1)
 
     # ------ dzeta selection ------
+    # for OS and SS
     dzeta: compute_dzeta(objects['dileptons'], objects['met']) > -30
     dzeta_ss: compute_dzeta(objects['dileptons_ss'], objects['met']) > -30
 
     # ------ dilepton-mass selections (for DY-ll and Diboson CRs) ------
-    # Z-peak window in m(ll): enriches DY -> ee/mumu mis-id
-    mll_zpeak: ak.all((objects['dileptons'].p4.mass > 85.0) & (objects['dileptons'].p4.mass < 100.0), axis=1)
     # High m(ll): suppresses DY (signal + ll mis-id), enriches diboson (WW)
     mll_high: ak.all(objects['dileptons'].p4.mass > 100.0, axis=1)
 
@@ -320,26 +317,6 @@ event_selection:
       - dzeta
       - gen_split
     # =====================================================================
-    # SINGLE-TOP CONTROL REGION
-    #   >=1 b-jet AND mT > 70 GeV. tW and t-channel both produce a real W
-    #   (high mT) plus a b-jet, similar to ttbar but with lower jet
-    #   multiplicity. Purity vs ttbar is expected to be limited; this CR
-    #   serves to demonstrate that single-top cannot be cleanly isolated
-    #   in the e-mu final state.
-    # =====================================================================
-    emu_singletop_cr:
-      - trigger
-      - lumimask
-      - atleast_one_goodvertex
-      #- met_filters
-      - extra_lepton_veto
-      - emu_pair
-      - trigger_leg_pt
-      - one_dilepton
-      - bjets_tag
-      - transverse_mass_high
-      - gen_split
-    # =====================================================================
     # DIBOSON CONTROL REGION
     #   b-veto + mT < 60 + m(ll) > 100 GeV.
     #   At high m(ll) the DY -> tau tau contribution drops (m_vis falls
@@ -361,29 +338,6 @@ event_selection:
       - bjets_veto
       - transverse_mass_low
       - mll_high
-      - gen_split
-    # =====================================================================
-    # DY -> ll CONTROL REGION
-    #   Z-peak window 85 < m(ll) < 100 GeV, otherwise SR-like.
-    #   In e-mu the DY -> ee/mumu component requires lepton mis-id and is
-    #   tiny. The Z-peak window therefore mainly contains DY -> tau tau
-    #   tails plus diboson, with a small genuine DY -> ll component.
-    #   Goal of this CR: validate DY normalization and shape near the Z
-    #   peak as a cross-check of the inclusive DY MC modeling.
-    # =====================================================================
-    emu_dy_cr:
-      - trigger
-      - lumimask
-      - atleast_one_goodvertex
-      #- met_filters
-      - extra_lepton_veto
-      - emu_pair
-      - trigger_leg_pt
-      - one_dilepton
-      - bjets_veto
-      - transverse_mass_low
-      - dzeta
-      - mll_zpeak
       - gen_split
     # =====================================================================
     # FAKE-LEPTON DETERMINATION REGIONS (anti-isolated muon, 0.2 < I < 0.5)
@@ -744,9 +698,6 @@ histogram_config:
       - electron_phi
     muon_phi:
       - muon_phi
-    electron_etaphi:
-      - electron_eta_2d
-      - electron_phi_2d
     fake_mvis:
       - dilepton_mass
       - fake_dr
