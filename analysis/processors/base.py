@@ -23,6 +23,9 @@ from analysis.selections import (
     get_stitching_mask,
     gen_split_mask,
     no_extra_loose_lepton,
+    emu_pair_mask,
+    pair_key,
+    jets_key,
     compute_dzeta,
 )
 

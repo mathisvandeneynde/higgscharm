@@ -113,9 +113,14 @@ class ObjectSelector:
         )
         self.objects[obj_name] = dileptons
 
-    def select_dileptons_antiiso(self, obj_name):
-        muons = self.objects["muons_antiiso"]
-        electrons = self.objects["electrons"]
+    def _build_emu_dileptons(self, obj_name, electrons_key, muons_key):
+        """All lepton pairs from the electrons in `electrons_key` and the muons in `muons_key`.
+
+        Same construction as select_dileptons, but with a free choice of the lepton collections,
+        for the fake-estimate regions (anti-isolated muon and/or electron).
+        """
+        muons = self.objects[muons_key]
+        electrons = self.objects[electrons_key]
         leptons = ak.concatenate([electrons, muons], axis=1)
         leptons = leptons[ak.argsort(leptons.pt, ascending=False, axis=1)]
         leptons = ak.zip(
@@ -130,9 +135,9 @@ class ObjectSelector:
             with_name="PtEtaPhiMCandidate",
             behavior=candidate.behavior,
         )
-        # create pair combinations with all muons
+        # create all pair combinations
         dileptons = ak.combinations(leptons, 2, fields=["l1", "l2"])
-        # add dimuon 4-momentum field
+        # add dilepton 4-momentum field
         dileptons = ak.zip(
             {
                 "pt": (dileptons.l1 + dileptons.l2).pt,
@@ -147,6 +152,18 @@ class ObjectSelector:
             behavior=candidate.behavior,
         )
         self.objects[obj_name] = dileptons
+
+    def select_dileptons_antiiso(self, obj_name):
+        """DR: isolated electron + anti-isolated muon."""
+        self._build_emu_dileptons(obj_name, "electrons", "muons_antiiso")
+
+    def select_dileptons_antiiso_e(self, obj_name):
+        """B_iso: anti-isolated electron + isolated muon."""
+        self._build_emu_dileptons(obj_name, "electrons_antiiso", "muons")
+
+    def select_dileptons_antiiso_emu(self, obj_name):
+        """B_anti: anti-isolated electron + anti-isolated muon."""
+        self._build_emu_dileptons(obj_name, "electrons_antiiso", "muons_antiiso")
 
     # --------------------------------------------------------------------------------
     # ZZTo4L (Z+L, ZLL)

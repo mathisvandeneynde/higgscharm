@@ -13,6 +13,7 @@ from analysis.selections.utils import (
     select_candidate_cjet_dphi,
 )
 from analysis.selections.object_selections import ObjectSelector
+from analysis.selections.emu_regions import pair_key, jets_key
 import analysis.selections.event_selections as event_selections
 
 get_lumi_mask = event_selections.get_lumi_mask
@@ -23,3 +24,4 @@ get_zzto4l_trigger_mask = event_selections.get_zzto4l_trigger_mask
 get_stitching_mask = event_selections.get_stitching_mask
 gen_split_mask = event_selections.gen_split_mask
 no_extra_loose_lepton = event_selections.no_extra_loose_lepton
+emu_pair_mask = event_selections.emu_pair_mask

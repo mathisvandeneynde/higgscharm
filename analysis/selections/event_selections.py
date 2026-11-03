@@ -99,3 +99,30 @@ def no_extra_loose_lepton(objects, pair_key, dr_match=0.01):
         is_l2 = (loose.delta_r(pair.l2) < dr_match) & (np.abs(pair.l2.pdgId) == pdg)
         n_extra = n_extra + ak.sum(~(is_l1 | is_l2), axis=1)
     return ak.to_numpy(ak.fill_none(n_extra == 0, True))
+
+
+def emu_pair_mask(events, objects, pair_key):
+    """Exactly one pair in `pair_key`, that pair is e-mu, and the pT of e and mu match the
+    fired trigger path (strong leg > 25 GeV, other leg > 16 GeV).
+
+    Same logic as the inline expressions pair_ai_os / trigger_leg_pt in xtoemu.yaml,
+    written once for the regions of the fake estimate.
+    """
+    pairs = objects[pair_key]
+    l1, l2 = pairs.l1, pairs.l2
+    is_emu = ((np.abs(l1.pdgId) == 11) & (np.abs(l2.pdgId) == 13)) | (
+        (np.abs(l1.pdgId) == 13) & (np.abs(l2.pdgId) == 11)
+    )
+    pt_e = ak.where(np.abs(l1.pdgId) == 11, l1.pt, l2.pt)
+    pt_mu = ak.where(np.abs(l1.pdgId) == 13, l1.pt, l2.pt)
+    hlt = events.HLT
+    ele_leg = (
+        hlt.Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ
+        | hlt.Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ
+    )
+    mu_leg = (
+        hlt.Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL
+        | hlt.Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_DZ
+    )
+    legs = (ele_leg & (pt_e > 25) & (pt_mu > 16)) | (mu_leg & (pt_mu > 25) & (pt_e > 16))
+    return (ak.num(pairs, axis=1) == 1) & ak.any(is_emu, axis=1) & ak.any(legs, axis=1)
