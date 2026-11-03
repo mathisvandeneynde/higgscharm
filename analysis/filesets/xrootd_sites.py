@@ -21,6 +21,7 @@ xroot_to_site =  {
     "root://se01.indiacms.res.in": "T2_IN_TIFR",
     "root://t2se.indiacms.res.in": "T2_IN_TIFR",
     "root://cmsio2.rc.ufl.edu:1094": "T2_US_Florida",
+    "root://cmsio3.rc.ufl.edu:1094": "T2_US_Florida",
     "root://t2dsk0011.cmsaf.mit.edu:1094": "T2_US_MIT",
     "root://xrootd.cmsaf.mit.edu:1094": "T2_US_MIT",
     "root://ruhex-osgce.rutgers.edu": "T3_US_Rutgers",
@@ -43,5 +44,6 @@ xroot_to_site =  {
     "root://cms-t2-se01.sdfarm.kr:1094": "T2_KR_KISTI",
     "root://eos01.grid.cyfronet.pl:1094": "T2_PL_Cyfronet",
     "root://xroot02.ncg.ingrid.pt:1094": "T2_PT_NCG_Lisbon",
+    "root://xroot01.ncg.ingrid.pt:1094": "T2_PT_NCG_Lisbon",
     "root://se01.grid.nchc.org.tw": "T2_TW_NCHC",
 }
