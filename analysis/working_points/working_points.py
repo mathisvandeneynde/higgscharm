@@ -21,6 +21,16 @@ class WorkingPoints:
                 if hasattr(events.Electron, "mvaFall17V2Iso_WP90")
                 else events.Electron.mvaIso_WP90
             ),
+            "wp80noiso": (
+                events.Electron.mvaFall17V2noIso_WP80
+                if hasattr(events.Electron, "mvaFall17V2noIso_WP80")
+                else events.Electron.mvaNoIso_WP80
+            ),
+            "wp90noiso": (
+                events.Electron.mvaFall17V2noIso_WP90
+                if hasattr(events.Electron, "mvaFall17V2noIso_WP90")
+                else events.Electron.mvaNoIso_WP90
+            ),
             "fail": events.Electron.cutBased == 0,
             "veto": events.Electron.cutBased == 1,
             "loose": events.Electron.cutBased == 2,

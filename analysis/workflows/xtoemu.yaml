@@ -34,7 +34,8 @@ object_selection:
       - np.abs(events.Electron.eta) < 2.4
       - np.abs(events.Electron.dxy) < 0.045
       - np.abs(events.Electron.dz) < 0.2
-      - working_points.electron_id(events, 'wp80iso')
+      - working_points.electron_id(events, 'wp80noiso')
+      - events.Electron.pfRelIso03_all < 0.15
   muons_antiiso:
     field: events.Muon
     cuts:
@@ -382,7 +383,7 @@ corrections:
     lhescaleWeight: false
     nnlopsWeight: false
     electron:
-      - id: wp80iso
+      - id: wp80noiso
       - reco: true
       - trigger: false
     muon:
