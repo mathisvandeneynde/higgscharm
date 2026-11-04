@@ -134,6 +134,10 @@ class BaseProcessor(processor.ProcessorABC):
         # Histogram filling / array dumping
         # --------------------------------------------------------------
         categories = event_selection["categories"]
+        # fake categories: also data get weights with variations (see fake_factor.py)
+        fake_categories = (
+            self.workflow_config.corrections_config["event_weights"].get("fake_factor") or {}
+        )
         for category, category_cuts in categories.items():
             # get selection mask by category
             category_mask = selection_manager.all(*category_cuts)
@@ -165,7 +169,8 @@ class BaseProcessor(processor.ProcessorABC):
                         variables_map=variables_map,
                         histograms=histograms,
                         category=category,
-                        is_mc=self.is_mc,
+                        # True -> weight variations are filled; for data only in fake categories
+                        is_mc=self.is_mc or category in fake_categories,
                         shift=shift,
                         flow=True,
                     )

@@ -23,6 +23,9 @@ PAIRS = {
     # bias region B_anti: anti-isolated electron and anti-isolated muon
     "emu_ba_os": "dileptons_ba",
     "emu_ba_ss": "dileptons_ba_ss",
+    # fake categories: same selection as their source region, events weighted with the fake factor
+    "emu_qcd": "dileptons_ss",
+    "emu_dr_qcd": "dileptons_ai_ss",
 }
 
 JETS = {
@@ -38,6 +41,14 @@ JETS = {
     "emu_bi_ss": "jets_bi",
     "emu_ba_os": "jets_ba",
     "emu_ba_ss": "jets_ba",
+    "emu_qcd": "jets",
+    "emu_dr_qcd": "jets_dr",
+}
+
+# fake category -> region in which its content is the fake (QCD) prediction
+FAKE_TARGETS = {
+    "emu_qcd": "emu",          # AR weighted with F_T * C * b -> prediction in the SR
+    "emu_dr_qcd": "emu_dr_os", # DR-SS weighted with F_T * C   -> validation in DR-OS
 }
 
 

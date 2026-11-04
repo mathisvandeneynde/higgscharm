@@ -58,6 +58,8 @@ class CoffeaPlotter:
 
         # set processes -> era map
         self.process_era_map = get_process_era_map(year)
+        # data-driven fake-lepton estimate (built in postprocessing, not in the filesets)
+        self.process_era_map.setdefault("QCD", "mc")
 
         # set processes -> color map
         with open(color_map_file, "r") as f:

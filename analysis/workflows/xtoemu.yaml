@@ -474,6 +474,37 @@ event_selection:
       - dzeta_ai_ss
       - gen_split
     # =====================================================================
+    # FAKE ESTIMATE: WEIGHTED CATEGORIES
+    #   same selection as the source region; every event gets the fake-factor
+    #   weight (data +w, MC -w), see corrections.event_weights.fake_factor
+    #   emu_qcd    = AR    -> QCD prediction in emu
+    #   emu_dr_qcd = DR-SS -> validation in emu_dr_os
+    # =====================================================================
+    emu_qcd:
+      - trigger
+      - lumimask
+      - atleast_one_goodvertex
+      - extra_lepton_veto_ss
+      - no_os_pair
+      - emu_pair_ss
+      - trigger_leg_pt_ss
+      - one_dilepton_ss
+      - bjets_veto
+      - transverse_mass_low_ss
+      - dzeta_ss
+      - gen_split
+    emu_dr_qcd:
+      - trigger
+      - lumimask
+      - atleast_one_goodvertex
+      - extra_lepton_veto_ai_ss
+      - no_nominal_pair
+      - pair_ai_ss
+      - bjets_veto_dr
+      - mt_ai_ss
+      - dzeta_ai_ss
+      - gen_split
+    # =====================================================================
     # FAKE ESTIMATE: BIAS REGIONS (anti-isolated electron)
     #   B_iso: anti-iso e + iso mu; B_anti: anti-iso e + anti-iso mu
     # =====================================================================
@@ -550,6 +581,12 @@ corrections:
       - id: tight
       - iso: tight
       - trigger: false
+    # data-driven fake-lepton estimate: category -> bias correction b
+    #   'measured': b from analysis/data/fake_factors/<year>_fake_factors.json
+    #   a number  : fixed b (e.g. 1.0 = no bias correction)
+    fake_factor:
+      - emu_qcd: measured
+      - emu_dr_qcd: 1.0   # DR-SS -> DR-OS: no isolation extrapolation, so no bias correction
 
 histogram_config:
   add_syst_axis: true

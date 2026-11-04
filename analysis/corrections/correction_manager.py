@@ -14,6 +14,7 @@ from analysis.corrections.met import apply_met_phi_corrections
 from analysis.corrections.muon_ss import apply_muon_ss_corrections
 from analysis.corrections.partonshower import add_partonshower_weight
 from analysis.corrections.electron_ss import apply_electron_ss_corrections
+from analysis.corrections.fake_factor import add_fake_factor_weights
 
 
 def object_corrector_manager(events, year, corrections_config):
@@ -207,4 +208,17 @@ def weight_manager(pruned_ev, year, dataset, workflow_config, category, shift):
                 ctag_corrector.add_ctag_weights(flavor="light")
     else:
         weights_container.add("weight", np.ones(len(pruned_ev)))
+
+    # data-driven fake-lepton estimate: only in the fake categories, for data AND MC
+    fake_config = weights_config.get("fake_factor") or {}
+    if category in fake_config:
+        add_fake_factor_weights(
+            events=pruned_ev,
+            year=year,
+            category=category,
+            bias_setting=fake_config[category],
+            weights_container=weights_container,
+            shift=shift,
+            is_mc=hasattr(pruned_ev, "genWeight"),
+        )
     return weights_container

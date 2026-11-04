@@ -126,4 +126,9 @@ correction_files = {
         "2023postBPix": "/cvmfs/cms-griddata.cern.ch/cat/metadata/BTV/Run3-23DSep23-Summer23BPix-NanoAODv12/2025-08-20/ctagging.json.gz",
         "2024": "/cvmfs/cms-griddata.cern.ch/cat/metadata/BTV/Run3-24CDEReprocessingFGHIPrompt-Summer24-NanoAODv15/2025-08-19/ctagging.json.gz",
     },
+    # data-driven fake-lepton estimate (scripts/qcd/qcd_estimate.ipynb + make_fake_cset.py)
+    "fake_factors": {
+        "2022preEE": f"{Path.cwd()}/analysis/data/fake_factors/2022preEE_fake_factors.json",
+        "2022postEE": f"{Path.cwd()}/analysis/data/fake_factors/2022postEE_fake_factors.json",
+    },
 }
