@@ -12,6 +12,7 @@ from collections import defaultdict
 from coffea.util import load, save
 from coffea.processor import accumulate
 from analysis.filesets.utils import get_dataset_config
+from analysis.postprocess.fake_process import add_fake_process
 
 
 def setup_logger(output_dir):
@@ -277,6 +278,9 @@ def load_processed_histograms(
     processed_histograms = {}
     for process in process_samples_map:
         processed_histograms.update(load(f"{output_dir}/{process}.coffea"))
+    # data-driven fake-lepton estimate: add the 'QCD' process before saving, so the file is
+    # written once (no-op for workflows without fake categories)
+    processed_histograms = add_fake_process(processed_histograms)
     save(processed_histograms, f"{output_dir}/{year}_processed_histograms.coffea")
     return processed_histograms
 

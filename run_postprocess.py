@@ -11,7 +11,6 @@ from collections import defaultdict
 from coffea.util import load, save
 from coffea.processor import accumulate
 from analysis.postprocess.plotter import CoffeaPlotter
-from analysis.postprocess.fake_process import add_fake_process
 from analysis.selections.emu_regions import FAKE_TARGETS
 from analysis.workflows.config import WorkflowConfigBuilder
 from analysis.filesets.utils import get_workflow_key_process_map, get_process_sample_map
@@ -268,10 +267,6 @@ if __name__ == "__main__":
             output_dir,
             process_samples_map,
         )
-        # data-driven fake-lepton estimate: build the 'QCD' process from the fake categories
-        if any(c in categories for c in FAKE_TARGETS):
-            processed_histograms = add_fake_process(processed_histograms)
-            save(processed_histograms, f"{output_dir}/{args.year}_processed_histograms.coffea")
 
         for category in categories:
             logging.info(f"category: {category}")
