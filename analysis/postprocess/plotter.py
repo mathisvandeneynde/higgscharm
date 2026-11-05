@@ -191,6 +191,10 @@ class CoffeaPlotter:
         err2_down = mcstat_err2
 
         for variation in get_variations_keys(self.processed_histograms):
+            # a variation that no MC process has for this histogram adds no uncertainty
+            # (e.g. CMS_fake_* in a histogram that stays empty in the fake categories)
+            if f"{variation}Up" not in histogram_info["mc"]["variations"]:
+                continue
             # Up/down variations for a single MC sample
             var_up = histogram_info["mc"]["variations"][f"{variation}Up"].values()
             var_down = histogram_info["mc"]["variations"][f"{variation}Down"].values()
